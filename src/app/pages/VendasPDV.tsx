@@ -4,6 +4,7 @@ import {
   ChevronDown, Store, Globe, Tag, UserPlus, User, MessageCircle,
 } from "lucide-react";
 import { useApp } from "../context/AppContext";
+import { triggerBotpressPresencialFlow } from "../services/botpress";
 
 interface CatalogItem {
   id: number;
@@ -43,7 +44,12 @@ export function VendasPDV() {
   const catalogo = [...catalogProdutos, ...decants];
 
   const [clienteSearch, setClienteSearch] = useState("");
-  const [clienteSelected, setClienteSelected] = useState<{ id: number; nome: string; telefone: string } | null>(null);
+  const [clienteSelected, setClienteSelected] = useState<{
+    id: number;
+    nome: string;
+    email: string;
+    telefone: string;
+  } | null>(null);
   const [clienteOpen, setClienteOpen] = useState(false);
   const [itemSearch, setItemSearch] = useState("");
   const [itemOpen, setItemOpen] = useState(false);
@@ -102,7 +108,7 @@ export function VendasPDV() {
 
   const total = Math.max(0, subtotal - descontoAplicado + freteVal);
 
-  const handleFinalizar = () => {
+  const handleFinalizar = async () => {
     const errs: string[] = [];
     if (cart.length === 0) errs.push("Adicione pelo menos um item ao carrinho.");
     if (!clienteSelected) errs.push("Selecione um cliente. O vínculo com cliente é obrigatório.");
@@ -121,23 +127,52 @@ export function VendasPDV() {
     const now = new Date();
     const dataFormatada = `${String(now.getDate()).padStart(2, "0")}/${String(now.getMonth() + 1).padStart(2, "0")}/${now.getFullYear()} ${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
 
-    addVenda({
+    const vendaItens = cart.map((i) => ({
+      nome: i.catalogItem.nome,
+      volume: i.catalogItem.volume,
+      quantidade: i.quantidade,
+      valorUnitario: i.catalogItem.preco,
+    }));
+
+    const vendaId = addVenda({
       data: dataFormatada,
       cliente: clienteSelected?.nome ?? "",
+      emailCliente: clienteSelected?.email || undefined,
       pagamento,
       tipoVenda: isOnline ? "online" : "presencial",
       canalOnline: isOnline ? (canalOnline ?? undefined) : undefined,
       frete: freteValFinal,
       desconto: descontoAplicado > 0 ? descontoAplicado : undefined,
       total,
-      itens: cart.map((i) => ({
-        nome: i.catalogItem.nome,
-        volume: i.catalogItem.volume,
-        quantidade: i.quantidade,
-        valorUnitario: i.catalogItem.preco,
-      })),
+      itens: vendaItens,
       enviado: false,
     });
+
+    if (!isOnline && clienteSelected) {
+      try {
+        const subtotalVenda = subtotal;
+        const freteVenda = 0;
+        await triggerBotpressPresencialFlow({
+          codigoVenda: vendaId,
+          nomeCliente: clienteSelected.nome,
+          emailCliente: clienteSelected.email || undefined,
+          dadosPedido: vendaItens.map((item) => ({
+            ...item,
+            totalItem: item.valorUnitario * item.quantidade,
+          })),
+          frete: freteVenda,
+          desconto: descontoAplicado > 0 ? descontoAplicado : undefined,
+          subtotal: subtotalVenda,
+          totalVenda: total,
+          formaPagamento: pagamento,
+          dataHoraPedido: dataFormatada,
+          canalVenda: "presencial",
+          codigoRastreio: undefined,
+        });
+      } catch (error) {
+        console.error("Erro ao acionar fluxo do Botpress", error);
+      }
+    }
 
     setSuccess(true);
     setCart([]);
@@ -256,8 +291,20 @@ export function VendasPDV() {
                     </div>
                   ) : (
                     clientesFiltrados.map((c) => (
-                      <button key={c.id} className="w-full text-left px-4 py-2.5 hover:bg-amber-50 transition-colors border-b border-gray-50 last:border-0 flex items-center justify-between gap-3"
-                        onClick={() => { setClienteSelected({ id: c.id, nome: c.nome, telefone: c.telefone }); setClienteSearch(""); setClienteOpen(false); }}>
+                      <button
+                        key={c.id}
+                        className="w-full text-left px-4 py-2.5 hover:bg-amber-50 transition-colors border-b border-gray-50 last:border-0 flex items-center justify-between gap-3"
+                        onClick={() => {
+                          setClienteSelected({
+                            id: c.id,
+                            nome: c.nome,
+                            email: c.email,
+                            telefone: c.telefone,
+                          });
+                          setClienteSearch("");
+                          setClienteOpen(false);
+                        }}
+                      >
                         <span className="text-sm text-gray-800 truncate">{c.nome}</span>
                         <span className="text-xs text-gray-400 shrink-0 font-mono">{c.telefone}</span>
                       </button>
@@ -498,8 +545,8 @@ export function VendasPDV() {
               endereco: { cep: "", logradouro: "", numero: "", bairro: "", cidade: "", uf: "" },
               totalPedidos: 0, ativo: true,
             };
-            setClientes(prev => [...prev, novoCliente]);
-            setClienteSelected({ id: newId, nome, telefone });
+            setClientes((prev) => [...prev, novoCliente]);
+            setClienteSelected({ id: newId, nome, email: "", telefone });
             setClienteSearch("");
             setClienteOpen(false);
           }}

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Package, Truck, RotateCcw, Search, Clock, Eye, X, Globe, CheckCircle, XCircle, MessageCircle, Send } from "lucide-react";
 import { useApp } from "../context/AppContext";
 import type { Venda } from "../context/AppContext";
+import { triggerBotpressOnlineFlow } from "../services/botpress";
 
 const ACC  = "#c29958";
 const DARK = "#050300";
@@ -234,7 +235,37 @@ export function PedidosOnline() {
     return `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}/${d.getFullYear()}`;
   };
 
-  const handleFinalizar = (venda: Venda) => {
+  const triggerOnlineFinalizationFlow = async (
+    venda: Venda,
+    codigoRastreio?: string,
+  ) => {
+    if (!venda.canalOnline) return;
+
+    const desconto = venda.desconto ?? 0;
+    const frete = venda.frete ?? 0;
+    const subtotal = venda.total - frete + desconto;
+
+    await triggerBotpressOnlineFlow({
+      codigoVenda: venda.id,
+      nomeCliente: venda.cliente,
+      emailCliente: venda.emailCliente || undefined,
+      dadosPedido: venda.itens.map((item) => ({
+        ...item,
+        totalItem: item.valorUnitario * item.quantidade,
+      })),
+      frete: venda.frete,
+      desconto: desconto > 0 ? desconto : undefined,
+      subtotal,
+      totalVenda: venda.total,
+      formaPagamento: venda.pagamento,
+      dataHoraPedido: venda.data,
+      canalVenda: venda.canalOnline,
+      codigoRastreio:
+        venda.canalOnline === "whatsapp" ? codigoRastreio : undefined,
+    });
+  };
+
+  const handleFinalizar = async (venda: Venda) => {
     if (venda.enviado) {
       // desfazer
       updateVendaEnvio(venda.id, false);
@@ -242,12 +273,22 @@ export function PedidosOnline() {
       setRastreioVenda(venda);
     } else {
       updateVendaEnvio(venda.id, true, hoje());
+      try {
+        await triggerOnlineFinalizationFlow(venda);
+      } catch (error) {
+        console.error("Erro ao acionar fluxo de venda online no Botpress", error);
+      }
     }
   };
 
-  const confirmarRastreio = (codigo: string) => {
+  const confirmarRastreio = async (codigo: string) => {
     if (!rastreioVenda) return;
     updateVendaEnvio(rastreioVenda.id, true, hoje(), codigo || undefined);
+    try {
+      await triggerOnlineFinalizationFlow(rastreioVenda, codigo || undefined);
+    } catch (error) {
+      console.error("Erro ao acionar fluxo de venda online no Botpress", error);
+    }
     setRastreioVenda(null);
   };
 
