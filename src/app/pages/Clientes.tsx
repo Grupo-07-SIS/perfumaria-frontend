@@ -31,7 +31,6 @@ import {
 
 const ACC = "#c29958";
 const DARK = "#050300";
-const WARM = "#f5ede0";
 
 type Aba = "clientes" | "fornecedores" | "funcionarios";
 type StatusFiltro = "todos" | "ativos" | "inativos";
@@ -394,7 +393,9 @@ function ClienteModal({ data, onClose, onSave }: ClienteModalProps) {
             </div>
           </div>
           <div>
-            <label className="text-sm text-gray-700 block mb-1.5">E-mail <span className="text-xs text-gray-400">(opcional)</span></label>
+            <label className="text-sm text-gray-700 block mb-1.5">
+              E-mail <span className="text-xs text-gray-400">(opcional)</span>
+            </label>
             <input
               type="email"
               value={email}
