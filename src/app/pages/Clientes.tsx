@@ -145,6 +145,7 @@ interface ClienteModalProps { data?: Cliente; onClose: () => void; onSave: (d: O
 function ClienteModal({ data, onClose, onSave }: ClienteModalProps) {
   const [nome, setNome] = useState(data?.nome ?? "");
   const [telefone, setTelefone] = useState(data?.telefone ?? "");
+  const [email, setEmail] = useState(data?.email ?? "");
   const [endereco, setEndereco] = useState<Endereco>(data?.endereco ?? { ...EMPTY_ENDERECO });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [success, setSuccess] = useState(false);
@@ -158,7 +159,7 @@ function ClienteModal({ data, onClose, onSave }: ClienteModalProps) {
     if (Object.keys(e).length > 0) { setErrors(e); return; }
     setErrors({});
     setSuccess(true);
-    onSave({ nome: nome.trim(), email: data?.email ?? "", telefone: telefone.trim(), endereco });
+    onSave({ nome: nome.trim(), email: email.trim(), telefone: telefone.trim(), endereco });
     setTimeout(onClose, 1200);
   };
 
@@ -186,6 +187,12 @@ function ClienteModal({ data, onClose, onSave }: ClienteModalProps) {
                 onFocus={e => e.target.style.borderColor = ACC} onBlur={e => e.target.style.borderColor = errors.telefone ? "#f87171" : ""} />
               {errors.telefone && <p className="text-xs text-red-600 mt-1">{errors.telefone}</p>}
             </div>
+          </div>
+          <div>
+            <label className="text-sm text-gray-700 block mb-1.5">E-mail <span className="text-xs text-gray-400">(opcional)</span></label>
+            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="cliente@email.com"
+              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none transition-colors"
+              onFocus={e => e.target.style.borderColor = ACC} onBlur={e => e.target.style.borderColor = ""} />
           </div>
           <EnderecoFields endereco={endereco} onChange={setEndereco} errors={errors} onClearError={clearError} />
         </div>
@@ -586,6 +593,9 @@ export function Clientes() {
                   </div>
                   <div className="flex flex-col gap-1.5">
                     <div className="flex items-center gap-2 text-xs text-gray-500"><Phone size={12} className="shrink-0" />{c.telefone}</div>
+                    {c.email && (
+                      <div className="flex items-center gap-2 text-xs text-gray-500"><Mail size={12} className="shrink-0" /><span className="truncate">{c.email}</span></div>
+                    )}
                     {(c.endereco.logradouro || c.endereco.cidade) && (
                       <div className="flex items-start gap-2 text-xs text-gray-500">
                         <MapPin size={12} className="shrink-0 mt-0.5" />
