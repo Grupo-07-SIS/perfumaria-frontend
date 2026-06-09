@@ -33,4 +33,15 @@ export default defineConfig({
 
   // File types to support raw imports. Never add .css, .tsx, or .ts files to this.
   assetsInclude: ['**/*.svg', '**/*.csv'],
+
+  server: {
+    proxy: {
+      '/botpress-webhook': {
+        target: 'https://webhook.botpress.cloud',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/botpress-webhook/, ''),
+        secure: true,
+      },
+    },
+  },
 })
