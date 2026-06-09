@@ -1,7 +1,7 @@
 import { useState } from "react";
 import {
-  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  BarChart, Bar, LineChart, Line, Cell,
+  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+  BarChart, Bar, PieChart, Pie, Cell, Legend,
 } from "recharts";
 import {
   ShoppingBag, DollarSign, TrendingUp, TrendingDown,
@@ -366,21 +366,14 @@ export function Inicio() {
               />
             ) : (
               <ResponsiveContainer width="100%" height={200}>
-                <AreaChart data={chartData}>
-                  <defs>
-                    <linearGradient id="gradFat" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%"  stopColor={ACC} stopOpacity={0.25} />
-                      <stop offset="95%" stopColor={ACC} stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                <BarChart data={chartData} barSize={24}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
                   <XAxis dataKey="label" tick={{ fontSize: 11, fill: "#9ca3af" }} axisLine={false} tickLine={false} />
                   <YAxis tick={{ fontSize: 11, fill: "#9ca3af" }} axisLine={false} tickLine={false}
                     tickFormatter={(v) => `R$${(v / 1000).toFixed(0)}k`} />
                   <Tooltip content={<TooltipFat />} />
-                  <Area type="monotone" dataKey="faturamento" stroke={ACC} strokeWidth={2.5}
-                    fill="url(#gradFat)" dot={{ fill: ACC, r: 4, strokeWidth: 0 }} activeDot={{ r: 6 }} />
-                </AreaChart>
+                  <Bar dataKey="faturamento" fill={ACC} radius={[4, 4, 0, 0]} />
+                </BarChart>
               </ResponsiveContainer>
             )}
           </div>
@@ -396,14 +389,13 @@ export function Inicio() {
             />
           ) : (
             <ResponsiveContainer width="100%" height={200}>
-              <LineChart data={chartData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+              <BarChart data={chartData} barSize={24}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
                 <XAxis dataKey="label" tick={{ fontSize: 11, fill: "#9ca3af" }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fontSize: 11, fill: "#9ca3af" }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fontSize: 11, fill: "#9ca3af" }} axisLine={false} tickLine={false} allowDecimals={false} />
                 <Tooltip content={<TooltipVendas />} />
-                <Line type="monotone" dataKey="vendas" stroke={ACC} strokeWidth={2.5}
-                  dot={{ fill: ACC, r: 4, strokeWidth: 0 }} activeDot={{ r: 6 }} />
-              </LineChart>
+                <Bar dataKey="vendas" fill={ACC} radius={[4, 4, 0, 0]} />
+              </BarChart>
             </ResponsiveContainer>
           )}
         </div>
@@ -461,16 +453,33 @@ export function Inicio() {
             />
           ) : (
             <ResponsiveContainer width="100%" height={200}>
-              <BarChart data={categoriaData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                <XAxis dataKey="categoria" tick={{ fontSize: 11, fill: "#9ca3af" }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fontSize: 11, fill: "#9ca3af" }} axisLine={false} tickLine={false}
-                  tickFormatter={(v) => `R$${(v / 1000).toFixed(0)}k`} />
-                <Tooltip {...TOOLTIP_STYLE} formatter={(v) => [fmtBRL(Number(v)), "Receita"]} />
-                <Bar dataKey="receita" radius={[4, 4, 0, 0]}>
-                  {categoriaData.map((_, i) => <Cell key={i} fill={CAT_COLORS[i % CAT_COLORS.length]} />)}
-                </Bar>
-              </BarChart>
+              <PieChart>
+                <Pie
+                  data={categoriaData}
+                  dataKey="receita"
+                  nameKey="categoria"
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={50}
+                  outerRadius={80}
+                  paddingAngle={3}
+                >
+                  {categoriaData.map((entry, i) => (
+                    <Cell key={`cat-${entry.categoria}`} fill={CAT_COLORS[i % CAT_COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip
+                  contentStyle={{ background: DARK, border: "none", borderRadius: "8px", fontSize: "12px" }}
+                  itemStyle={{ color: "#ffffff" }}
+                  labelStyle={{ color: "#ffffff" }}
+                  formatter={(v) => [fmtBRL(Number(v)), "Receita"]}
+                />
+                <Legend
+                  iconType="circle"
+                  iconSize={8}
+                  formatter={(value) => <span style={{ fontSize: 11, color: "#6b6b68" }}>{value}</span>}
+                />
+              </PieChart>
             </ResponsiveContainer>
           )}
         </div>
