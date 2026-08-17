@@ -1,4 +1,4 @@
-Claro — aqui está a instruction pronta para usar em Markdown:
+
 
 ```md
 # Instrução de Arquitetura para Componentes no Design System Peract
