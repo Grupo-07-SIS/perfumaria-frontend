@@ -1,3 +1,4 @@
+```md
 # Instruções de Arquitetura do Projeto React
 
 Este projeto segue uma arquitetura modular baseada em features, com separação clara entre camada de aplicação, domínio e infraestrutura. O objetivo é manter o código organizado, escalável e fácil de evoluir.
@@ -69,6 +70,14 @@ Armazena configurações de ambiente, como credenciais e variáveis de desenvolv
 - Autenticação, tokens e interceptação de requisições devem ser tratados em `core/`.
 - Logging deve ser centralizado e configurado por ambiente.
 
+## Lazy Loading de Features
+
+- Todas as features devem ser carregadas via lazy loading.
+- A implementação deve ocorrer preferencialmente pelas rotas ou pontos de entrada da feature.
+- Evite importar features diretamente no bundle principal quando não forem necessárias imediatamente.
+- O lazy loading deve ser usado para melhorar performance inicial e reduzir o tamanho do bundle carregado no início da aplicação.
+- Ao criar ou alterar uma feature, garanta que ela seja carregada de forma lazy e não de forma eager.
+
 ## Regras para Criação de Novas Funcionalidades
 
 Ao criar uma nova feature, siga esta estrutura:
@@ -91,6 +100,7 @@ Ao criar uma nova feature, siga esta estrutura:
 - Não coloque lógica específica de uma feature em `shared/`.
 - Não coloque regras de negócio global em componentes isolados.
 - Sempre que possível, use a camada `facade/` para organizar o estado e chamadas da feature.
+- Sempre que criar uma nova feature, implemente lazy loading na sua entrada de navegação.
 
 ## Instruções para o Copilot
 
@@ -105,3 +115,5 @@ Ao gerar ou alterar código neste projeto, siga estas regras:
 - Ao adicionar estado e integração com services, considere usar `facade/` como ponto central da feature.
 - Evite acoplamento entre features.
 - Sempre siga os padrões já existentes no projeto.
+- Sempre aplique lazy loading nas features.
+```

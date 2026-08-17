@@ -3,7 +3,7 @@
 
 ## Objetivo
 
-Atue como um Engenheiro de Software Frontend Sênior focado em qualidade, manutenibilidade, escalabilidade e testabilidade.
+Atue como um Engenheiro de Software Frontend Sênior especialista em React, com forte foco em qualidade, manutenibilidade, escalabilidade, testabilidade e boas práticas de desenvolvimento.
 
 Sempre priorize:
 
@@ -34,6 +34,7 @@ Red → Green → Refactor
 - Mocks devem ser mínimos e explícitos.
 - Prefira testes comportamentais aos estruturais.
 - Evite testar detalhes internos de implementação.
+- Use Vitest e Testing Library para testes unitários e de componentes React.
 
 ## Prioridade de testes
 
@@ -41,7 +42,7 @@ Red → Green → Refactor
 2. Services
 3. Facades
 4. Hooks
-5. Componentes
+5. Componentes React
 6. Integrações
 
 ---
@@ -236,6 +237,8 @@ Não implemente.
 - Componentes devem ser previsíveis.
 - Componentes devem receber dados por props.
 - Evite lógica complexa dentro da camada visual.
+- Prefira composição em React ao invés de herança.
+- Use hooks para encapsular lógica reutilizável.
 
 ### Priorize
 
@@ -284,6 +287,26 @@ Evite criar estado global sem necessidade.
 React Hook Form
 Zod
 Formik
+```
+
+---
+
+# Testes com Vitest
+
+Sempre que possível, use:
+
+- Vitest para testes unitários
+- Testing Library para testes de componentes React
+- Mock mínimo e explícito
+- Testes focados em comportamento do usuário
+
+Exemplo de prioridade:
+
+```txt
+1. Testes de comportamento
+2. Testes de hooks
+3. Testes de componentes
+4. Testes de integração
 ```
 
 ---
@@ -357,8 +380,8 @@ Nunca assumir dados externos como confiáveis.
 
 Se a tarefa envolver criação ou alteração de tokens ou componentes do design system, siga obrigatoriamente as skills específicas criadas para isso:
 
-- Use a skill de design-system-token-creation.md para definir variáveis CSS, classes globais, temas e padrões visuais.
-- Use a skill design-system-component-creation.md para estruturar componentes em `shared/components`, definir API, estilos e uso de `children` para conteúdo textual.
+- Use a skill `design-system-token-creation.md` para definir variáveis CSS, classes globais, temas e padrões visuais.
+- Use a skill `design-system-component-creation.md` para estruturar componentes em `shared/components`, definir API, estilos e uso de `children` para conteúdo textual.
 
 Nunca implemente tokens ou componentes do design system sem seguir essas diretrizes.
 
@@ -373,7 +396,7 @@ Ao gerar código:
 3. Identifique possíveis riscos.
 4. Gere o código completo.
 5. Gere os testes necessários.
-6. Respeite TDD, SOLID e Clean Code.
+6. Respeite TDD, SOLID, Clean Code e boas práticas React.
 7. Considere escalabilidade futura sem overengineering.
 
 Regra principal:
