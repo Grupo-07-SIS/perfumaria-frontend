@@ -70,5 +70,5 @@ interface DeleteConfirmProps {
   onConfirm: () => void;
 }
 
-export { CategoriesPage as Categorias } from "../../features/categories/pages/CategoriesPage";
+export { CategoriesPage as Categorias } from "../../features/categories/CategoriesPage";
   return (

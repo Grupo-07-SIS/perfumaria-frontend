@@ -25,7 +25,7 @@ export const router = createBrowserRouter([
       {
         path: "estoque/categorias",
         lazy: async () => {
-          const { CategoriesPage } = await import("../features/categories/pages/CategoriesPage");
+          const { CategoriesPage } = await import("../features/categories/CategoriesPage");
           return { Component: CategoriesPage };
         },
       },
