@@ -9,7 +9,7 @@ Esta skill orienta refactors incrementais do frontend Peract sem perder compatib
 
 ## Quando usar
 
-- mover páginas de `app/pages` para `features`;
+- mover páginas de `app/pages` para o root da pasta da feature em `features`;
 - mover layout global para `core/layout`;
 - extrair componentes reutilizáveis para `shared/components`;
 - trocar botões, inputs, selects, tags, tabelas e cards ad hoc por componentes Peract;
@@ -28,6 +28,9 @@ Esta skill orienta refactors incrementais do frontend Peract sem perder compatib
 - `shared` não conhece regra de negócio.
 - `core` concentra layout e infraestrutura transversal.
 - `features` encapsula a UI e o comportamento da funcionalidade.
+- a página principal da feature deve ficar no root da pasta da feature, sem subpasta `pages`;
+- cada feature deve seguir a estrutura `components`, `services`, `repository`, `repository/dto`, `repository/mapper`, `facade`, `models` e `config` quando houver responsabilidade correspondente;
+- acesso a backend ou fonte de dados da feature deve entrar por `repository`, não direto pela página ou por `shared`;
 - `app` apenas compõe bootstrap, providers e rotas.
 
 ## Regras de design system
@@ -39,7 +42,7 @@ Esta skill orienta refactors incrementais do frontend Peract sem perder compatib
 
 ## Resultado esperado
 
-- páginas em `features`;
+- páginas no root de `features/<feature>`;
 - layout em `core`;
 - componentes reutilizáveis em `shared`;
 - rotas com lazy loading;

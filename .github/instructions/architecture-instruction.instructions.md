@@ -14,8 +14,15 @@ applyTo: "src/**"
 
 ## Regras de modularização
 
-- Pages novas devem nascer em `src/features/<feature>/pages/`.
+- A entrada principal da feature deve nascer no root da própria pasta, por exemplo `src/features/<feature>/<FeatureName>Page.tsx`.
 - Componentes específicos da feature devem ficar em `src/features/<feature>/components/`.
+- Regras de negócio da feature devem ficar em `src/features/<feature>/services/`.
+- Chamadas de dados e integração da feature devem passar por `src/features/<feature>/repository/`.
+- Contratos de entrada e saída do repository devem ficar em `src/features/<feature>/repository/dto/`.
+- Conversões entre DTOs e models da feature devem ficar em `src/features/<feature>/repository/mapper/`.
+- Models da feature devem ficar em `src/features/<feature>/models/`.
+- Configurações específicas da feature devem ficar em `src/features/<feature>/config/`.
+- O `facade` da feature deve centralizar estado e acesso a `services` em `src/features/<feature>/facade/`.
 - `src/app/pages/*` pode existir apenas como reexport de compatibilidade enquanto a migração não terminar.
 - `src/app/routes.ts` deve lazy-loadar features sempre que possível.
 
