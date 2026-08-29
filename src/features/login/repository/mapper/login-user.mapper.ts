@@ -5,7 +5,7 @@ export function toLoginUserDto(user: Funcionario): LoginUserDto {
   return {
     cargo: user.cargo,
     email: user.email,
-    id: user.id,
+    id: String(user.id),
     nome: user.nome,
     senha: user.senha,
   };

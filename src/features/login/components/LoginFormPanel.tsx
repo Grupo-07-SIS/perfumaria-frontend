@@ -4,15 +4,13 @@ import logoImg from "figma:asset/19603bc35fe7f283ff1a83c590f928c9d0bfe9cf.png";
 import { PeractButton } from "../../../shared/components/peract-button";
 import { PeractCard } from "../../../shared/components/peract-card";
 import { PeractInput } from "../../../shared/components/peract-input";
-import { LoginDemoAccounts } from "./LoginDemoAccounts";
-import type { DemoAccount, LoginFormFacade } from "../models/login.models";
+import type { LoginFormFacade } from "../models/login.models";
 
 interface LoginFormPanelProps {
-  accounts: DemoAccount[];
   facade: LoginFormFacade;
 }
 
-export function LoginFormPanel({ accounts, facade }: LoginFormPanelProps) {
+export function LoginFormPanel({ facade }: LoginFormPanelProps) {
   return (
     <div className="relative flex flex-1 items-center justify-center overflow-hidden bg-white px-6 py-12">
       <div className="pointer-events-none absolute -right-32 -top-32 h-96 w-96 rounded-full" style={{ background: "radial-gradient(circle, rgba(194,153,88,0.06) 0%, transparent 70%)" }} />
@@ -103,8 +101,6 @@ export function LoginFormPanel({ accounts, facade }: LoginFormPanelProps) {
             {facade.loading ? "Verificando..." : "Entrar no sistema"}
           </PeractButton>
         </form>
-
-        <LoginDemoAccounts accounts={accounts} onSelectAccount={facade.handleSelectAccount} />
 
         <p className="mt-6 text-center text-xs tracking-[0.06em] text-[#c8c8c5]">© 2026 CANAL PERFUMADO DECANTS</p>
       </PeractCard>

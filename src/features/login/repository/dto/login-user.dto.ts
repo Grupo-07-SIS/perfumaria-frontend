@@ -1,7 +1,7 @@
 export interface LoginUserDto {
   cargo: string;
   email: string;
-  id: number;
+  id: string;
   nome: string;
   senha?: string;
 }

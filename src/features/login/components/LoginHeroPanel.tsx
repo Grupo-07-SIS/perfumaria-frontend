@@ -2,7 +2,7 @@ import logoImg from "figma:asset/19603bc35fe7f283ff1a83c590f928c9d0bfe9cf.png";
 import { Sparkles } from "lucide-react";
 import { ImageWithFallback } from "../../../app/components/figma/ImageWithFallback";
 import { PeractCard } from "../../../shared/components/peract-card";
-import { PERFUME_BG } from "../config/demoAccounts";
+import { PERFUME_BG } from "../config/loginVisuals";
 
 export function LoginHeroPanel() {
   return (

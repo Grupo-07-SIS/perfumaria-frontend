@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { useApp } from "../../../app/context/AppContext";
-import type { DemoAccount, LoginFormData, LoginFormFacade } from "../models/login.models";
+import type { LoginFormData, LoginFormFacade } from "../models/login.models";
 import { executeLogin, hasAuthenticatedSession } from "../services/login.service";
 
 export function useLoginFacade(): LoginFormFacade {
-  const { applyAuthSession, funcionarios } = useApp();
+  const { applyAuthSession } = useApp();
   const [showPass, setShowPass] = useState(false);
   const [authError, setAuthError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -25,35 +25,31 @@ export function useLoginFacade(): LoginFormFacade {
     setLoading(true);
     setAuthError("");
 
-    const hasLoggedIn = await executeLogin({
-      credentials,
-      users: funcionarios,
-    });
+    try {
+      const hasLoggedIn = await executeLogin({
+        credentials,
+      });
 
-    if (!hasAuthenticatedSession(hasLoggedIn)) {
-      setAuthError("E-mail ou senha incorretos.");
+      if (!hasAuthenticatedSession(hasLoggedIn)) {
+        setAuthError("E-mail ou senha incorretos.");
+        setLoading(false);
+        return;
+      }
+
+      applyAuthSession(hasLoggedIn);
       setLoading(false);
-      return;
+    } catch {
+      setAuthError("Não foi possível autenticar com o backend.");
+      setLoading(false);
     }
-
-    applyAuthSession(hasLoggedIn);
-    setLoading(false);
   });
-
-  const handleSelectAccount = (account: DemoAccount) => {
-    setAuthError("");
-    setValue("email", account.email);
-    setValue("password", account.senha);
-  };
 
   return {
     authError,
     control,
     errors,
-    handleSelectAccount,
     loading,
     onSubmit,
-    setValue,
     showPass,
     togglePasswordVisibility: () => setShowPass((currentValue) => !currentValue),
   };

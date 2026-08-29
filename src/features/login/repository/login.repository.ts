@@ -1,18 +1,26 @@
-import { authService } from "../../../core/services/auth.service";
-import type { Funcionario } from "../../../app/context/AppContext";
+import { environment } from "../../../environment";
 import type { LoginRequestDto } from "./dto/login-request.dto";
-import { toLoginUserDto } from "./mapper/login-user.mapper";
+import type { LoginResponseDto } from "./dto/login-response.dto";
 
 interface AuthenticateParams {
   credentials: LoginRequestDto;
-  users: Funcionario[];
 }
 
 export const loginRepository = {
-  authenticate({ credentials, users }: AuthenticateParams) {
-    return authService.login({
-      credentials,
-      users: users.map(toLoginUserDto),
+  async authenticate({ credentials }: AuthenticateParams): Promise<LoginResponseDto> {
+    const response = await fetch(`${environment.backendUrl}/auth/login`, {
+      body: JSON.stringify(credentials),
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      method: "POST",
     });
+
+    if (!response.ok) {
+      throw new Error(`LOGIN_REQUEST_FAILED:${response.status}`);
+    }
+
+    return response.json() as Promise<LoginResponseDto>;
   },
 };

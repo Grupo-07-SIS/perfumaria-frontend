@@ -1,12 +1,12 @@
 import type { AuthSession } from "../../../core/auth/auth.types";
-import type { Funcionario } from "../../../app/context/AppContext";
+import { authService } from "../../../core/services/auth.service";
 import { loginRepository } from "../repository/login.repository";
+import { toAuthenticatedUser } from "../repository/mapper/login-session.mapper";
 import type { LoginFormData } from "../models/login.models";
 
 interface ExecuteLoginParams {
   credentials: LoginFormData;
   delayMs?: number;
-  users: Funcionario[];
 }
 
 function wait(delayMs: number) {
@@ -18,16 +18,20 @@ function wait(delayMs: number) {
 export async function executeLogin({
   credentials,
   delayMs = 700,
-  users,
 }: ExecuteLoginParams) {
   await wait(delayMs);
 
-  return loginRepository.authenticate({
+  const loginResponse = await loginRepository.authenticate({
     credentials: {
       email: credentials.email.trim(),
-      password: credentials.password,
+      senha: credentials.password,
     },
-    users,
+  });
+
+  return authService.saveSession({
+    accessToken: loginResponse.accessToken,
+    expiresIn: loginResponse.expiresIn,
+    user: toAuthenticatedUser(loginResponse),
   });
 }
 
