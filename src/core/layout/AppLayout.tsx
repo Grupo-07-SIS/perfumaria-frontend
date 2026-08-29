@@ -258,7 +258,9 @@ export function AppLayout() {
                 <p className="max-w-[120px] truncate text-xs font-medium leading-tight" style={{ color: C.dark }}>{currentUser?.nome ?? "Usuário"}</p>
                 <PeractTag className="mt-1 w-fit border-0 px-0" icon={isAdmin ? <ShieldCheck size={10} /> : <UserCheck size={10} />} style={{ background: "transparent", color: isAdmin ? C.accent : "#6366f1" }}>{currentUser?.cargo ?? ""}</PeractTag>
               </div>
-              <PeractButton action={logout} aria-label="Sair" className="ml-1 h-8 w-8 rounded-lg hover:bg-gray-100" size="icon" style={{ color: C.textMid }} theme="secondary" title="Sair"><LogOut size={15} /></PeractButton>
+              <PeractButton action={() => void logout()} aria-label="Sair" className="ml-1 gap-2 rounded-lg hover:bg-gray-100" icon={<LogOut size={15} />} size="sm" style={{ color: C.textMid }} theme="secondary" title="Sair">
+                <span className="hidden md:inline">Sair</span>
+              </PeractButton>
             </div>
           </div>
         </header>

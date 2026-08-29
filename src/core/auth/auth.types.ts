@@ -3,7 +3,7 @@ export type AuthUserRole = "Administrador" | "Funcionário";
 export interface AuthenticatedUser {
   cargo: AuthUserRole;
   email: string;
-  id: number;
+  id: string;
   nome: string;
 }
 

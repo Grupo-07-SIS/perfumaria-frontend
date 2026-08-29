@@ -7,6 +7,7 @@ import {
   Dispatch,
   SetStateAction,
 } from "react";
+import type { AuthSession, AuthenticatedUser } from "../../core/auth/auth.types";
 import { sessionService } from "../../core/auth/session.service";
 import { authService } from "../../core/services/auth.service";
 import { logger } from "../../core/logging/logger";
@@ -582,10 +583,9 @@ const INITIAL_VENDAS: Venda[] = [
 interface AppContextType {
   // Auth
   isLoggedIn: boolean;
-  currentUser: Funcionario | null;
+  currentUser: AuthenticatedUser | null;
   applyAuthSession: (session: AuthSession) => void;
-  login: (email: string, password: string) => boolean;
-  logout: () => void;
+  logout: () => Promise<void>;
 
   // Products
   products: Product[];
@@ -646,7 +646,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const restoredSession = sessionService.restore();
 
   const [isLoggedIn, setIsLoggedIn] = useState(Boolean(restoredSession));
-  const [currentUser, setCurrentUser] = useState<Funcionario | null>(
+  const [currentUser, setCurrentUser] = useState<AuthenticatedUser | null>(
     restoredSession?.user ?? null,
   );
 
@@ -671,23 +671,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     logger.info("Usuário autenticado", { email: session.user.email });
   }, []);
 
-  const login = useCallback((email: string, password: string) => {
-    const session = authService.login({
-      credentials: { email, password },
-      users: INITIAL_FUNCIONARIOS,
-    });
-
-    if (session) {
-      applyAuthSession(session);
-      return true;
-    }
-
-    logger.warn("Tentativa de login inválida", { email });
-    return false;
-  }, [applyAuthSession]);
-
-  const logout = useCallback(() => {
-    authService.logout();
+  const logout = useCallback(async () => {
+    await authService.logout();
     setIsLoggedIn(false);
     setCurrentUser(null);
     logger.info("Sessão encerrada");
@@ -915,7 +900,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       value={{
         isLoggedIn,
         currentUser,
-        login,
+        applyAuthSession,
         logout,
         products,
         addProduct,

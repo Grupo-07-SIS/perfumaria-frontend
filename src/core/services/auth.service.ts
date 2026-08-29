@@ -1,45 +1,31 @@
-import type { AuthLoginPayload, AuthSession, AuthenticatedUser } from "../auth/auth.types";
 import { sessionService } from "../auth/session.service";
-
-interface AuthUserRecord extends AuthenticatedUser {
-  senha?: string;
-}
-
-interface LoginOptions {
-  credentials: AuthLoginPayload;
-  users: AuthUserRecord[];
-}
-
-function createMockToken(user: AuthenticatedUser) {
-  return `peract-token-${user.id}-${Date.now()}`;
-}
-
-function sanitizeUser(user: AuthUserRecord): AuthenticatedUser {
-  return {
-    cargo: user.cargo,
-    email: user.email,
-    id: user.id,
-    nome: user.nome,
-  };
-}
+import type { AuthenticatedUser } from "../auth/auth.types";
+import { environment } from "../../environment";
 
 export const authService = {
-  login({ credentials, users }: LoginOptions): AuthSession | null {
-    const matchedUser = users.find(
-      (user) => user.email === credentials.email && user.senha === credentials.password,
-    );
-
-    if (!matchedUser) return null;
-
-    return sessionService.save({
-      accessToken: createMockToken(matchedUser),
-      user: sanitizeUser(matchedUser),
-    });
-  },
-  logout() {
-    sessionService.clear();
-  },
   restoreSession() {
     return sessionService.restore();
+  },
+  saveSession(session: { accessToken: string; expiresIn?: number; user: AuthenticatedUser }) {
+    return sessionService.save(
+      {
+        accessToken: session.accessToken,
+        user: session.user,
+      },
+      session.expiresIn,
+    );
+  },
+  clearSession() {
+    sessionService.clear();
+  },
+  async logout() {
+    try {
+      await fetch(`${environment.backendUrl}/auth/logout`, {
+        credentials: "include",
+        method: "POST",
+      });
+    } finally {
+      sessionService.clear();
+    }
   },
 };

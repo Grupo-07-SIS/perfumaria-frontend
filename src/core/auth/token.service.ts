@@ -1,6 +1,6 @@
 import { getCookie, removeCookie, setCookie } from "./cookieStorage";
 
-const AUTH_TOKEN_COOKIE = "authToken";
+const AUTH_TOKEN_COOKIE = "authSessionToken";
 
 export const tokenService = {
   clear() {
