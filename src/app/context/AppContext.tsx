@@ -7,6 +7,9 @@ import {
   Dispatch,
   SetStateAction,
 } from "react";
+import { sessionService } from "../../core/auth/session.service";
+import { authService } from "../../core/services/auth.service";
+import { logger } from "../../core/logging/logger";
 
 /* ─── Types ─── */
 export type StockStatus = "ok" | "critico" | "esgotado";
@@ -639,8 +642,12 @@ interface AppContextType {
 const AppContext = createContext<AppContextType | null>(null);
 
 export function AppProvider({ children }: { children: ReactNode }) {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [currentUser, setCurrentUser] = useState<Funcionario | null>(null);
+  const restoredSession = sessionService.restore();
+
+  const [isLoggedIn, setIsLoggedIn] = useState(Boolean(restoredSession));
+  const [currentUser, setCurrentUser] = useState<Funcionario | null>(
+    restoredSession?.user ?? null,
+  );
 
   const [products, setProducts] = useState<Product[]>(INITIAL_PRODUCTS);
   const [categories, setCategories] = useState<Category[]>(INITIAL_CATEGORIES);
@@ -658,20 +665,27 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [vendaIdCounter, setVendaIdCounter] = useState(1043);
 
   const login = useCallback((email: string, password: string) => {
-    const func = INITIAL_FUNCIONARIOS.find(
-      (f) => f.email === email && f.senha === password,
-    );
-    if (func) {
+    const session = authService.login({
+      credentials: { email, password },
+      users: INITIAL_FUNCIONARIOS,
+    });
+
+    if (session) {
       setIsLoggedIn(true);
-      setCurrentUser(func);
+      setCurrentUser(session.user);
+      logger.info("Usuário autenticado", { email: session.user.email });
       return true;
     }
+
+    logger.warn("Tentativa de login inválida", { email });
     return false;
   }, []);
 
   const logout = useCallback(() => {
+    authService.logout();
     setIsLoggedIn(false);
     setCurrentUser(null);
+    logger.info("Sessão encerrada");
   }, []);
 
   const getStockStatus = useCallback(
