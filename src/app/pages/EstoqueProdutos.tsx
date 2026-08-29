@@ -6,6 +6,7 @@ import {
 import { useApp, Product, StockStatus } from "../context/AppContext";
 import { PeractButton } from "../../shared/components/peract-button";
 import { PeractInput } from "../../shared/components/peract-input";
+import { PeractSelect } from "../../shared/components/peract-select";
 
 const statusConfig: Record<StockStatus, { label: string; color: string; bg: string; icon: React.ReactNode }> = {
   ok:       { label: "OK",       color: "#166534", bg: "#dcfce7", icon: <CheckCircle size={12} /> },
@@ -102,11 +103,12 @@ function ProductModal({ product, categories, onClose, onSave }: ProductModalProp
 
             {/* Categoria */}
             <div>
-              <label className="text-sm text-gray-700 block mb-1.5">Categoria</label>
-              <select value={category} onChange={(e) => setCategory(e.target.value)}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-700 focus:outline-none focus:border-[#A67449]">
-                {allCategories.map((c) => <option key={c}>{c}</option>)}
-              </select>
+              <PeractSelect
+                data={allCategories.map((item) => ({ name: item, value: item }))}
+                label="Categoria"
+                onValueChange={setCategory}
+                value={category}
+              />
             </div>
 
             {/* Estoque */}
@@ -169,11 +171,13 @@ function ProductModal({ product, categories, onClose, onSave }: ProductModalProp
                       validation={errors.volume ? "invalid" : "non-validation"} />
                   </div>
                   <div>
-                    <label className="text-sm text-gray-700 block mb-1.5">Tipo de medida *</label>
-                    <select value={tipoMedida} onChange={(e) => setTipoMedida(e.target.value)}
-                      className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-700 focus:outline-none focus:border-[#A67449]">
-                      {UNIDADES.map((u) => <option key={u} value={u}>{u}</option>)}
-                    </select>
+                    <PeractSelect
+                      data={UNIDADES.map((unit) => ({ name: unit, value: unit }))}
+                      label="Tipo de medida"
+                      onValueChange={setTipoMedida}
+                      required
+                      value={tipoMedida}
+                    />
                   </div>
                 </div>
                 {volumeVal && tipoMedida && (
@@ -313,13 +317,18 @@ export function EstoqueProdutos() {
           <PeractInput type="text" placeholder="Buscar por nome ou marca..." value={search} onValueChange={setSearch}
             className="border-0 bg-transparent px-0 py-0 shadow-none" />
         </div>
-        <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}
-          className="border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-700 focus:outline-none focus:border-[#A67449] sm:w-44">
-          <option value="todos">Todos os status</option>
-          <option value="ok">OK</option>
-          <option value="critico">Crítico</option>
-          <option value="esgotado">Esgotado</option>
-        </select>
+        <div className="sm:w-44">
+          <PeractSelect
+            data={[
+              { name: "Todos os status", value: "todos" },
+              { name: "OK", value: "ok" },
+              { name: "Crítico", value: "critico" },
+              { name: "Esgotado", value: "esgotado" },
+            ]}
+            onValueChange={setStatusFilter}
+            value={statusFilter}
+          />
+        </div>
       </div>
 
       {/* Table desktop */}
