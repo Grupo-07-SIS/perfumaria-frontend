@@ -583,6 +583,7 @@ interface AppContextType {
   // Auth
   isLoggedIn: boolean;
   currentUser: Funcionario | null;
+  applyAuthSession: (session: AuthSession) => void;
   login: (email: string, password: string) => boolean;
   logout: () => void;
 
@@ -664,6 +665,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [vendas, setVendas] = useState<Venda[]>(INITIAL_VENDAS);
   const [vendaIdCounter, setVendaIdCounter] = useState(1043);
 
+  const applyAuthSession = useCallback((session: AuthSession) => {
+    setIsLoggedIn(true);
+    setCurrentUser(session.user);
+    logger.info("Usuário autenticado", { email: session.user.email });
+  }, []);
+
   const login = useCallback((email: string, password: string) => {
     const session = authService.login({
       credentials: { email, password },
@@ -671,15 +678,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
     });
 
     if (session) {
-      setIsLoggedIn(true);
-      setCurrentUser(session.user);
-      logger.info("Usuário autenticado", { email: session.user.email });
+      applyAuthSession(session);
       return true;
     }
 
     logger.warn("Tentativa de login inválida", { email });
     return false;
-  }, []);
+  }, [applyAuthSession]);
 
   const logout = useCallback(() => {
     authService.logout();
