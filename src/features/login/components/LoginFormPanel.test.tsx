@@ -15,7 +15,6 @@ function TestHost({ authError = "", loading = false, onSubmit = vi.fn() }: TestH
   const {
     control,
     formState: { errors },
-    setValue,
   } = useForm<LoginFormData>({
     defaultValues: {
       email: "",
@@ -26,26 +25,15 @@ function TestHost({ authError = "", loading = false, onSubmit = vi.fn() }: TestH
 
   return (
     <LoginFormPanel
-      accounts={[
-        {
-          color: "#c29958",
-          email: "admin@canalperfumado.com.br",
-          icon: <span>icone</span>,
-          label: "Administrador",
-          senha: "admin123",
-        },
-      ]}
       facade={{
         authError,
         control,
         errors,
-        handleSelectAccount: vi.fn(),
         loading,
         onSubmit: (event?: FormEvent<HTMLFormElement>) => {
           event?.preventDefault();
           onSubmit();
         },
-        setValue,
         showPass,
         togglePasswordVisibility: () => setShowPass((currentValue) => !currentValue),
       }}

@@ -1,14 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { authLoginMock } = vi.hoisted(() => ({
-  authLoginMock: vi.fn(),
+const { fetchMock } = vi.hoisted(() => ({
+  fetchMock: vi.fn(),
 }));
 
-vi.mock("../../../core/services/auth.service", () => ({
-  authService: {
-    login: authLoginMock,
-  },
-}));
+vi.stubGlobal("fetch", fetchMock);
 
 import { loginRepository } from "./login.repository";
 
@@ -17,37 +13,42 @@ describe("loginRepository", () => {
     vi.clearAllMocks();
   });
 
-  it("maps users and forwards authentication to authService", () => {
-    loginRepository.authenticate({
-      credentials: {
-        email: "admin@canalperfumado.com.br",
-        password: "admin123",
-      },
-      users: [
-        {
-          cargo: "Administrador",
-          email: "admin@canalperfumado.com.br",
-          id: 1,
-          nome: "Admin",
-          senha: "admin123",
-        },
-      ],
+  it("posts login credentials to the backend auth route", async () => {
+    fetchMock.mockResolvedValue({
+      json: vi.fn().mockResolvedValue({ accessToken: "token-123" }),
+      ok: true,
     });
 
-    expect(authLoginMock).toHaveBeenCalledWith({
+    await loginRepository.authenticate({
       credentials: {
         email: "admin@canalperfumado.com.br",
-        password: "admin123",
+        senha: "admin123",
       },
-      users: [
-        {
-          cargo: "Administrador",
-          email: "admin@canalperfumado.com.br",
-          id: 1,
-          nome: "Admin",
-          senha: "admin123",
-        },
-      ],
     });
+
+    expect(fetchMock).toHaveBeenCalledWith("http://localhost:8080/auth/login", {
+      body: JSON.stringify({
+        email: "admin@canalperfumado.com.br",
+        senha: "admin123",
+      }),
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      method: "POST",
+    });
+  });
+
+  it("throws when the backend rejects the login", async () => {
+    fetchMock.mockResolvedValue({ ok: false, status: 401 });
+
+    await expect(
+      loginRepository.authenticate({
+        credentials: {
+          email: "admin@canalperfumado.com.br",
+          senha: "errada",
+        },
+      }),
+    ).rejects.toThrow("LOGIN_REQUEST_FAILED:401");
   });
 });

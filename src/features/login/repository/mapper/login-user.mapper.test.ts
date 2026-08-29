@@ -14,7 +14,7 @@ describe("toLoginUserDto", () => {
     ).toEqual({
       cargo: "Administrador",
       email: "admin@canalperfumado.com.br",
-      id: 1,
+      id: "1",
       nome: "Admin",
       senha: "admin123",
     });

@@ -14,7 +14,7 @@ vi.mock("./components/LoginHeroPanel", () => ({
 }));
 
 vi.mock("./components/LoginFormPanel", () => ({
-  LoginFormPanel: ({ accounts }: { accounts: { email: string }[] }) => <div>Form Panel {accounts.length}</div>,
+  LoginFormPanel: () => <div>Form Panel</div>,
 }));
 
 import { LoginPage } from "./LoginPage";
@@ -27,6 +27,6 @@ describe("LoginPage", () => {
 
     expect(useLoginFacadeMock).toHaveBeenCalled();
     expect(screen.getByText("Hero Panel")).toBeInTheDocument();
-    expect(screen.getByText(/Form Panel/)).toBeInTheDocument();
+    expect(screen.getByText("Form Panel")).toBeInTheDocument();
   });
 });
