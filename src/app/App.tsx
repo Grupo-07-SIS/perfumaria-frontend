@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { RouterProvider } from "react-router";
 import { router } from "./routes";
 import { AppProvider, useApp } from "./context/AppContext";
-import { Login } from "./pages/Login";
+import { LoginPage } from "../features/login/pages/LoginPage";
 
 function VLibras() {
   useEffect(() => {
@@ -34,7 +34,7 @@ function VLibras() {
 
 function AppContent() {
   const { isLoggedIn } = useApp();
-  if (!isLoggedIn) return <Login />;
+  if (!isLoggedIn) return <LoginPage />;
   return <RouterProvider router={router} />;
 }
 

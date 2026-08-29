@@ -35,12 +35,12 @@
   }
 
   .peract-serif-font {
-    font-family: "Georgia", serif;
+    font-family: "Playfair Display", "Georgia", serif;
     letter-spacing: 0.05em;
   }
 
   .peract-sans-font {
-    font-family: "Instrument Sans", "Segoe UI", sans-serif;
+    font-family: "Inter", "Segoe UI", sans-serif;
   }
 
   .peract-font-weight-normal {
