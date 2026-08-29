@@ -7,6 +7,7 @@ import { useApp, Product, StockStatus } from "../context/AppContext";
 import { PeractButton } from "../../shared/components/peract-button";
 import { PeractCard } from "../../shared/components/peract-card";
 import { PeractInput } from "../../shared/components/peract-input";
+import { PeractModalAction } from "../../shared/components/peract-modal-action";
 import { PeractSelect } from "../../shared/components/peract-select";
 import { PeractTag } from "../../shared/components/peract-tag";
 
@@ -203,18 +204,16 @@ function ProductModal({ product, categories, onClose, onSave }: ProductModalProp
 
 function DeleteConfirm({ name, onClose, onConfirm }: { name: string; onClose: () => void; onConfirm: () => void }) {
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm">
-        <div className="p-4 border-b border-gray-100"><h3 className="text-[#26221E]">Remover produto</h3></div>
-        <div className="p-4">
-          <p className="text-sm text-gray-600">Tem certeza que deseja remover <strong className="text-gray-800">"{name}"</strong>? Esta ação não pode ser desfeita.</p>
-        </div>
-        <div className="flex gap-2 p-4 border-t border-gray-100">
-          <PeractButton action={onClose} className="flex-1 text-gray-600" theme="secondary">Cancelar</PeractButton>
-          <PeractButton action={onConfirm} className="flex-1 border-red-600 bg-red-600 text-white" theme="primary">Remover</PeractButton>
-        </div>
-      </div>
-    </div>
+    <PeractModalAction
+      btnPrimaryAction={onConfirm}
+      buttonSecondaryAction={onClose}
+      primaryLabel="Remover"
+      title="Remover produto"
+    >
+      <p className="text-sm text-gray-600">
+        Tem certeza que deseja remover <strong className="text-gray-800">"{name}"</strong>? Esta ação não pode ser desfeita.
+      </p>
+    </PeractModalAction>
   );
 }
 
