@@ -5,6 +5,7 @@ import {
 } from "lucide-react";
 import { useApp, Product, StockStatus } from "../context/AppContext";
 import { PeractButton } from "../../shared/components/peract-button";
+import { PeractCard } from "../../shared/components/peract-card";
 import { PeractInput } from "../../shared/components/peract-input";
 import { PeractSelect } from "../../shared/components/peract-select";
 
@@ -311,7 +312,7 @@ export function EstoqueProdutos() {
         ))}
       </div>
 
-      <div className="bg-white rounded-xl border border-gray-100 p-3 mb-4 flex flex-col sm:flex-row gap-3 shadow-sm">
+      <PeractCard className="mb-4 flex flex-col gap-3 p-3 shadow-sm sm:flex-row">
         <div className="flex items-center gap-2 flex-1 border border-gray-200 rounded-lg px-3 py-2">
           <Search size={15} className="text-gray-400 shrink-0" />
           <PeractInput type="text" placeholder="Buscar por nome ou marca..." value={search} onValueChange={setSearch}
@@ -329,7 +330,7 @@ export function EstoqueProdutos() {
             value={statusFilter}
           />
         </div>
-      </div>
+      </PeractCard>
 
       {/* Table desktop */}
       <div className="hidden md:block bg-white rounded-xl border border-gray-100 shadow-sm">
@@ -417,7 +418,7 @@ export function EstoqueProdutos() {
           const vol = volumeLabel(p);
           const margem = margemLabel(p);
           return (
-            <div key={p.id} className="bg-white rounded-xl border border-gray-100 p-4 shadow-sm">
+            <PeractCard key={p.id} className="p-4 shadow-sm">
               <div className="flex items-start justify-between mb-2">
                 <div>
                   <p className="text-sm font-medium text-gray-800">{p.name}</p>
@@ -443,7 +444,7 @@ export function EstoqueProdutos() {
                 <PeractButton action={() => setEditProduct(p)} className="flex-1 text-gray-600" size="sm" theme="secondary">Editar</PeractButton>
                 <PeractButton action={() => setDeleteTarget(p)} className="border-red-200 text-red-600 hover:bg-red-50" size="sm" theme="secondary"><Trash2 size={13} /></PeractButton>
               </div>
-            </div>
+            </PeractCard>
           );
         })}
       </div>

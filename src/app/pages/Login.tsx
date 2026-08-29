@@ -4,6 +4,7 @@ import logoImg from "figma:asset/19603bc35fe7f283ff1a83c590f928c9d0bfe9cf.png";
 import { useApp } from "../context/AppContext";
 import { ImageWithFallback } from "../components/figma/ImageWithFallback";
 import { PeractButton } from "../../shared/components/peract-button";
+import { PeractCard } from "../../shared/components/peract-card";
 import { PeractInput } from "../../shared/components/peract-input";
 
 const PERFUME_BG = "https://images.unsplash.com/photo-1588405748880-12d1d2a59f75?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwyfHxwZXJmdW1lJTIwYm90dGxlJTIwd2hpdGUlMjBnb2xkJTIwbHV4dXJ5JTIwZmxhdCUyMGxheXxlbnwxfHx8fDE3Nzg4ODEyMDN8MA&ixlib=rb-4.1.0&q=80&w=1080";
@@ -54,7 +55,7 @@ export function Login() {
               <p className="text-xs" style={{ color: "#c29958", letterSpacing: "0.12em" }}>DECANTS</p>
             </div>
           </div>
-          <div className="px-5 py-5 rounded-2xl" style={{ background: "rgba(255,255,255,0.72)", backdropFilter: "blur(10px)" }}>
+          <PeractCard className="px-5 py-5" style={{ background: "rgba(255,255,255,0.72)", backdropFilter: "blur(10px)" }}>
             <div className="flex items-center gap-2 mb-4">
               <div className="h-px flex-1" style={{ background: "linear-gradient(to right, #c29958, transparent)" }} />
               <Sparkles size={13} style={{ color: "#c29958" }} />
@@ -65,7 +66,7 @@ export function Login() {
               sua marca merece.
             </h2>
             <p className="text-sm font-medium" style={{ color: "#6b6b68", letterSpacing: "0.08em" }}>SISTEMA DE GESTÃO LOGÍSTICA</p>
-          </div>
+          </PeractCard>
         </div>
       </div>
 
@@ -74,7 +75,7 @@ export function Login() {
         <div className="absolute -top-32 -right-32 w-96 h-96 rounded-full pointer-events-none" style={{ background: "radial-gradient(circle, rgba(194,153,88,0.06) 0%, transparent 70%)" }} />
         <div className="absolute -bottom-32 -left-32 w-96 h-96 rounded-full pointer-events-none" style={{ background: "radial-gradient(circle, rgba(194,153,88,0.04) 0%, transparent 70%)" }} />
 
-        <div className="relative w-full max-w-[380px]">
+        <PeractCard className="relative w-full max-w-[380px] border-none p-0 shadow-none" style={{ background: "transparent" }}>
           {/* Logo mobile */}
           <div className="lg:hidden flex items-center gap-3 mb-8 justify-center">
             <img src={logoImg} alt="Canal Perfumado" className="w-12 h-12 rounded-full object-cover border-2" style={{ borderColor: "#c29958" }} />
@@ -175,7 +176,7 @@ export function Login() {
           <p className="text-center text-xs mt-6" style={{ color: "#c8c8c5", letterSpacing: "0.06em" }}>
             © 2026 CANAL PERFUMADO DECANTS
           </p>
-        </div>
+        </PeractCard>
       </div>
     </div>
   );

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Plus, Pencil, Trash2, X, CheckCircle, Tag, AlertTriangle } from "lucide-react";
 import { useApp } from "../context/AppContext";
 import { PeractButton } from "../../shared/components/peract-button";
+import { PeractCard } from "../../shared/components/peract-card";
 import { PeractInput } from "../../shared/components/peract-input";
 
 /* ─── Modal ─── */
@@ -156,7 +157,7 @@ export function Categorias() {
       {/* Summary cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
         {categories.map((cat) => (
-          <div key={cat.id} className="bg-white rounded-xl border border-gray-100 p-3 shadow-sm flex items-center gap-3">
+          <PeractCard key={cat.id} className="flex items-center gap-3 p-3 shadow-sm">
             <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0" style={{ background: "#FFF3E8" }}>
               <Tag size={16} style={{ color: "#A67449" }} />
             </div>
@@ -164,7 +165,7 @@ export function Categorias() {
               <p className="text-sm font-medium text-gray-800 truncate">{cat.nome}</p>
               <p className="text-xs text-gray-400">{countForCategory(cat.nome)} produto(s)</p>
             </div>
-          </div>
+          </PeractCard>
         ))}
       </div>
 
