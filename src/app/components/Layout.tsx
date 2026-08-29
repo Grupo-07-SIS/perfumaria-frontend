@@ -7,6 +7,7 @@ import {
   Bell, LogOut, ShieldCheck, UserCheck, Sparkles,
 } from "lucide-react";
 import { useApp } from "../context/AppContext";
+import { PeractButton } from "../../shared/components/peract-button";
 
 /* ─── Brand palette — resolved via CSS vars so high-contrast overrides apply ─── */
 const C = {
@@ -90,8 +91,9 @@ function SidebarItem({ item, collapsed, onMobileClose }: {
 
   return (
     <div>
-      <button onClick={() => setOpen(!open)} title={collapsed ? item.label : undefined}
-        className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-150 group relative"
+      <PeractButton action={() => setOpen(!open)} title={collapsed ? item.label : undefined}
+        className="group relative w-full justify-start gap-3 px-3 py-2.5"
+        theme="secondary"
         style={{ color: isChildActive ? C.accent : C.text }}>
         <span className="shrink-0">{item.icon}</span>
         {!collapsed && (
@@ -106,7 +108,7 @@ function SidebarItem({ item, collapsed, onMobileClose }: {
             {item.label}
           </div>
         )}
-      </button>
+      </PeractButton>
       {!collapsed && open && (
         <div className="ml-8 mt-1 flex flex-col gap-1">
           {item.children?.map((child) => (
@@ -259,12 +261,12 @@ export function Layout() {
         </nav>
 
         <div className="p-2 hidden lg:block shrink-0" style={{ borderTop: `1px solid ${C.border}` }}>
-          <button onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-            className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg transition-all text-sm hover:bg-gray-100"
-            style={{ color: C.textMid }}>
+          <PeractButton action={() => setSidebarCollapsed(!sidebarCollapsed)}
+            className="w-full justify-center gap-2 text-sm hover:bg-gray-100"
+            style={{ color: C.textMid }} theme="secondary">
             {sidebarCollapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
             {!sidebarCollapsed && <span>Recolher</span>}
-          </button>
+          </PeractButton>
         </div>
       </aside>
 
@@ -273,17 +275,17 @@ export function Layout() {
         {/* Header */}
         <header className="shrink-0 flex items-center gap-3 px-4 h-14 z-30"
           style={{ background: C.bg, borderBottom: `1px solid ${C.border}` }}>
-          <button className="lg:hidden p-1.5 rounded-lg transition-colors hover:bg-gray-100" style={{ color: C.textMid }} onClick={() => setMobileMenuOpen(true)}>
+          <PeractButton className="lg:hidden h-9 w-9 rounded-lg hover:bg-gray-100" style={{ color: C.textMid }} action={() => setMobileMenuOpen(true)} size="icon" theme="secondary">
             <Menu size={22} />
-          </button>
+          </PeractButton>
 
           <span className="text-sm font-medium truncate" style={{ color: C.dark }}>{getPageTitle()}</span>
 
           <div className="ml-auto flex items-center gap-1">
             <div className="relative">
-              <button onClick={() => setNotifOpen(!notifOpen)}
-                className="relative p-2 rounded-lg transition-all hover:bg-gray-100"
-                style={{ color: C.textMid }} aria-label="Notificações">
+              <PeractButton action={() => setNotifOpen(!notifOpen)}
+                className="relative h-9 w-9 rounded-lg hover:bg-gray-100"
+                style={{ color: C.textMid }} aria-label="Notificações" size="icon" theme="secondary">
                 <Bell size={18} />
                 {unread > 0 && (
                   <span className="absolute top-1 right-1 w-4 h-4 rounded-full flex items-center justify-center text-[10px] text-white font-medium"
@@ -291,7 +293,7 @@ export function Layout() {
                     {unread > 9 ? "9+" : unread}
                   </span>
                 )}
-              </button>
+              </PeractButton>
               {notifOpen && <NotificationPanel onClose={() => setNotifOpen(false)} />}
             </div>
 
@@ -307,10 +309,10 @@ export function Layout() {
                   {currentUser?.cargo ?? ""}
                 </p>
               </div>
-              <button onClick={logout} className="ml-1 p-1.5 rounded-lg transition-all hover:bg-gray-100"
-                style={{ color: C.textMid }} title="Sair" aria-label="Sair">
+              <PeractButton action={logout} className="ml-1 h-8 w-8 rounded-lg hover:bg-gray-100"
+                style={{ color: C.textMid }} title="Sair" aria-label="Sair" size="icon" theme="secondary">
                 <LogOut size={15} />
-              </button>
+              </PeractButton>
             </div>
           </div>
         </header>

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Plus, Pencil, Trash2, X, CheckCircle, Tag, AlertTriangle } from "lucide-react";
 import { useApp } from "../context/AppContext";
+import { PeractButton } from "../../shared/components/peract-button";
 
 /* ─── Modal ─── */
 interface CategoriaModalProps {
@@ -27,7 +28,7 @@ function CategoriaModal({ onClose, onSave, editNome }: CategoriaModalProps) {
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm">
         <div className="flex items-center justify-between p-4 border-b border-gray-100">
           <h3 className="text-[#26221E]">{editNome ? "Editar Categoria" : "Nova Categoria"}</h3>
-          <button onClick={onClose} className="p-1 rounded-lg hover:bg-gray-100 text-gray-500"><X size={18} /></button>
+          <PeractButton action={onClose} className="h-8 w-8 rounded-lg text-gray-500 hover:bg-gray-100" size="icon" theme="secondary"><X size={18} /></PeractButton>
         </div>
         <div className="p-4 flex flex-col gap-3">
           {success && (
@@ -49,10 +50,8 @@ function CategoriaModal({ onClose, onSave, editNome }: CategoriaModalProps) {
           </div>
         </div>
         <div className="flex gap-2 p-4 border-t border-gray-100">
-          <button onClick={onClose} className="flex-1 px-4 py-2 border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50">Cancelar</button>
-          <button onClick={handleSave} className="flex-1 px-4 py-2 rounded-lg text-sm text-white hover:opacity-90" style={{ background: "#A67449" }}>
-            Salvar
-          </button>
+          <PeractButton action={onClose} className="flex-1 text-gray-600" theme="secondary">Cancelar</PeractButton>
+          <PeractButton action={handleSave} className="flex-1">Salvar</PeractButton>
         </div>
       </div>
     </div>
@@ -90,10 +89,8 @@ function DeleteConfirm({ nome, produtosVinculados, onClose, onConfirm }: DeleteC
           )}
         </div>
         <div className="flex gap-2 p-4 border-t border-gray-100">
-          <button onClick={onClose} className="flex-1 px-4 py-2 border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50">Cancelar</button>
-          <button onClick={onConfirm} className="flex-1 px-4 py-2 rounded-lg text-sm text-white bg-red-600 hover:bg-red-700">
-            Excluir
-          </button>
+          <PeractButton action={onClose} className="flex-1 text-gray-600" theme="secondary">Cancelar</PeractButton>
+          <PeractButton action={onConfirm} className="flex-1 border-red-600 bg-red-600 text-white" theme="primary">Excluir</PeractButton>
         </div>
       </div>
     </div>
@@ -153,13 +150,7 @@ export function Categorias() {
             Estoque &rsaquo; <span className="text-[#A67449]">Categorias</span>
           </nav>
         </div>
-        <button
-          onClick={() => setShowModal(true)}
-          className="flex items-center gap-2 px-4 py-2 rounded-lg text-white text-sm self-start hover:opacity-90"
-          style={{ background: "#A67449" }}
-        >
-          <Plus size={16} /> Nova Categoria
-        </button>
+        <PeractButton action={() => setShowModal(true)} className="self-start" icon={<Plus size={16} />}>Nova Categoria</PeractButton>
       </div>
 
       {/* Summary cards */}
@@ -217,20 +208,24 @@ export function Categorias() {
                 </td>
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => setEditCat({ id: cat.id, nome: cat.nome })}
-                      className="p-1.5 rounded-lg hover:bg-amber-50 text-gray-400 hover:text-amber-700 transition-colors"
+                    <PeractButton
+                      action={() => setEditCat({ id: cat.id, nome: cat.nome })}
+                      className="h-8 w-8 text-gray-400 hover:bg-amber-50 hover:text-amber-700"
+                      size="icon"
+                      theme="secondary"
                       title="Editar"
                     >
                       <Pencil size={15} />
-                    </button>
-                    <button
-                      onClick={() => setDeleteCat({ id: cat.id, nome: cat.nome })}
-                      className="p-1.5 rounded-lg hover:bg-red-50 text-gray-400 hover:text-red-600 transition-colors"
+                    </PeractButton>
+                    <PeractButton
+                      action={() => setDeleteCat({ id: cat.id, nome: cat.nome })}
+                      className="h-8 w-8 text-gray-400 hover:bg-red-50 hover:text-red-600"
+                      size="icon"
+                      theme="secondary"
                       title="Excluir"
                     >
                       <Trash2 size={15} />
-                    </button>
+                    </PeractButton>
                   </div>
                 </td>
               </tr>

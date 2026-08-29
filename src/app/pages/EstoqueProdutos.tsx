@@ -4,6 +4,7 @@ import {
   AlertCircle, Trash2, PackageX, Ruler, TrendingUp,
 } from "lucide-react";
 import { useApp, Product, StockStatus } from "../context/AppContext";
+import { PeractButton } from "../../shared/components/peract-button";
 
 const statusConfig: Record<StockStatus, { label: string; color: string; bg: string; icon: React.ReactNode }> = {
   ok:       { label: "OK",       color: "#166534", bg: "#dcfce7", icon: <CheckCircle size={12} /> },
@@ -75,7 +76,7 @@ function ProductModal({ product, categories, onClose, onSave }: ProductModalProp
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between p-4 border-b border-gray-100 sticky top-0 bg-white">
           <h3 className="text-[#26221E]">{product ? "Editar Produto" : "Novo Produto"}</h3>
-          <button onClick={onClose} className="p-1 rounded-lg hover:bg-gray-100 text-gray-500"><X size={18} /></button>
+          <PeractButton action={onClose} className="h-8 w-8 rounded-lg text-gray-500 hover:bg-gray-100" size="icon" theme="secondary"><X size={18} /></PeractButton>
         </div>
 
         <div className="p-4 flex flex-col gap-4">
@@ -194,10 +195,8 @@ function ProductModal({ product, categories, onClose, onSave }: ProductModalProp
         </div>
 
         <div className="flex gap-2 p-4 border-t border-gray-100 sticky bottom-0 bg-white">
-          <button onClick={onClose} className="flex-1 px-4 py-2 border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50">Cancelar</button>
-          <button onClick={handleSave} className="flex-1 px-4 py-2 rounded-lg text-sm text-white hover:opacity-90" style={{ background: "#A67449" }}>
-            {product ? "Salvar alterações" : "Cadastrar produto"}
-          </button>
+          <PeractButton action={onClose} className="flex-1 text-gray-600" theme="secondary">Cancelar</PeractButton>
+          <PeractButton action={handleSave} className="flex-1">{product ? "Salvar alterações" : "Cadastrar produto"}</PeractButton>
         </div>
       </div>
     </div>
@@ -213,8 +212,8 @@ function DeleteConfirm({ name, onClose, onConfirm }: { name: string; onClose: ()
           <p className="text-sm text-gray-600">Tem certeza que deseja remover <strong className="text-gray-800">"{name}"</strong>? Esta ação não pode ser desfeita.</p>
         </div>
         <div className="flex gap-2 p-4 border-t border-gray-100">
-          <button onClick={onClose} className="flex-1 px-4 py-2 border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50">Cancelar</button>
-          <button onClick={onConfirm} className="flex-1 px-4 py-2 rounded-lg text-sm text-white bg-red-600 hover:bg-red-700">Remover</button>
+          <PeractButton action={onClose} className="flex-1 text-gray-600" theme="secondary">Cancelar</PeractButton>
+          <PeractButton action={onConfirm} className="flex-1 border-red-600 bg-red-600 text-white" theme="primary">Remover</PeractButton>
         </div>
       </div>
     </div>
@@ -298,9 +297,7 @@ export function EstoqueProdutos() {
           <h1 className="text-[#26221E]">Estoque – Produtos</h1>
           <nav className="text-xs text-gray-400 mt-0.5">Estoque &rsaquo; <span className="text-[#A67449]">Produtos</span></nav>
         </div>
-        <button onClick={() => setShowNew(true)} className="flex items-center gap-2 px-4 py-2 rounded-lg text-white text-sm self-start hover:opacity-90" style={{ background: "#A67449" }}>
-          <Plus size={16} /> Novo produto
-        </button>
+        <PeractButton action={() => setShowNew(true)} className="self-start" icon={<Plus size={16} />}>Novo produto</PeractButton>
       </div>
 
       <div className="flex items-center gap-2 text-xs text-gray-400 mb-4 bg-white px-3 py-2 rounded-lg border border-gray-100 w-fit shadow-sm">
@@ -395,8 +392,8 @@ export function EstoqueProdutos() {
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
-                        <button onClick={() => setEditProduct(p)} className="p-1.5 rounded-lg hover:bg-amber-50 text-gray-400 hover:text-amber-700 transition-colors" title="Editar"><Edit3 size={15} /></button>
-                        <button onClick={() => setDeleteTarget(p)} className="p-1.5 rounded-lg hover:bg-red-50 text-gray-400 hover:text-red-600 transition-colors" title="Remover"><Trash2 size={15} /></button>
+                        <PeractButton action={() => setEditProduct(p)} className="h-8 w-8 text-gray-400 hover:bg-amber-50 hover:text-amber-700" size="icon" theme="secondary" title="Editar"><Edit3 size={15} /></PeractButton>
+                        <PeractButton action={() => setDeleteTarget(p)} className="h-8 w-8 text-gray-400 hover:bg-red-50 hover:text-red-600" size="icon" theme="secondary" title="Remover"><Trash2 size={15} /></PeractButton>
                       </div>
                     </td>
                   </tr>
@@ -442,8 +439,8 @@ export function EstoqueProdutos() {
                 <div><p className="text-xs text-gray-400">Volume</p><p className="text-sm text-gray-700">{vol ?? <span className="text-gray-300 italic text-xs">—</span>}</p></div>
               </div>
               <div className="flex gap-2 mt-3 pt-3 border-t border-gray-50">
-                <button className="flex-1 text-xs py-1.5 border border-gray-200 rounded-lg text-gray-600 hover:bg-gray-50" onClick={() => setEditProduct(p)}>Editar</button>
-                <button className="px-3 text-xs py-1.5 border border-red-200 rounded-lg text-red-600 hover:bg-red-50" onClick={() => setDeleteTarget(p)}><Trash2 size={13} /></button>
+                <PeractButton action={() => setEditProduct(p)} className="flex-1 text-gray-600" size="sm" theme="secondary">Editar</PeractButton>
+                <PeractButton action={() => setDeleteTarget(p)} className="border-red-200 text-red-600 hover:bg-red-50" size="sm" theme="secondary"><Trash2 size={13} /></PeractButton>
               </div>
             </div>
           );

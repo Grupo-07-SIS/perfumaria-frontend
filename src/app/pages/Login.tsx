@@ -3,6 +3,7 @@ import { Eye, EyeOff, Lock, Mail, AlertCircle, Sparkles, ShieldCheck, UserCheck 
 import logoImg from "figma:asset/19603bc35fe7f283ff1a83c590f928c9d0bfe9cf.png";
 import { useApp } from "../context/AppContext";
 import { ImageWithFallback } from "../components/figma/ImageWithFallback";
+import { PeractButton } from "../../shared/components/peract-button";
 
 const PERFUME_BG = "https://images.unsplash.com/photo-1588405748880-12d1d2a59f75?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwyfHxwZXJmdW1lJTIwYm90dGxlJTIwd2hpdGUlMjBnb2xkJTIwbHV4dXJ5JTIwZmxhdCUyMGxheXxlbnwxfHx8fDE3Nzg4ODEyMDN8MA&ixlib=rb-4.1.0&q=80&w=1080";
 
@@ -132,15 +133,15 @@ export function Login() {
               </div>
             </div>
 
-            <button type="submit" disabled={loading}
-              className="w-full py-3.5 rounded-xl text-sm font-medium transition-all duration-200 flex items-center justify-center gap-2.5 mt-2"
-              style={{
-                background: loading ? "#d4b278" : "#c29958",
-                color: "#ffffff", letterSpacing: "0.04em"
-              }}>
+            <PeractButton
+              className="mt-2 w-full tracking-[0.04em]"
+              disabled={loading}
+              theme="primary"
+              type="submit"
+            >
               {loading && <span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin shrink-0" />}
               {loading ? "Verificando..." : "Entrar no sistema"}
-            </button>
+            </PeractButton>
           </form>
 
           {/* Demo accounts */}
@@ -148,9 +149,10 @@ export function Login() {
             <p className="text-xs text-center mb-3" style={{ color: "#9a9a97", letterSpacing: "0.1em" }}>CREDENCIAIS DE DEMONSTRAÇÃO</p>
             <div className="flex flex-col gap-2">
               {DEMO_ACCOUNTS.map((acc) => (
-                <button key={acc.email} onClick={() => fillAccount(acc)}
-                  className="rounded-xl px-4 py-3 text-xs text-left transition-all hover:bg-gray-50 active:scale-[0.99]"
-                  style={{ background: "#f7f7f6", border: `1px solid ${acc.color}28` }}>
+                <PeractButton key={acc.email} action={() => fillAccount(acc)}
+                  className="h-auto w-full rounded-xl border px-4 py-3 text-left text-xs transition-all active:scale-[0.99]"
+                  style={{ background: "#f7f7f6", borderColor: `${acc.color}28`, color: "inherit" }}
+                  theme="secondary">
                   <div className="flex items-center gap-2 mb-1.5">
                     <span style={{ color: acc.color }}>{acc.icon}</span>
                     <span className="font-medium" style={{ color: acc.color }}>{acc.label}</span>
@@ -166,7 +168,7 @@ export function Login() {
                       <span className="font-mono" style={{ color: "#4a4a47" }}>{acc.senha}</span>
                     </div>
                   </div>
-                </button>
+                </PeractButton>
               ))}
             </div>
           </div>
