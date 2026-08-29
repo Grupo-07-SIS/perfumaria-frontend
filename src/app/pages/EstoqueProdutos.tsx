@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Search, Plus, Edit3, ChevronUp, ChevronDown, X, CheckCircle,
   AlertCircle, Trash2, PackageX, Ruler, TrendingUp,
@@ -8,6 +8,7 @@ import { PeractButton } from "../../shared/components/peract-button";
 import { PeractCard } from "../../shared/components/peract-card";
 import { PeractInput } from "../../shared/components/peract-input";
 import { PeractModalAction } from "../../shared/components/peract-modal-action";
+import { PeractPagination } from "../../shared/components/peract-pagination";
 import { PeractSelect } from "../../shared/components/peract-select";
 import { PeractTag } from "../../shared/components/peract-tag";
 import { PeractTable } from "../../shared/components/peract-table";
@@ -220,8 +221,10 @@ function DeleteConfirm({ name, onClose, onConfirm }: { name: string; onClose: ()
 
 export function EstoqueProdutos() {
   const { products, addProduct, updateProduct, deleteProduct, categories, stockThresholds } = useApp();
+  const itemsPerPage = 6;
 
   const [activeCategory, setActiveCategory] = useState("Todos");
+  const [currentPage, setCurrentPage] = useState(1);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("todos");
   const [sortField, setSortField] = useState<keyof Product>("name");
@@ -265,6 +268,13 @@ export function EstoqueProdutos() {
       return 0;
     });
 
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [activeCategory, search, statusFilter]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / itemsPerPage));
+  const paginatedProducts = filtered.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
   const SortIcon = ({ field }: { field: keyof Product }) =>
     sortField === field
       ? sortAsc ? <ChevronUp size={13} /> : <ChevronDown size={13} />
@@ -279,7 +289,7 @@ export function EstoqueProdutos() {
   };
 
   return (
-    <div className="p-4 lg:p-6 max-w-[1400px] mx-auto">
+    <div className="p-4 lg:p-6 max-w-[1400px] mx-auto" id="products-section">
       {(editProduct || showNew) && (
         <ProductModal
           product={editProduct ?? undefined}
@@ -336,9 +346,14 @@ export function EstoqueProdutos() {
       {/* Table desktop */}
       <div className="hidden md:block">
         <PeractTable
-          data={filtered}
+          data={paginatedProducts}
           emptyState="Nenhum produto encontrado."
-          footer={<p className="text-xs text-gray-400">Exibindo {filtered.length} de {products.length} produtos</p>}
+          footer={
+            <div className="flex items-center justify-between gap-4">
+              <p className="text-xs text-gray-400">Exibindo {paginatedProducts.length} de {filtered.length} produtos filtrados</p>
+              <PeractPagination currentPage={currentPage} onPageChange={setCurrentPage} targetSelection="products-section" totalPages={totalPages} />
+            </div>
+          }
           header={[
             { name: "Produto", value: "name", orderColumn: true },
             { name: "Marca", value: "brand", orderColumn: true },
@@ -394,9 +409,9 @@ export function EstoqueProdutos() {
 
       {/* Mobile cards */}
       <div className="md:hidden flex flex-col gap-3">
-        {filtered.length === 0 ? (
+        {paginatedProducts.length === 0 ? (
           <div className="text-center py-12 text-gray-400 text-sm bg-white rounded-xl border border-gray-100">Nenhum produto encontrado.</div>
-        ) : filtered.map((p) => {
+        ) : paginatedProducts.map((p) => {
           const sc = statusConfig[p.status];
           const vol = volumeLabel(p);
           const margem = margemLabel(p);
@@ -430,6 +445,10 @@ export function EstoqueProdutos() {
             </PeractCard>
           );
         })}
+      </div>
+
+      <div className="mt-4 md:hidden">
+        <PeractPagination currentPage={currentPage} onPageChange={setCurrentPage} targetSelection="products-section" totalPages={totalPages} />
       </div>
     </div>
   );

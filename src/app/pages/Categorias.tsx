@@ -5,6 +5,7 @@ import { PeractButton } from "../../shared/components/peract-button";
 import { PeractCard } from "../../shared/components/peract-card";
 import { PeractInput } from "../../shared/components/peract-input";
 import { PeractModalAction } from "../../shared/components/peract-modal-action";
+import { PeractPagination } from "../../shared/components/peract-pagination";
 import { PeractTable } from "../../shared/components/peract-table";
 
 /* ─── Modal ─── */
@@ -99,6 +100,8 @@ function DeleteConfirm({ nome, produtosVinculados, onClose, onConfirm }: DeleteC
 /* ─── Main ─── */
 export function Categorias() {
   const { categories, products, addCategory, editCategory, deleteCategory } = useApp();
+  const itemsPerPage = 5;
+  const [currentPage, setCurrentPage] = useState(1);
   const [showModal, setShowModal] = useState(false);
   const [editCat, setEditCat] = useState<{ id: number; nome: string } | null>(null);
   const [deleteCat, setDeleteCat] = useState<{ id: number; nome: string } | null>(null);
@@ -122,9 +125,11 @@ export function Categorias() {
 
   // Count products per category
   const countForCategory = (nome: string) => products.filter((p) => p.category === nome).length;
+  const totalPages = Math.max(1, Math.ceil(categories.length / itemsPerPage));
+  const paginatedCategories = categories.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
   return (
-    <div className="p-4 lg:p-6 max-w-[1400px] mx-auto">
+    <div className="p-4 lg:p-6 max-w-[1400px] mx-auto" id="categories-section">
       {(showModal || editCat) && (
         <CategoriaModal
           onClose={() => { setShowModal(false); setEditCat(null); }}
@@ -169,7 +174,7 @@ export function Categorias() {
 
       {/* Table */}
       <PeractTable
-        data={categories}
+        data={paginatedCategories}
         emptyState={
           <div className="flex flex-col items-center gap-2">
             <Tag size={32} className="text-gray-300" />
@@ -177,7 +182,12 @@ export function Categorias() {
             <PeractButton action={() => setShowModal(true)} size="sm">Criar primeira categoria</PeractButton>
           </div>
         }
-        footer={<p className="text-xs text-gray-400">{categories.length} categorias cadastradas</p>}
+        footer={
+          <div className="flex items-center justify-between gap-4">
+            <p className="text-xs text-gray-400">{categories.length} categorias cadastradas</p>
+            <PeractPagination currentPage={currentPage} onPageChange={setCurrentPage} targetSelection="categories-section" totalPages={totalPages} />
+          </div>
+        }
         header={[
           { name: "ID", value: "id" },
           { name: "Nome da Categoria", value: "nome" },
