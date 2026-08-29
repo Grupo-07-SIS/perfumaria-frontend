@@ -23,18 +23,18 @@ describe("tokenService", () => {
     getCookieMock.mockReturnValue("token-123");
 
     expect(tokenService.get()).toBe("token-123");
-    expect(getCookieMock).toHaveBeenCalledWith("authToken");
+    expect(getCookieMock).toHaveBeenCalledWith("authSessionToken");
   });
 
   it("persists the auth token with max age", () => {
     tokenService.set("token-123", 1200);
 
-    expect(setCookieMock).toHaveBeenCalledWith("authToken", "token-123", { maxAge: 1200 });
+    expect(setCookieMock).toHaveBeenCalledWith("authSessionToken", "token-123", { maxAge: 1200 });
   });
 
   it("clears the auth token cookie", () => {
     tokenService.clear();
 
-    expect(removeCookieMock).toHaveBeenCalledWith("authToken");
+    expect(removeCookieMock).toHaveBeenCalledWith("authSessionToken");
   });
 });
