@@ -10,6 +10,7 @@ import { PeractInput } from "../../shared/components/peract-input";
 import { PeractModalAction } from "../../shared/components/peract-modal-action";
 import { PeractSelect } from "../../shared/components/peract-select";
 import { PeractTag } from "../../shared/components/peract-tag";
+import { PeractTable } from "../../shared/components/peract-table";
 
 const statusConfig: Record<StockStatus, { label: string; color: string; bg: string; icon: React.ReactNode }> = {
   ok:       { label: "OK",       color: "#166534", bg: "#dcfce7", icon: <CheckCircle size={12} /> },
@@ -333,78 +334,62 @@ export function EstoqueProdutos() {
       </PeractCard>
 
       {/* Table desktop */}
-      <div className="hidden md:block bg-white rounded-xl border border-gray-100 shadow-sm">
-        <div className="overflow-auto max-h-[520px]">
-          <table className="w-full">
-            <thead className="sticky top-0 z-10">
-              <tr style={{ background: "#F2F2F2" }}>
-                {[
-                  { label: "Produto",   field: "name"         as keyof Product },
-                  { label: "Marca",     field: "brand"        as keyof Product },
-                  { label: "Categoria", field: "category"     as keyof Product },
-                  { label: "Volume",    field: "volume"       as keyof Product },
-                  { label: "Estoque",   field: "currentStock" as keyof Product },
-                  { label: "P. Venda",  field: "preco"        as keyof Product },
-                  { label: "P. Compra", field: "precoCompra"  as keyof Product },
-                  { label: "Margem",    field: "precoCompra"  as keyof Product },
-                  { label: "Status",    field: "status"       as keyof Product },
-                ].map(({ label, field }, idx) => (
-                  <th key={`${field}-${idx}`}
-                    className="text-left px-4 py-3 text-xs font-medium text-gray-500 cursor-pointer hover:text-gray-800 whitespace-nowrap"
-                    onClick={() => handleSort(field)}>
-                    <div className="flex items-center gap-1">{label}<SortIcon field={field} /></div>
-                  </th>
-                ))}
-                <th className="text-left px-4 py-3 text-xs font-medium text-gray-500">Ações</th>
+      <div className="hidden md:block">
+        <PeractTable
+          data={filtered}
+          emptyState="Nenhum produto encontrado."
+          footer={<p className="text-xs text-gray-400">Exibindo {filtered.length} de {products.length} produtos</p>}
+          header={[
+            { name: "Produto", value: "name", orderColumn: true },
+            { name: "Marca", value: "brand", orderColumn: true },
+            { name: "Categoria", value: "category", orderColumn: true },
+            { name: "Volume", value: "volume", orderColumn: true },
+            { name: "Estoque", value: "currentStock", orderColumn: true },
+            { name: "P. Venda", value: "preco", orderColumn: true },
+            { name: "P. Compra", value: "precoCompra", orderColumn: true },
+            { name: "Margem", value: "precoCompra", orderColumn: true },
+            { name: "Status", value: "status", orderColumn: true },
+            { name: "Ações", value: "actions" },
+          ]}
+          onOrderColumn={(field) => handleSort(field as keyof Product)}
+          renderHeaderLabel={(column) =>
+            column.orderColumn ? <div className="flex items-center gap-1">{column.name}<SortIcon field={column.value as keyof Product} /></div> : column.name
+          }
+          renderRow={(p) => {
+            const sc = statusConfig[p.status];
+            const vol = volumeLabel(p);
+            const margem = margemLabel(p);
+            return (
+              <tr key={p.id} className="transition-colors hover:bg-gray-50/50">
+                <td className="whitespace-nowrap px-4 py-3 text-sm font-medium text-gray-800">{p.name}</td>
+                <td className="px-4 py-3 text-sm text-gray-600">{p.brand}</td>
+                <td className="px-4 py-3"><PeractTag>{p.category}</PeractTag></td>
+                <td className="px-4 py-3">
+                  {vol ? <PeractTag className="w-fit bg-blue-50 text-blue-600" icon={<Ruler size={10} />}>{vol}</PeractTag> : <span className="text-xs italic text-gray-300">—</span>}
+                </td>
+                <td className="px-4 py-3 text-sm font-medium text-gray-800">{p.currentStock}</td>
+                <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-700">R$ {p.preco.toFixed(2)}</td>
+                <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500">
+                  {p.precoCompra ? `R$ ${p.precoCompra.toFixed(2)}` : <span className="text-gray-300">—</span>}
+                </td>
+                <td className="px-4 py-3">
+                  {margem !== null ? <PeractTag type={margem >= 35 ? "success" : margem >= 20 ? "warning" : "alert"}>{margem.toFixed(1)}%</PeractTag> : <span className="text-xs text-gray-300">—</span>}
+                </td>
+                <td className="px-4 py-3">
+                  <PeractTag className="border-0" icon={sc.icon} style={{ color: sc.color, background: sc.bg }}>
+                    {sc.label}
+                  </PeractTag>
+                </td>
+                <td className="px-4 py-3">
+                  <div className="flex items-center gap-2">
+                    <PeractButton action={() => setEditProduct(p)} className="h-8 w-8 text-gray-400 hover:bg-amber-50 hover:text-amber-700" size="icon" theme="secondary" title="Editar"><Edit3 size={15} /></PeractButton>
+                    <PeractButton action={() => setDeleteTarget(p)} className="h-8 w-8 text-gray-400 hover:bg-red-50 hover:text-red-600" size="icon" theme="secondary" title="Remover"><Trash2 size={15} /></PeractButton>
+                  </div>
+                </td>
               </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-50">
-              {filtered.length === 0 ? (
-                <tr><td colSpan={10} className="text-center py-12 text-gray-400 text-sm">Nenhum produto encontrado.</td></tr>
-              ) : filtered.map((p) => {
-                const sc = statusConfig[p.status];
-                const vol = volumeLabel(p);
-                const margem = margemLabel(p);
-                return (
-                  <tr key={p.id} className="hover:bg-gray-50/50 transition-colors">
-                    <td className="px-4 py-3 text-sm font-medium text-gray-800 whitespace-nowrap">{p.name}</td>
-                    <td className="px-4 py-3 text-sm text-gray-600">{p.brand}</td>
-                    <td className="px-4 py-3"><PeractTag>{p.category}</PeractTag></td>
-                    <td className="px-4 py-3">
-                      {vol
-                        ? <PeractTag className="w-fit bg-blue-50 text-blue-600" icon={<Ruler size={10} />}>{vol}</PeractTag>
-                        : <span className="text-xs text-gray-300 italic">—</span>}
-                    </td>
-                    <td className="px-4 py-3 text-sm font-medium text-gray-800">{p.currentStock}</td>
-                    <td className="px-4 py-3 text-sm text-gray-700 whitespace-nowrap">R$ {p.preco.toFixed(2)}</td>
-                    <td className="px-4 py-3 text-sm text-gray-500 whitespace-nowrap">
-                      {p.precoCompra ? `R$ ${p.precoCompra.toFixed(2)}` : <span className="text-gray-300">—</span>}
-                    </td>
-                    <td className="px-4 py-3">
-                      {margem !== null
-                        ? <PeractTag type={margem >= 35 ? "success" : margem >= 20 ? "warning" : "alert"}>{margem.toFixed(1)}%</PeractTag>
-                        : <span className="text-gray-300 text-xs">—</span>}
-                    </td>
-                    <td className="px-4 py-3">
-                      <PeractTag className="border-0" icon={sc.icon} style={{ color: sc.color, background: sc.bg }}>
-                        {sc.label}
-                      </PeractTag>
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-2">
-                        <PeractButton action={() => setEditProduct(p)} className="h-8 w-8 text-gray-400 hover:bg-amber-50 hover:text-amber-700" size="icon" theme="secondary" title="Editar"><Edit3 size={15} /></PeractButton>
-                        <PeractButton action={() => setDeleteTarget(p)} className="h-8 w-8 text-gray-400 hover:bg-red-50 hover:text-red-600" size="icon" theme="secondary" title="Remover"><Trash2 size={15} /></PeractButton>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-        <div className="px-4 py-3 border-t border-gray-50">
-          <p className="text-xs text-gray-400">Exibindo {filtered.length} de {products.length} produtos</p>
-        </div>
+            );
+          }}
+        />
       </div>
 
       {/* Mobile cards */}

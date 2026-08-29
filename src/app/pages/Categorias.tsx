@@ -5,6 +5,7 @@ import { PeractButton } from "../../shared/components/peract-button";
 import { PeractCard } from "../../shared/components/peract-card";
 import { PeractInput } from "../../shared/components/peract-input";
 import { PeractModalAction } from "../../shared/components/peract-modal-action";
+import { PeractTable } from "../../shared/components/peract-table";
 
 /* ─── Modal ─── */
 interface CategoriaModalProps {
@@ -167,73 +168,61 @@ export function Categorias() {
       </div>
 
       {/* Table */}
-      <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
-        <table className="w-full">
-          <thead>
-            <tr style={{ background: "#F2F2F2" }}>
-              <th className="text-left px-4 py-3 text-xs font-medium text-gray-500">ID</th>
-              <th className="text-left px-4 py-3 text-xs font-medium text-gray-500">Nome da Categoria</th>
-              <th className="text-left px-4 py-3 text-xs font-medium text-gray-500">Produtos vinculados</th>
-              <th className="text-left px-4 py-3 text-xs font-medium text-gray-500">Ações</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-50">
-            {categories.length === 0 ? (
-              <tr>
-                <td colSpan={4} className="text-center py-16 text-gray-400 text-sm">
-                  <div className="flex flex-col items-center gap-2">
-                    <Tag size={32} className="text-gray-300" />
-                    <p>Nenhuma categoria cadastrada.</p>
-                    <button onClick={() => setShowModal(true)} className="mt-1 text-xs px-3 py-1.5 rounded-lg text-white hover:opacity-90" style={{ background: "#A67449" }}>
-                      Criar primeira categoria
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            ) : categories.map((cat) => (
-              <tr key={cat.id} className="hover:bg-gray-50/50 transition-colors">
-                <td className="px-4 py-3 text-sm font-mono text-gray-400">#{cat.id}</td>
-                <td className="px-4 py-3">
-                  <div className="flex items-center gap-2">
-                    <div className="w-6 h-6 rounded-md flex items-center justify-center" style={{ background: "#FFF3E8" }}>
-                      <Tag size={12} style={{ color: "#A67449" }} />
-                    </div>
-                    <span className="text-sm font-medium text-gray-800">{cat.nome}</span>
-                  </div>
-                </td>
-                <td className="px-4 py-3">
-                  <span className="text-sm text-gray-600">{countForCategory(cat.nome)} produto(s)</span>
-                </td>
-                <td className="px-4 py-3">
-                  <div className="flex items-center gap-2">
-                    <PeractButton
-                      action={() => setEditCat({ id: cat.id, nome: cat.nome })}
-                      className="h-8 w-8 text-gray-400 hover:bg-amber-50 hover:text-amber-700"
-                      size="icon"
-                      theme="secondary"
-                      title="Editar"
-                    >
-                      <Pencil size={15} />
-                    </PeractButton>
-                    <PeractButton
-                      action={() => setDeleteCat({ id: cat.id, nome: cat.nome })}
-                      className="h-8 w-8 text-gray-400 hover:bg-red-50 hover:text-red-600"
-                      size="icon"
-                      theme="secondary"
-                      title="Excluir"
-                    >
-                      <Trash2 size={15} />
-                    </PeractButton>
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        <div className="px-4 py-3 border-t border-gray-50">
-          <p className="text-xs text-gray-400">{categories.length} categorias cadastradas</p>
-        </div>
-      </div>
+      <PeractTable
+        data={categories}
+        emptyState={
+          <div className="flex flex-col items-center gap-2">
+            <Tag size={32} className="text-gray-300" />
+            <p>Nenhuma categoria cadastrada.</p>
+            <PeractButton action={() => setShowModal(true)} size="sm">Criar primeira categoria</PeractButton>
+          </div>
+        }
+        footer={<p className="text-xs text-gray-400">{categories.length} categorias cadastradas</p>}
+        header={[
+          { name: "ID", value: "id" },
+          { name: "Nome da Categoria", value: "nome" },
+          { name: "Produtos vinculados", value: "linkedProducts" },
+          { name: "Ações", value: "actions" },
+        ]}
+        renderRow={(cat) => (
+          <tr key={cat.id} className="transition-colors hover:bg-gray-50/50">
+            <td className="px-4 py-3 font-mono text-sm text-gray-400">#{cat.id}</td>
+            <td className="px-4 py-3">
+              <div className="flex items-center gap-2">
+                <div className="flex h-6 w-6 items-center justify-center rounded-md" style={{ background: "#FFF3E8" }}>
+                  <Tag size={12} style={{ color: "#A67449" }} />
+                </div>
+                <span className="text-sm font-medium text-gray-800">{cat.nome}</span>
+              </div>
+            </td>
+            <td className="px-4 py-3">
+              <span className="text-sm text-gray-600">{countForCategory(cat.nome)} produto(s)</span>
+            </td>
+            <td className="px-4 py-3">
+              <div className="flex items-center gap-2">
+                <PeractButton
+                  action={() => setEditCat({ id: cat.id, nome: cat.nome })}
+                  className="h-8 w-8 text-gray-400 hover:bg-amber-50 hover:text-amber-700"
+                  size="icon"
+                  theme="secondary"
+                  title="Editar"
+                >
+                  <Pencil size={15} />
+                </PeractButton>
+                <PeractButton
+                  action={() => setDeleteCat({ id: cat.id, nome: cat.nome })}
+                  className="h-8 w-8 text-gray-400 hover:bg-red-50 hover:text-red-600"
+                  size="icon"
+                  theme="secondary"
+                  title="Excluir"
+                >
+                  <Trash2 size={15} />
+                </PeractButton>
+              </div>
+            </td>
+          </tr>
+        )}
+      />
     </div>
   );
 }
