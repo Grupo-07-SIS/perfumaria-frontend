@@ -18,7 +18,7 @@ export const router = createBrowserRouter([
       {
         path: "estoque/produtos",
         lazy: async () => {
-          const { ProductsPage } = await import("../features/products/pages/ProductsPage");
+          const { ProductsPage } = await import("../features/products/ProductsPage");
           return { Component: ProductsPage };
         },
       },
