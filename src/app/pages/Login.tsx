@@ -4,6 +4,7 @@ import logoImg from "figma:asset/19603bc35fe7f283ff1a83c590f928c9d0bfe9cf.png";
 import { useApp } from "../context/AppContext";
 import { ImageWithFallback } from "../components/figma/ImageWithFallback";
 import { PeractButton } from "../../shared/components/peract-button";
+import { PeractInput } from "../../shared/components/peract-input";
 
 const PERFUME_BG = "https://images.unsplash.com/photo-1588405748880-12d1d2a59f75?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwyfHxwZXJmdW1lJTIwYm90dGxlJTIwd2hpdGUlMjBnb2xkJTIwbHV4dXJ5JTIwZmxhdCUyMGxheXxlbnwxfHx8fDE3Nzg4ODEyMDN8MA&ixlib=rb-4.1.0&q=80&w=1080";
 
@@ -102,36 +103,34 @@ export function Login() {
           )}
 
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-            <div>
-              <label className="block text-xs mb-2 tracking-wide" style={{ color: "#6b6b68", letterSpacing: "0.06em" }}>E-MAIL</label>
-              <div className="relative">
-                <Mail size={15} className="absolute left-4 top-1/2 -translate-y-1/2" style={{ color: "#c29958" }} />
-                <input type="email" value={email} onChange={(e) => { setEmail(e.target.value); setError(""); }}
-                  placeholder="seu@email.com" autoComplete="email"
-                  className="w-full rounded-xl pl-11 pr-4 py-3 text-sm outline-none transition-all duration-200"
-                  style={{ background: "#f3f3f2", border: "1px solid rgba(0,0,0,0.09)", color: "#1a1a1a" }}
-                  onFocus={(e) => { e.target.style.borderColor = "#c29958"; e.target.style.background = "#fff"; }}
-                  onBlur={(e) => { e.target.style.borderColor = "rgba(0,0,0,0.09)"; e.target.style.background = "#f3f3f2"; }} />
-              </div>
-            </div>
+            <PeractInput
+              autoComplete="email"
+              icon={<Mail size={15} />}
+              label="E-MAIL"
+              onValueChange={(value) => { setEmail(value); setError(""); }}
+              placeholder="seu@email.com"
+              type="email"
+              validation={error ? "invalid" : "non-validation"}
+              value={email}
+            />
 
-            <div>
-              <label className="block text-xs mb-2 tracking-wide" style={{ color: "#6b6b68", letterSpacing: "0.06em" }}>SENHA</label>
-              <div className="relative">
-                <Lock size={15} className="absolute left-4 top-1/2 -translate-y-1/2" style={{ color: "#c29958" }} />
-                <input type={showPass ? "text" : "password"} value={password} onChange={(e) => { setPassword(e.target.value); setError(""); }}
-                  placeholder="••••••••" autoComplete="current-password"
-                  className="w-full rounded-xl pl-11 pr-12 py-3 text-sm outline-none transition-all duration-200"
-                  style={{ background: "#f3f3f2", border: "1px solid rgba(0,0,0,0.09)", color: "#1a1a1a" }}
-                  onFocus={(e) => { e.target.style.borderColor = "#c29958"; e.target.style.background = "#fff"; }}
-                  onBlur={(e) => { e.target.style.borderColor = "rgba(0,0,0,0.09)"; e.target.style.background = "#f3f3f2"; }} />
+            <PeractInput
+              autoComplete="current-password"
+              icon={<Lock size={15} />}
+              label="SENHA"
+              onValueChange={(value) => { setPassword(value); setError(""); }}
+              placeholder="••••••••"
+              rightAdornment={
                 <button type="button" onClick={() => setShowPass(!showPass)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 transition-opacity hover:opacity-80"
+                  className="transition-opacity hover:opacity-80"
                   style={{ color: "#6b6b68" }} aria-label={showPass ? "Ocultar senha" : "Mostrar senha"}>
                   {showPass ? <EyeOff size={15} /> : <Eye size={15} />}
                 </button>
-              </div>
-            </div>
+              }
+              type={showPass ? "text" : "password"}
+              validation={error ? "invalid" : "non-validation"}
+              value={password}
+            />
 
             <PeractButton
               className="mt-2 w-full tracking-[0.04em]"

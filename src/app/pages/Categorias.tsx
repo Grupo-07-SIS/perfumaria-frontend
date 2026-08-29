@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Plus, Pencil, Trash2, X, CheckCircle, Tag, AlertTriangle } from "lucide-react";
 import { useApp } from "../context/AppContext";
 import { PeractButton } from "../../shared/components/peract-button";
+import { PeractInput } from "../../shared/components/peract-input";
 
 /* ─── Modal ─── */
 interface CategoriaModalProps {
@@ -36,18 +37,17 @@ function CategoriaModal({ onClose, onSave, editNome }: CategoriaModalProps) {
               <CheckCircle size={16} /> Categoria salva com sucesso!
             </div>
           )}
-          <div>
-            <label className="text-sm text-gray-700 block mb-1.5">Nome da categoria *</label>
-            <input
-              type="text"
-              value={nome}
-              onChange={(e) => { setNome(e.target.value); setError(""); }}
-              placeholder="Ex: Perfumes, Body Splash, Kits..."
-              autoFocus
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-800 focus:outline-none focus:border-[#A67449]"
-            />
-            {error && <p className="text-xs text-red-600 mt-1">{error}</p>}
-          </div>
+          <PeractInput
+            autoFocus
+            errorText={error}
+            label="Nome da categoria"
+            onValueChange={(value) => { setNome(value); setError(""); }}
+            placeholder="Ex: Perfumes, Body Splash, Kits..."
+            required
+            type="text"
+            validation={error ? "invalid" : "non-validation"}
+            value={nome}
+          />
         </div>
         <div className="flex gap-2 p-4 border-t border-gray-100">
           <PeractButton action={onClose} className="flex-1 text-gray-600" theme="secondary">Cancelar</PeractButton>

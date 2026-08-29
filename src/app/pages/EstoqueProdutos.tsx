@@ -5,6 +5,7 @@ import {
 } from "lucide-react";
 import { useApp, Product, StockStatus } from "../context/AppContext";
 import { PeractButton } from "../../shared/components/peract-button";
+import { PeractInput } from "../../shared/components/peract-input";
 
 const statusConfig: Record<StockStatus, { label: string; color: string; bg: string; icon: React.ReactNode }> = {
   ok:       { label: "OK",       color: "#166534", bg: "#dcfce7", icon: <CheckCircle size={12} /> },
@@ -89,18 +90,14 @@ function ProductModal({ product, categories, onClose, onSave }: ProductModalProp
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {/* Nome */}
             <div className="sm:col-span-2">
-              <label className="text-sm text-gray-700 block mb-1.5">Nome do produto *</label>
-              <input type="text" value={name} onChange={(e) => { setName(e.target.value); setErrors({ ...errors, name: "" }); }}
-                placeholder="Ex: Chanel N°5" autoFocus
-                className={`w-full border rounded-lg px-3 py-2 text-sm text-gray-800 focus:outline-none transition-colors ${errors.name ? "border-red-400" : "border-gray-200 focus:border-[#A67449]"}`} />
-              {errors.name && <p className="text-xs text-red-600 mt-1">{errors.name}</p>}
+              <PeractInput type="text" value={name} onValueChange={(value) => { setName(value); setErrors({ ...errors, name: "" }); }}
+                placeholder="Ex: Chanel N°5" autoFocus label="Nome do produto" required errorText={errors.name}
+                validation={errors.name ? "invalid" : "non-validation"} />
             </div>
 
             {/* Marca */}
             <div>
-              <label className="text-sm text-gray-700 block mb-1.5">Marca</label>
-              <input type="text" value={brand} onChange={(e) => setBrand(e.target.value)} placeholder="Ex: Chanel"
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-800 focus:outline-none focus:border-[#A67449]" />
+              <PeractInput type="text" value={brand} onValueChange={setBrand} placeholder="Ex: Chanel" label="Marca" />
             </div>
 
             {/* Categoria */}
@@ -114,27 +111,23 @@ function ProductModal({ product, categories, onClose, onSave }: ProductModalProp
 
             {/* Estoque */}
             <div>
-              <label className="text-sm text-gray-700 block mb-1.5">Estoque atual *</label>
-              <input type="number" min={0} value={stock} onChange={(e) => { setStock(e.target.value); setErrors({ ...errors, stock: "" }); }}
-                className={`w-full border rounded-lg px-3 py-2 text-sm text-gray-800 focus:outline-none transition-colors ${errors.stock ? "border-red-400" : "border-gray-200 focus:border-[#A67449]"}`} />
-              {errors.stock && <p className="text-xs text-red-600 mt-1">{errors.stock}</p>}
+              <PeractInput type="number" min={0} value={stock} onValueChange={(value) => { setStock(value); setErrors({ ...errors, stock: "" }); }}
+                label="Estoque atual" required errorText={errors.stock}
+                validation={errors.stock ? "invalid" : "non-validation"} />
             </div>
 
             {/* Preço de venda */}
             <div>
-              <label className="text-sm text-gray-700 block mb-1.5">Preço de venda (R$) *</label>
-              <input type="number" min={0} step={0.01} value={preco} placeholder="0,00"
-                onChange={(e) => { setPreco(e.target.value); setErrors({ ...errors, preco: "" }); }}
-                className={`w-full border rounded-lg px-3 py-2 text-sm text-gray-800 focus:outline-none transition-colors ${errors.preco ? "border-red-400" : "border-gray-200 focus:border-[#A67449]"}`} />
-              {errors.preco && <p className="text-xs text-red-600 mt-1">{errors.preco}</p>}
+              <PeractInput type="number" min={0} step={0.01} value={preco} placeholder="0,00"
+                onValueChange={(value) => { setPreco(value); setErrors({ ...errors, preco: "" }); }}
+                label="Preço de venda (R$)" required errorText={errors.preco}
+                validation={errors.preco ? "invalid" : "non-validation"} />
             </div>
 
             {/* Preço de compra */}
             <div>
-              <label className="text-sm text-gray-700 block mb-1.5">Preço de compra (R$)</label>
-              <input type="number" min={0} step={0.01} value={precoCompra} placeholder="0,00"
-                onChange={(e) => setPrecoCompra(e.target.value)}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-800 focus:outline-none focus:border-[#A67449]" />
+              <PeractInput type="number" min={0} step={0.01} value={precoCompra} placeholder="0,00"
+                onValueChange={setPrecoCompra} label="Preço de compra (R$)" />
             </div>
 
             {/* Margem preview */}
@@ -170,11 +163,10 @@ function ProductModal({ product, categories, onClose, onSave }: ProductModalProp
                 <p className="text-xs text-gray-400">Informe a capacidade do produto e a unidade de medida</p>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="text-sm text-gray-700 block mb-1.5">Capacidade *</label>
-                    <input type="number" min={0} step={0.1} value={volumeVal} placeholder="Ex: 200"
-                      onChange={(e) => { setVolumeVal(e.target.value); setErrors({ ...errors, volume: "" }); }}
-                      className={`w-full border rounded-lg px-3 py-2 text-sm text-gray-800 focus:outline-none transition-colors ${errors.volume ? "border-red-400" : "border-gray-200 focus:border-[#A67449]"}`} />
-                    {errors.volume && <p className="text-xs text-red-600 mt-1">{errors.volume}</p>}
+                    <PeractInput type="number" min={0} step={0.1} value={volumeVal} placeholder="Ex: 200"
+                      onValueChange={(value) => { setVolumeVal(value); setErrors({ ...errors, volume: "" }); }}
+                      label="Capacidade" required errorText={errors.volume}
+                      validation={errors.volume ? "invalid" : "non-validation"} />
                   </div>
                   <div>
                     <label className="text-sm text-gray-700 block mb-1.5">Tipo de medida *</label>
@@ -318,8 +310,8 @@ export function EstoqueProdutos() {
       <div className="bg-white rounded-xl border border-gray-100 p-3 mb-4 flex flex-col sm:flex-row gap-3 shadow-sm">
         <div className="flex items-center gap-2 flex-1 border border-gray-200 rounded-lg px-3 py-2">
           <Search size={15} className="text-gray-400 shrink-0" />
-          <input type="text" placeholder="Buscar por nome ou marca..." value={search} onChange={(e) => setSearch(e.target.value)}
-            className="text-sm outline-none flex-1 text-gray-800 placeholder:text-gray-400" />
+          <PeractInput type="text" placeholder="Buscar por nome ou marca..." value={search} onValueChange={setSearch}
+            className="border-0 bg-transparent px-0 py-0 shadow-none" />
         </div>
         <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}
           className="border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-700 focus:outline-none focus:border-[#A67449] sm:w-44">
