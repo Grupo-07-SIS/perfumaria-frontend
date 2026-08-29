@@ -44,4 +44,26 @@ export default defineConfig({
       },
     },
   },
+  test: {
+    environment: 'jsdom',
+    globals: true,
+    setupFiles: './src/test/setup.ts',
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'html'],
+      include: ['src/core/**/*.{ts,tsx}', 'src/features/login/**/*.{ts,tsx}'],
+      exclude: [
+        'src/core/auth/auth.types.ts',
+        'src/features/login/config/**',
+        'src/features/login/models/**',
+        'src/features/login/repository/dto/**',
+      ],
+      thresholds: {
+        lines: 80,
+        functions: 80,
+        statements: 80,
+        branches: 80,
+      },
+    },
+  },
 })
