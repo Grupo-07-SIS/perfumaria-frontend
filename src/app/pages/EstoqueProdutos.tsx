@@ -6,6 +6,7 @@ import {
 import { useApp, Product, StockStatus } from "../context/AppContext";
 import { PeractButton } from "../../shared/components/peract-button";
 import { PeractCard } from "../../shared/components/peract-card";
+import { PeractChip } from "../../shared/components/peract-chip";
 import { PeractInput } from "../../shared/components/peract-input";
 import { PeractModalAction } from "../../shared/components/peract-modal-action";
 import { PeractPagination } from "../../shared/components/peract-pagination";
@@ -315,11 +316,11 @@ export function EstoqueProdutos() {
 
       <div className="flex gap-1 mb-4 overflow-x-auto pb-1">
         {categoryNames.map((cat) => (
-          <button key={cat} onClick={() => setActiveCategory(cat)}
-            className={`px-4 py-2 rounded-lg text-sm whitespace-nowrap transition-all ${activeCategory === cat ? "text-white" : "bg-white text-gray-600 border border-gray-200 hover:bg-gray-50"}`}
-            style={activeCategory === cat ? { background: "#A67449" } : {}}>
-            {cat}
-          </button>
+          <PeractChip
+            key={cat}
+            actionFilter={(value) => setActiveCategory(String(value))}
+            data={{ label: cat, selected: activeCategory === cat, value: cat }}
+          />
         ))}
       </div>
 
