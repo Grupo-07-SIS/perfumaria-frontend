@@ -1,0 +1,179 @@
+@layer base {
+  @property --tw-font-weight {
+    syntax: "*";
+    inherits: false;
+  }
+}
+
+@layer components {
+  .peract-font-color-default {
+    color: var(--foreground);
+  }
+
+  .peract-font-color-muted {
+    color: var(--muted-foreground);
+  }
+
+  .peract-font-color-accent {
+    color: var(--brand-accent);
+  }
+
+  .peract-font-color-primary {
+    color: var(--primary);
+  }
+
+  .peract-font-color-success {
+    color: #166534;
+  }
+
+  .peract-font-color-warning {
+    color: #92400e;
+  }
+
+  .peract-font-color-alert {
+    color: var(--destructive);
+  }
+
+  .peract-serif-font {
+    font-family: "Georgia", serif;
+    letter-spacing: 0.05em;
+  }
+
+  .peract-sans-font {
+    font-family: "Instrument Sans", "Segoe UI", sans-serif;
+  }
+
+  .peract-font-weight-normal {
+    --tw-font-weight: var(--font-weight-normal);
+    font-weight: var(--font-weight-normal);
+  }
+
+  .peract-font-weight-medium {
+    --tw-font-weight: var(--font-weight-medium);
+    font-weight: var(--font-weight-medium);
+  }
+
+  .peract-letter-spacing-brand {
+    letter-spacing: 0.12em;
+  }
+
+  .peract-bg-brand {
+    background-color: var(--brand-bg);
+  }
+
+  .peract-bg-page {
+    background-color: var(--background);
+  }
+
+  .peract-bg-card {
+    background-color: var(--card);
+  }
+
+  .peract-bg-primary {
+    background-color: var(--primary);
+    color: var(--primary-foreground);
+  }
+
+  .peract-bg-secondary {
+    background-color: var(--secondary);
+    color: var(--secondary-foreground);
+  }
+
+  .peract-bg-accent-soft {
+    background-color: color-mix(in srgb, var(--brand-accent) 10%, white);
+  }
+
+  .peract-border-default {
+    border: 1px solid var(--border);
+  }
+
+  .peract-border-accent {
+    border: 1px solid var(--brand-accent);
+  }
+
+  .peract-border-alert {
+    border: 1px solid color-mix(in srgb, var(--destructive) 22%, transparent);
+  }
+
+  .peract-radius-sm {
+    border-radius: calc(var(--radius) - 4px);
+  }
+
+  .peract-radius-md {
+    border-radius: calc(var(--radius) - 2px);
+  }
+
+  .peract-radius-lg {
+    border-radius: var(--radius);
+  }
+
+  .peract-radius-xl {
+    border-radius: calc(var(--radius) + 4px);
+  }
+
+  .peract-surface-panel {
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.96) 0%, rgba(247, 247, 246, 0.96) 100%);
+    border: 1px solid var(--border);
+    box-shadow: 0 18px 45px rgba(26, 26, 26, 0.08);
+  }
+
+  .peract-input-shell {
+    background-color: var(--input-background);
+    border: 1px solid var(--border);
+    color: var(--foreground);
+    border-radius: calc(var(--radius) + 2px);
+    transition: border-color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .peract-input-shell:focus-within {
+    border-color: var(--ring);
+    background-color: var(--card);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--ring) 18%, transparent);
+  }
+
+  .peract-validation-invalid {
+    border-color: color-mix(in srgb, var(--destructive) 45%, transparent);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--destructive) 12%, transparent);
+  }
+
+  .peract-validation-valid {
+    border-color: color-mix(in srgb, #166534 45%, transparent);
+    box-shadow: 0 0 0 3px color-mix(in srgb, #166534 12%, transparent);
+  }
+
+  .peract-button-base {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    min-height: 2.75rem;
+    padding: 0.75rem 1.25rem;
+    border-radius: calc(var(--radius) + 2px);
+    font-size: 0.9375rem;
+    line-height: 1;
+    transition: transform 0.2s ease, opacity 0.2s ease, background-color 0.2s ease;
+  }
+
+  .peract-button-base:hover {
+    opacity: 0.94;
+  }
+
+  .peract-button-base:active {
+    transform: translateY(1px);
+  }
+
+  .peract-sidebar-shell {
+    background-color: var(--sidebar);
+    border-right: 1px solid var(--sidebar-border);
+  }
+
+  .peract-header-shell {
+    background-color: var(--card);
+    border-bottom: 1px solid var(--border);
+    backdrop-filter: blur(12px);
+  }
+
+  .peract-interactive-hover:hover {
+    background-color: var(--sidebar-accent);
+  }
+}
