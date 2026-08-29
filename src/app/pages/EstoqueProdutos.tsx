@@ -8,6 +8,7 @@ import { PeractButton } from "../../shared/components/peract-button";
 import { PeractCard } from "../../shared/components/peract-card";
 import { PeractInput } from "../../shared/components/peract-input";
 import { PeractSelect } from "../../shared/components/peract-select";
+import { PeractTag } from "../../shared/components/peract-tag";
 
 const statusConfig: Record<StockStatus, { label: string; color: string; bg: string; icon: React.ReactNode }> = {
   ok:       { label: "OK",       color: "#166534", bg: "#dcfce7", icon: <CheckCircle size={12} /> },
@@ -369,10 +370,10 @@ export function EstoqueProdutos() {
                   <tr key={p.id} className="hover:bg-gray-50/50 transition-colors">
                     <td className="px-4 py-3 text-sm font-medium text-gray-800 whitespace-nowrap">{p.name}</td>
                     <td className="px-4 py-3 text-sm text-gray-600">{p.brand}</td>
-                    <td className="px-4 py-3"><span className="text-xs px-2 py-0.5 rounded-full bg-stone-100 text-stone-600">{p.category}</span></td>
+                    <td className="px-4 py-3"><PeractTag>{p.category}</PeractTag></td>
                     <td className="px-4 py-3">
                       {vol
-                        ? <span className="text-xs px-2 py-0.5 rounded-full bg-blue-50 text-blue-600 font-medium flex items-center gap-1 w-fit"><Ruler size={10} />{vol}</span>
+                        ? <PeractTag className="w-fit bg-blue-50 text-blue-600" icon={<Ruler size={10} />}>{vol}</PeractTag>
                         : <span className="text-xs text-gray-300 italic">—</span>}
                     </td>
                     <td className="px-4 py-3 text-sm font-medium text-gray-800">{p.currentStock}</td>
@@ -382,15 +383,13 @@ export function EstoqueProdutos() {
                     </td>
                     <td className="px-4 py-3">
                       {margem !== null
-                        ? <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${margem >= 35 ? "bg-green-100 text-green-700" : margem >= 20 ? "bg-amber-100 text-amber-700" : "bg-red-100 text-red-600"}`}>
-                            {margem.toFixed(1)}%
-                          </span>
+                        ? <PeractTag type={margem >= 35 ? "success" : margem >= 20 ? "warning" : "alert"}>{margem.toFixed(1)}%</PeractTag>
                         : <span className="text-gray-300 text-xs">—</span>}
                     </td>
                     <td className="px-4 py-3">
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium" style={{ color: sc.color, background: sc.bg }}>
-                        {sc.icon}{sc.label}
-                      </span>
+                      <PeractTag className="border-0" icon={sc.icon} style={{ color: sc.color, background: sc.bg }}>
+                        {sc.label}
+                      </PeractTag>
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
@@ -424,9 +423,9 @@ export function EstoqueProdutos() {
                   <p className="text-sm font-medium text-gray-800">{p.name}</p>
                   <p className="text-xs text-gray-500">{p.brand} · {p.category}</p>
                 </div>
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium shrink-0" style={{ color: sc.color, background: sc.bg }}>
-                  {sc.icon}{sc.label}
-                </span>
+                <PeractTag className="shrink-0 border-0" icon={sc.icon} style={{ color: sc.color, background: sc.bg }}>
+                  {sc.label}
+                </PeractTag>
               </div>
               <div className="grid grid-cols-2 gap-2 mt-3">
                 <div><p className="text-xs text-gray-400">Estoque</p><p className="text-sm font-medium text-gray-800">{p.currentStock}</p></div>
@@ -435,7 +434,7 @@ export function EstoqueProdutos() {
                 <div>
                   <p className="text-xs text-gray-400">Margem</p>
                   {margem !== null
-                    ? <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${margem >= 35 ? "bg-green-100 text-green-700" : "bg-amber-100 text-amber-700"}`}>{margem.toFixed(1)}%</span>
+                    ? <PeractTag type={margem >= 35 ? "success" : "warning"}>{margem.toFixed(1)}%</PeractTag>
                     : <span className="text-sm text-gray-300">—</span>}
                 </div>
                 <div><p className="text-xs text-gray-400">Volume</p><p className="text-sm text-gray-700">{vol ?? <span className="text-gray-300 italic text-xs">—</span>}</p></div>

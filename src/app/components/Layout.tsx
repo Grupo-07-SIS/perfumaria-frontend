@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { useApp } from "../context/AppContext";
 import { PeractButton } from "../../shared/components/peract-button";
+import { PeractTag } from "../../shared/components/peract-tag";
 
 /* ─── Brand palette — resolved via CSS vars so high-contrast overrides apply ─── */
 const C = {
@@ -232,7 +233,7 @@ export function Layout() {
           {!sidebarCollapsed && (
             <div className="min-w-0">
               <p className="text-xs font-medium leading-tight truncate" style={{ color: C.dark }}>Canal Perfumado</p>
-              <p className="text-xs truncate" style={{ color: C.accent }}>Decants</p>
+              <PeractTag className="w-fit px-0" style={{ background: "transparent", color: C.accent }}>Decants</PeractTag>
             </div>
           )}
           <button className="lg:hidden ml-auto p-1 rounded transition-colors hover:bg-gray-100" style={{ color: C.textMid }} onClick={() => setMobileMenuOpen(false)}>
@@ -304,10 +305,9 @@ export function Layout() {
               </div>
               <div className="hidden md:block">
                 <p className="text-xs font-medium leading-tight truncate max-w-[120px]" style={{ color: C.dark }}>{currentUser?.nome ?? "Usuário"}</p>
-                <p className="text-xs flex items-center gap-1" style={{ color: isAdmin ? C.accent : "#6366f1" }}>
-                  {isAdmin ? <ShieldCheck size={10} /> : <UserCheck size={10} />}
+                <PeractTag className="mt-1 w-fit border-0 px-0" icon={isAdmin ? <ShieldCheck size={10} /> : <UserCheck size={10} />} style={{ background: "transparent", color: isAdmin ? C.accent : "#6366f1" }}>
                   {currentUser?.cargo ?? ""}
-                </p>
+                </PeractTag>
               </div>
               <PeractButton action={logout} className="ml-1 h-8 w-8 rounded-lg hover:bg-gray-100"
                 style={{ color: C.textMid }} title="Sair" aria-label="Sair" size="icon" theme="secondary">
