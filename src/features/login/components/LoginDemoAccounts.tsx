@@ -1,13 +1,5 @@
-import type { ReactNode } from "react";
 import { PeractButton } from "../../../shared/components/peract-button";
-
-interface DemoAccount {
-  color: string;
-  email: string;
-  icon: ReactNode;
-  label: string;
-  senha: string;
-}
+import type { DemoAccount } from "../models/login.models";
 
 interface LoginDemoAccountsProps {
   accounts: DemoAccount[];

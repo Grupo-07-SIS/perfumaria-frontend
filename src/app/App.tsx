@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { RouterProvider } from "react-router";
 import { router } from "./routes";
 import { AppProvider, useApp } from "./context/AppContext";
-import { LoginPage } from "../features/login/pages/LoginPage";
+import { LoginPage } from "../features/login/LoginPage";
 
 function VLibras() {
   useEffect(() => {

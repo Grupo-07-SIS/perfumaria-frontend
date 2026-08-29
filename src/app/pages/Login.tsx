@@ -1,1 +1,1 @@
-export { LoginPage as Login } from "../../features/login/pages/LoginPage";
+export { LoginPage as Login } from "../../features/login/LoginPage";
