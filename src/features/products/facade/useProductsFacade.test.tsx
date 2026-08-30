@@ -47,6 +47,8 @@ describe("useProductsFacade", () => {
       expect(result.current.isLoading).toBe(false);
     });
 
+    expect(fetchProductsMock).toHaveBeenCalledWith({ nome: "", ordenacao: "nome,asc" });
+
     expect(result.current.products[0].estoqueStatus).toBe("ok");
     expect(result.current.products[1].estoqueStatus).toBe("esgotado");
 
@@ -56,8 +58,42 @@ describe("useProductsFacade", () => {
       result.current.setStatusFilter("ok");
     });
 
+    expect(fetchProductsMock).toHaveBeenCalledTimes(1);
     expect(result.current.filteredProductsCount).toBe(1);
     expect(result.current.paginatedProducts[0].nome).toBe("Chance");
+  });
+
+  it("fetches products remotely when pressing search or changing ordering", async () => {
+    fetchProductsMock
+      .mockResolvedValueOnce([{ ativo: 1, categoriaId: 1, categoriaNome: "Perfumes", estoqueAtual: 9, id: 1, marca: "Chanel", nome: "Chance", precoVenda: 180 }])
+      .mockResolvedValueOnce([{ ativo: 1, categoriaId: 1, categoriaNome: "Perfumes", estoqueAtual: 4, id: 2, marca: "Dior", nome: "Dior Homme", precoVenda: 210 }])
+      .mockResolvedValueOnce([{ ativo: 1, categoriaId: 1, categoriaNome: "Perfumes", estoqueAtual: 4, id: 2, marca: "Dior", nome: "Dior Homme", precoVenda: 210 }]);
+    fetchProductCategoriesMock.mockResolvedValue([{ id: 1, nome: "Perfumes" }]);
+
+    const { result } = renderHook(() => useProductsFacade());
+
+    await waitFor(() => {
+      expect(result.current.isLoading).toBe(false);
+    });
+
+    act(() => {
+      result.current.setSearch("dior");
+    });
+
+    expect(fetchProductsMock).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      await result.current.submitSearch();
+    });
+
+    expect(fetchProductsMock).toHaveBeenNthCalledWith(2, { nome: "dior", ordenacao: "nome,asc" });
+    expect(result.current.products[0].nome).toBe("Dior Homme");
+
+    await act(async () => {
+      await result.current.toggleSort("marca");
+    });
+
+    expect(fetchProductsMock).toHaveBeenNthCalledWith(3, { nome: "dior", ordenacao: "marca,asc" });
   });
 
   it("creates, updates and deletes products through the facade", async () => {

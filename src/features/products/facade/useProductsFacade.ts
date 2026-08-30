@@ -50,33 +50,17 @@ function getStockStatus(estoqueAtual: number, critico: number): ProductStockStat
   return "ok";
 }
 
-function sortProducts(products: ProductListItem[], field: ProductSortField, ascending: boolean) {
-  const direction = ascending ? 1 : -1;
-
-  return [...products].sort((left, right) => {
-    switch (field) {
-      case "nome":
-      case "marca":
-      case "categoriaNome":
-        return direction * left[field].localeCompare(right[field], "pt-BR");
-      case "volume":
-        return direction * ((left.volume ?? 0) - (right.volume ?? 0));
-      case "estoqueAtual":
-        return direction * (left.estoqueAtual - right.estoqueAtual);
-      case "precoVenda":
-        return direction * (left.precoVenda - right.precoVenda);
-      case "precoCompra":
-        return direction * ((left.precoCompra ?? 0) - (right.precoCompra ?? 0));
-      case "margem":
-        return direction * ((left.margemCalculada ?? -1) - (right.margemCalculada ?? -1));
-      case "estoqueStatus": {
-        const order = { ok: 3, critico: 2, esgotado: 1 } as const;
-        return direction * (order[left.estoqueStatus] - order[right.estoqueStatus]);
-      }
-      default:
-        return 0;
-    }
-  });
+function toRemoteSortField(field: ProductSortField) {
+  switch (field) {
+    case "categoriaNome":
+      return "categoriaNome";
+    case "margem":
+      return "precoVenda";
+    case "estoqueStatus":
+      return "estoqueAtual";
+    default:
+      return field;
+  }
 }
 
 export function useProductsFacade() {
@@ -93,15 +77,45 @@ export function useProductsFacade() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [rawProducts, setRawProducts] = useState<Product[]>([]);
   const [search, setSearch] = useState("");
+  const [submittedSearch, setSubmittedSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("todos");
   const [sortAscending, setSortAscending] = useState(true);
   const [sortField, setSortField] = useState<ProductSortField>("nome");
   const [statusFilter, setStatusFilter] = useState<ProductStatusFilter>("todos");
 
+  const loadProducts = async ({ nextSearch, nextSortAscending, nextSortField }: {
+    nextSearch?: string;
+    nextSortAscending?: boolean;
+    nextSortField?: ProductSortField;
+  } = {}) => {
+    const resolvedSearch = nextSearch ?? submittedSearch;
+    const resolvedSortAscending = nextSortAscending ?? sortAscending;
+    const resolvedSortField = nextSortField ?? sortField;
+
+    setIsLoading(true);
+
+    try {
+      const productsResult = await fetchProducts({
+        nome: resolvedSearch,
+        ordenacao: `${toRemoteSortField(resolvedSortField)},${resolvedSortAscending ? "asc" : "desc"}`,
+      });
+
+      setRawProducts(productsResult);
+      setError("");
+    } catch {
+      setError("Não foi possível carregar os produtos.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
     let isMounted = true;
 
-    void Promise.all([fetchProducts(), fetchProductCategories()])
+    void Promise.all([
+      fetchProducts({ nome: "", ordenacao: "nome,asc" }),
+      fetchProductCategories(),
+    ])
       .then(([productsResult, categoriesResult]) => {
         if (!isMounted) return;
         setRawProducts(productsResult);
@@ -135,7 +149,7 @@ export function useProductsFacade() {
   ], [categoryOptions]);
 
   const filteredProducts = useMemo(() => {
-    const normalizedSearch = search.trim().toLowerCase();
+    const normalizedSearch = submittedSearch.trim().toLowerCase();
 
     const filtered = products.filter((product) => {
       const matchSearch = !normalizedSearch
@@ -147,8 +161,8 @@ export function useProductsFacade() {
       return matchSearch && matchStatus && matchCategory;
     });
 
-    return sortProducts(filtered, sortField, sortAscending);
-  }, [products, search, selectedCategory, sortAscending, sortField, statusFilter]);
+    return filtered;
+  }, [products, selectedCategory, statusFilter, submittedSearch]);
 
   useEffect(() => {
     setCurrentPage(1);
@@ -191,13 +205,19 @@ export function useProductsFacade() {
   };
 
   const toggleSort = (field: ProductSortField) => {
-    if (sortField === field) {
-      setSortAscending((currentValue) => !currentValue);
-      return;
-    }
+    const nextSortAscending = sortField === field ? !sortAscending : true;
+    const nextSortField = field;
 
-    setSortField(field);
-    setSortAscending(true);
+    setSortField(nextSortField);
+    setSortAscending(nextSortAscending);
+    void loadProducts({ nextSortAscending, nextSortField });
+  };
+
+  const submitSearch = async () => {
+    const normalizedSearch = search.trim();
+    setSubmittedSearch(normalizedSearch);
+    setCurrentPage(1);
+    await loadProducts({ nextSearch: normalizedSearch });
   };
 
   const submitProduct = async (formData: ProductFormData) => {
@@ -272,6 +292,7 @@ export function useProductsFacade() {
     sortAscending,
     sortField,
     statusFilter,
+    submitSearch,
     submitProduct,
     toggleSort,
     totalPages,

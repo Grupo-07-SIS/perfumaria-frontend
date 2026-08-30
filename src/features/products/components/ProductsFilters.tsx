@@ -10,6 +10,7 @@ interface ProductsFiltersProps {
   categoryTabs: Array<{ id: string; nome: string }>;
   onCategoryChange: (categoryId: string) => void;
   onSearchChange: (value: string) => void;
+  onSearchSubmit: () => void;
   onStatusChange: (value: ProductStatusFilter) => void;
   search: string;
   selectedCategory: string;
@@ -20,6 +21,7 @@ export function ProductsFilters({
   categoryTabs,
   onCategoryChange,
   onSearchChange,
+  onSearchSubmit,
   onStatusChange,
   search,
   selectedCategory,
@@ -43,10 +45,18 @@ export function ProductsFilters({
 
       <PeractCard className="mb-4 flex flex-col gap-3 p-3 shadow-sm sm:flex-row">
         <div className="flex flex-1 items-center gap-2 rounded-lg border border-gray-200 px-3 py-2">
-          <Search size={15} className="shrink-0 text-gray-400" />
+          <button aria-label="Buscar produtos" className="shrink-0 text-gray-400 transition-colors hover:text-gray-700" onClick={onSearchSubmit} type="button">
+            <Search size={15} />
+          </button>
           <PeractInput
             className="border-0 bg-transparent px-0 py-0 shadow-none"
             onValueChange={onSearchChange}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") {
+                event.preventDefault();
+                onSearchSubmit();
+              }
+            }}
             placeholder="Buscar por nome ou marca..."
             type="text"
             value={search}

@@ -1,7 +1,13 @@
 import { environment } from "../../../environment";
+import { PRODUCTS_PAGE_SIZE } from "../config/products.config";
 import type { ProductCategoryResponseDto } from "./dto/product-category-response.dto";
 import type { ProductRequestDto } from "./dto/product-request.dto";
 import type { ProductPageDto, ProductResponseDto } from "./dto/product-response.dto";
+
+interface ListProductsParams {
+  nome?: string;
+  ordenacao?: string;
+}
 
 async function parseJsonResponse<T>(response: Response): Promise<T> {
   return response.json() as Promise<T>;
@@ -49,8 +55,18 @@ export const productsRepository = {
     return parseJsonResponse<ProductCategoryResponseDto[]>(response);
   },
 
-  async listProducts(): Promise<ProductPageDto> {
-    const response = await fetch(`${environment.backendUrl}/produtos?page=0&size=200&ordenacao=nome,asc`, {
+  async listProducts({ nome, ordenacao = "nome,asc" }: ListProductsParams = {}): Promise<ProductPageDto> {
+    const searchParams = new URLSearchParams({
+      ordenacao,
+      page: "0",
+      size: String(Math.min(100, Math.max(PRODUCTS_PAGE_SIZE, 100))),
+    });
+
+    if (nome?.trim()) {
+      searchParams.set("nome", nome.trim());
+    }
+
+    const response = await fetch(`${environment.backendUrl}/produtos?${searchParams.toString()}`, {
       credentials: "include",
       method: "GET",
     });

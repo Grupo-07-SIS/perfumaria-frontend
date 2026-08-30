@@ -43,7 +43,7 @@ describe("productsService", () => {
     });
     listCategoriesMock.mockResolvedValue([{ id: 2, nome: "Body Splash" }, { id: 1, nome: "Perfumes" }]);
 
-    await expect(fetchProducts()).resolves.toEqual([
+    await expect(fetchProducts({ nome: "Libre", ordenacao: "nome,desc" })).resolves.toEqual([
       {
         ativo: 1,
         categoriaId: 1,
@@ -59,6 +59,7 @@ describe("productsService", () => {
         volume: undefined,
       },
     ]);
+    expect(listProductsMock).toHaveBeenCalledWith({ nome: "Libre", ordenacao: "nome,desc" });
     await expect(fetchProductCategories()).resolves.toEqual([
       { id: 2, nome: "Body Splash" },
       { id: 1, nome: "Perfumes" },

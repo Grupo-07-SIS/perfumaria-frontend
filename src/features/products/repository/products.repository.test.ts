@@ -8,6 +8,16 @@ vi.stubGlobal("fetch", fetchMock);
 
 import { productsRepository } from "./products.repository";
 
+function expectProductsRequestUrl(requestUrl: string, expectedParams: Record<string, string>) {
+  const parsedUrl = new URL(requestUrl);
+
+  expect(`${parsedUrl.origin}${parsedUrl.pathname}`).toBe("http://localhost:8080/produtos");
+
+  Object.entries(expectedParams).forEach(([key, value]) => {
+    expect(parsedUrl.searchParams.get(key)).toBe(value);
+  });
+}
+
 describe("productsRepository", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -22,7 +32,7 @@ describe("productsRepository", () => {
         last: true,
         number: 0,
         numberOfElements: 1,
-        size: 200,
+        size: 100,
         totalElements: 1,
         totalPages: 1,
       }),
@@ -31,11 +41,48 @@ describe("productsRepository", () => {
 
     const result = await productsRepository.listProducts();
 
-    expect(fetchMock).toHaveBeenCalledWith("http://localhost:8080/produtos?page=0&size=200&ordenacao=nome,asc", {
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expectProductsRequestUrl(fetchMock.mock.calls[0][0], {
+      ordenacao: "nome,asc",
+      page: "0",
+      size: "100",
+    });
+    expect(fetchMock.mock.calls[0][1]).toEqual({
       credentials: "include",
       method: "GET",
     });
     expect(result.content).toHaveLength(1);
+  });
+
+  it("sends remote name search and selected ordering params", async () => {
+    fetchMock.mockResolvedValue({
+      json: vi.fn().mockResolvedValue({
+        content: [],
+        empty: true,
+        first: true,
+        last: true,
+        number: 0,
+        numberOfElements: 0,
+        size: 100,
+        totalElements: 0,
+        totalPages: 0,
+      }),
+      ok: true,
+    });
+
+    await productsRepository.listProducts({ nome: "Chance", ordenacao: "marca,desc" });
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expectProductsRequestUrl(fetchMock.mock.calls[0][0], {
+      nome: "Chance",
+      ordenacao: "marca,desc",
+      page: "0",
+      size: "100",
+    });
+    expect(fetchMock.mock.calls[0][1]).toEqual({
+      credentials: "include",
+      method: "GET",
+    });
   });
 
   it("lists categories and persists create or update requests", async () => {

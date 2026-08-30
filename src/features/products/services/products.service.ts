@@ -12,8 +12,13 @@ import {
   toProductRequestDto,
 } from "../repository/mapper/product.mapper";
 
-export async function fetchProducts(): Promise<Product[]> {
-  const productPage = await productsRepository.listProducts();
+interface FetchProductsParams {
+  nome?: string;
+  ordenacao?: string;
+}
+
+export async function fetchProducts(params: FetchProductsParams = {}): Promise<Product[]> {
+  const productPage = await productsRepository.listProducts(params);
   return productPage.content.map(toProductModel);
 }
 

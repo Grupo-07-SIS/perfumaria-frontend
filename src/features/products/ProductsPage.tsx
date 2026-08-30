@@ -68,6 +68,7 @@ export function ProductsPage() {
         categoryTabs={facade.categoryTabs}
         onCategoryChange={facade.setSelectedCategory}
         onSearchChange={facade.setSearch}
+        onSearchSubmit={() => void facade.submitSearch()}
         onStatusChange={facade.setStatusFilter}
         search={facade.search}
         selectedCategory={facade.selectedCategory}
