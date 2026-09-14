@@ -45,7 +45,7 @@ describe("productsRepository", () => {
     expectProductsRequestUrl(fetchMock.mock.calls[0][0], {
       ordenacao: "nome,asc",
       page: "0",
-      size: "100",
+      size: "10",
     });
     expect(fetchMock.mock.calls[0][1]).toEqual({
       credentials: "include",
@@ -70,14 +70,17 @@ describe("productsRepository", () => {
       ok: true,
     });
 
-    await productsRepository.listProducts({ nome: "Chance", ordenacao: "marca,desc" });
+    await productsRepository.listProducts({ categoriaId: 2, estoqueMin: 0, estoqueMax: 0, nome: "Chance", ordenacao: "marca,desc", page: 1 });
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
     expectProductsRequestUrl(fetchMock.mock.calls[0][0], {
       nome: "Chance",
+      categoriaId: "2",
+      estoqueMin: "0",
+      estoqueMax: "0",
       ordenacao: "marca,desc",
-      page: "0",
-      size: "100",
+      page: "1",
+      size: "10",
     });
     expect(fetchMock.mock.calls[0][1]).toEqual({
       credentials: "include",

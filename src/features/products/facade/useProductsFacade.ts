@@ -1,8 +1,7 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useApp } from "../../../app/context/AppContext";
 import {
   DEFAULT_CRITICAL_STOCK_THRESHOLD,
-  PRODUCTS_PAGE_SIZE,
 } from "../config/products.config";
 import type {
   Product,
@@ -51,16 +50,14 @@ function getStockStatus(estoqueAtual: number, critico: number): ProductStockStat
 }
 
 function toRemoteSortField(field: ProductSortField) {
-  switch (field) {
-    case "categoriaNome":
-      return "categoriaNome";
-    case "margem":
-      return "precoVenda";
-    case "estoqueStatus":
-      return "estoqueAtual";
-    default:
-      return field;
-  }
+  return field === "estoqueStatus" ? "estoqueAtual" : field;
+}
+
+function getStockFilters(status: ProductStatusFilter, threshold: number) {
+  if (status === "esgotado") return { estoqueMax: 0 };
+  if (status === "critico") return { estoqueMin: 1, estoqueMax: threshold };
+  if (status === "ok") return { estoqueMin: threshold + 1 };
+  return {};
 }
 
 export function useProductsFacade() {
@@ -82,53 +79,59 @@ export function useProductsFacade() {
   const [sortAscending, setSortAscending] = useState(true);
   const [sortField, setSortField] = useState<ProductSortField>("nome");
   const [statusFilter, setStatusFilter] = useState<ProductStatusFilter>("todos");
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalProducts, setTotalProducts] = useState(0);
+  const [reloadVersion, setReloadVersion] = useState(0);
+  const requestId = useRef(0);
 
-  const loadProducts = async ({ nextSearch, nextSortAscending, nextSortField }: {
-    nextSearch?: string;
-    nextSortAscending?: boolean;
-    nextSortField?: ProductSortField;
-  } = {}) => {
-    const resolvedSearch = nextSearch ?? submittedSearch;
-    const resolvedSortAscending = nextSortAscending ?? sortAscending;
-    const resolvedSortField = nextSortField ?? sortField;
-
+  const loadProducts = async () => {
+    const currentRequestId = ++requestId.current;
     setIsLoading(true);
 
     try {
       const productsResult = await fetchProducts({
-        nome: resolvedSearch,
-        ordenacao: `${toRemoteSortField(resolvedSortField)},${resolvedSortAscending ? "asc" : "desc"}`,
+        categoriaId: selectedCategory === "todos" ? undefined : Number(selectedCategory),
+        ...getStockFilters(statusFilter, criticalThreshold),
+        nome: submittedSearch,
+        ordenacao: `${toRemoteSortField(sortField)},${sortAscending ? "asc" : "desc"}`,
+        page: currentPage - 1,
       });
 
-      setRawProducts(productsResult);
+      if (currentRequestId !== requestId.current) return;
+      const nextTotalPages = Math.max(1, productsResult.totalPages);
+      setTotalPages(nextTotalPages);
+      setTotalProducts(productsResult.totalElements);
+      if (currentPage > nextTotalPages) {
+        setCurrentPage(nextTotalPages);
+        return;
+      }
+      setRawProducts(productsResult.content);
       setError("");
     } catch {
+      if (currentRequestId !== requestId.current) return;
+      setRawProducts([]);
       setError("Não foi possível carregar os produtos.");
     } finally {
-      setIsLoading(false);
+      if (currentRequestId === requestId.current) setIsLoading(false);
     }
   };
 
   useEffect(() => {
+    void loadProducts();
+    return () => { requestId.current += 1; };
+  }, [currentPage, submittedSearch, selectedCategory, statusFilter, sortAscending, sortField, criticalThreshold, reloadVersion]);
+
+  useEffect(() => {
     let isMounted = true;
 
-    void Promise.all([
-      fetchProducts({ nome: "", ordenacao: "nome,asc" }),
-      fetchProductCategories(),
-    ])
-      .then(([productsResult, categoriesResult]) => {
+    void fetchProductCategories()
+      .then((categoriesResult) => {
         if (!isMounted) return;
-        setRawProducts(productsResult);
         setCategoryOptions(categoriesResult);
-        setError("");
       })
       .catch(() => {
         if (!isMounted) return;
         setError("Não foi possível carregar os produtos.");
-      })
-      .finally(() => {
-        if (!isMounted) return;
-        setIsLoading(false);
       });
 
     return () => {
@@ -148,38 +151,15 @@ export function useProductsFacade() {
     ...categoryOptions.map((category) => ({ id: String(category.id), nome: category.nome })),
   ], [categoryOptions]);
 
-  const filteredProducts = useMemo(() => {
-    const normalizedSearch = submittedSearch.trim().toLowerCase();
-
-    const filtered = products.filter((product) => {
-      const matchSearch = !normalizedSearch
-        || product.nome.toLowerCase().includes(normalizedSearch)
-        || product.marca.toLowerCase().includes(normalizedSearch);
-      const matchStatus = statusFilter === "todos" || product.estoqueStatus === statusFilter;
-      const matchCategory = selectedCategory === "todos" || String(product.categoriaId) === selectedCategory;
-
-      return matchSearch && matchStatus && matchCategory;
-    });
-
-    return filtered;
-  }, [products, selectedCategory, statusFilter, submittedSearch]);
-
-  useEffect(() => {
+  const changeCategory = (category: string) => {
+    setSelectedCategory(category);
     setCurrentPage(1);
-  }, [search, selectedCategory, statusFilter]);
+  };
 
-  const totalPages = Math.max(1, Math.ceil(filteredProducts.length / PRODUCTS_PAGE_SIZE));
-
-  useEffect(() => {
-    if (currentPage > totalPages) {
-      setCurrentPage(totalPages);
-    }
-  }, [currentPage, totalPages]);
-
-  const paginatedProducts = useMemo(() => {
-    const startIndex = (currentPage - 1) * PRODUCTS_PAGE_SIZE;
-    return filteredProducts.slice(startIndex, startIndex + PRODUCTS_PAGE_SIZE);
-  }, [currentPage, filteredProducts]);
+  const changeStatus = (status: ProductStatusFilter) => {
+    setStatusFilter(status);
+    setCurrentPage(1);
+  };
 
   const closeForm = () => {
     setFormTarget(null);
@@ -210,14 +190,14 @@ export function useProductsFacade() {
 
     setSortField(nextSortField);
     setSortAscending(nextSortAscending);
-    void loadProducts({ nextSortAscending, nextSortField });
+    setCurrentPage(1);
   };
 
   const submitSearch = async () => {
     const normalizedSearch = search.trim();
     setSubmittedSearch(normalizedSearch);
     setCurrentPage(1);
-    await loadProducts({ nextSearch: normalizedSearch });
+    setReloadVersion((version) => version + 1);
   };
 
   const submitProduct = async (formData: ProductFormData) => {
@@ -225,18 +205,11 @@ export function useProductsFacade() {
     setError("");
 
     try {
-      const savedProduct = formTarget
-        ? await updateProduct(formTarget, formData)
-        : await createProduct(formData);
-
-      setRawProducts((currentProducts) => {
-        if (formTarget) {
-          return currentProducts.map((product) => product.id === savedProduct.id ? savedProduct : product);
-        }
-
-        return [...currentProducts, savedProduct];
-      });
+      await (formTarget
+        ? updateProduct(formTarget, formData)
+        : createProduct(formData));
       closeForm();
+      await loadProducts();
     } catch {
       setError("Não foi possível salvar o produto.");
       throw new Error("PRODUCTS_SUBMIT_FAILED");
@@ -252,9 +225,9 @@ export function useProductsFacade() {
     setError("");
 
     try {
-      const deletedProductId = await removeProduct(deleteTarget);
-      setRawProducts((currentProducts) => currentProducts.filter((product) => product.id !== deletedProductId));
+      await removeProduct(deleteTarget);
       setDeleteTarget(null);
+      await loadProducts();
     } catch {
       setError("Não foi possível excluir o produto.");
     } finally {
@@ -272,7 +245,7 @@ export function useProductsFacade() {
     currentPage,
     deleteTarget,
     error,
-    filteredProductsCount: filteredProducts.length,
+    filteredProductsCount: totalProducts,
     formTarget,
     isDeleteSubmitting,
     isFormOpen,
@@ -281,14 +254,14 @@ export function useProductsFacade() {
     openCreateForm,
     openDeleteConfirm,
     openEditForm,
-    paginatedProducts,
+    paginatedProducts: products,
     products,
     search,
     selectedCategory,
     setCurrentPage,
     setSearch,
-    setSelectedCategory,
-    setStatusFilter,
+    setSelectedCategory: changeCategory,
+    setStatusFilter: changeStatus,
     sortAscending,
     sortField,
     statusFilter,

@@ -13,13 +13,22 @@ import {
 } from "../repository/mapper/product.mapper";
 
 interface FetchProductsParams {
+  categoriaId?: number;
+  estoqueMin?: number;
+  estoqueMax?: number;
   nome?: string;
   ordenacao?: string;
+  page?: number;
 }
 
-export async function fetchProducts(params: FetchProductsParams = {}): Promise<Product[]> {
+export async function fetchProducts(params: FetchProductsParams = {}) {
   const productPage = await productsRepository.listProducts(params);
-  return productPage.content.map(toProductModel);
+  return {
+    content: productPage.content.map(toProductModel),
+    number: productPage.number,
+    totalElements: productPage.totalElements,
+    totalPages: productPage.totalPages,
+  };
 }
 
 export async function fetchProductCategories(): Promise<ProductCategoryOption[]> {

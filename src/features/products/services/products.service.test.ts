@@ -40,10 +40,17 @@ describe("productsService", () => {
   it("maps listed products and categories", async () => {
     listProductsMock.mockResolvedValue({
       content: [{ id: 2, nome: "Libre", categoriaNome: "Perfumes", fkCategoria: 1, estoqueAtual: 7, precoVenda: 160, status: 1 }],
+      number: 1,
+      totalElements: 23,
+      totalPages: 3,
     });
     listCategoriesMock.mockResolvedValue([{ id: 2, nome: "Body Splash" }, { id: 1, nome: "Perfumes" }]);
 
-    await expect(fetchProducts({ nome: "Libre", ordenacao: "nome,desc" })).resolves.toEqual([
+    await expect(fetchProducts({ nome: "Libre", ordenacao: "nome,desc", page: 1 })).resolves.toEqual({
+      number: 1,
+      totalElements: 23,
+      totalPages: 3,
+      content: [
       {
         ativo: 1,
         categoriaId: 1,
@@ -58,8 +65,8 @@ describe("productsService", () => {
         precoVenda: 160,
         volume: undefined,
       },
-    ]);
-    expect(listProductsMock).toHaveBeenCalledWith({ nome: "Libre", ordenacao: "nome,desc" });
+    ] });
+    expect(listProductsMock).toHaveBeenCalledWith({ nome: "Libre", ordenacao: "nome,desc", page: 1 });
     await expect(fetchProductCategories()).resolves.toEqual([
       { id: 2, nome: "Body Splash" },
       { id: 1, nome: "Perfumes" },

@@ -5,6 +5,7 @@ import { PeractCard } from "../../../shared/components/peract-card";
 import { PeractPagination } from "../../../shared/components/peract-pagination";
 import { PeractTable } from "../../../shared/components/peract-table";
 import { PeractTag } from "../../../shared/components/peract-tag";
+import { PRODUCTS_PAGE_SIZE } from "../config/products.config";
 import type {
   ProductDeleteTarget,
   ProductFormTarget,
@@ -54,6 +55,14 @@ export function ProductsTable({
   totalPages,
   totalProducts,
 }: ProductsTableProps) {
+  const firstProduct = products.length === 0 ? 0 : (currentPage - 1) * PRODUCTS_PAGE_SIZE + 1;
+  const lastProduct = products.length === 0 ? 0 : firstProduct + products.length - 1;
+  const pagination = (
+    <div className="flex flex-wrap items-center justify-between gap-4">
+      <p className="text-xs text-gray-400">Exibindo {firstProduct} a {lastProduct} de {totalProducts} produtos</p>
+      <PeractPagination currentPage={currentPage} onPageChange={onPageChange} targetSelection="products-section" totalPages={totalPages} />
+    </div>
+  );
   const renderActions = (product: ProductListItem) => (
     <div className="flex items-center gap-2">
       <PeractButton action={() => onEditProduct(product)} className="h-8 w-8 text-gray-400 hover:bg-amber-50 hover:text-amber-700" size="icon" theme="secondary" title="Editar"><Edit3 size={15} /></PeractButton>
@@ -67,7 +76,7 @@ export function ProductsTable({
         <PeractTable
           data={products}
           emptyState={<div className="flex flex-col items-center gap-2"><PackageX size={32} className="text-gray-300" /><p>Nenhum produto encontrado.</p><PeractButton action={onCreateProduct} size="sm">Criar primeiro produto</PeractButton></div>}
-          footer={<div className="flex items-center justify-between gap-4"><p className="text-xs text-gray-400">Exibindo {products.length} produtos na página</p><PeractPagination currentPage={currentPage} onPageChange={onPageChange} targetSelection="products-section" totalPages={totalPages} /></div>}
+          footer={pagination}
           header={[
             { name: "Produto", value: "nome", orderColumn: true },
             { name: "Marca", value: "marca", orderColumn: true },
@@ -138,7 +147,7 @@ export function ProductsTable({
       </div>
 
       <div className="mt-4 md:hidden">
-        <PeractPagination currentPage={currentPage} onPageChange={onPageChange} targetSelection="products-section" totalPages={totalPages} />
+        {pagination}
       </div>
     </>
   );

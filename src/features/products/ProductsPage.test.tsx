@@ -14,6 +14,7 @@ import { ProductsPage } from "./ProductsPage";
 describe("ProductsPage", () => {
   it("renders the products composition and opens the create flow", () => {
     const openCreateForm = vi.fn();
+    const setCurrentPage = vi.fn();
 
     useProductsFacadeMock.mockReturnValue({
       categoryOptions: [{ id: 1, nome: "Perfumes" }],
@@ -25,7 +26,7 @@ describe("ProductsPage", () => {
       currentPage: 1,
       deleteTarget: null,
       error: "",
-      filteredProductsCount: 1,
+      filteredProductsCount: 23,
       formTarget: null,
       isDeleteSubmitting: false,
       isFormOpen: false,
@@ -38,7 +39,7 @@ describe("ProductsPage", () => {
       products: [],
       search: "",
       selectedCategory: "todos",
-      setCurrentPage: vi.fn(),
+      setCurrentPage,
       setSearch: vi.fn(),
       setSelectedCategory: vi.fn(),
       setStatusFilter: vi.fn(),
@@ -48,7 +49,7 @@ describe("ProductsPage", () => {
       submitSearch: vi.fn(),
       submitProduct: vi.fn(),
       toggleSort: vi.fn(),
-      totalPages: 1,
+      totalPages: 3,
     });
 
     render(<ProductsPage />);
@@ -58,6 +59,11 @@ describe("ProductsPage", () => {
 
     fireEvent.click(screen.getByRole("button", { name: /Novo produto/i }));
     expect(openCreateForm).toHaveBeenCalled();
+    document.getElementById("products-section")!.scrollIntoView = vi.fn();
+    expect(screen.getAllByText("Exibindo 1 a 1 de 23 produtos")).toHaveLength(2);
+    expect(screen.getAllByRole("button", { name: "Anterior" })[0]).toBeDisabled();
+    fireEvent.click(screen.getAllByRole("button", { name: "2", exact: true })[0]);
+    expect(setCurrentPage).toHaveBeenCalledWith(2);
   });
 
   it("shows error, loading and modal states", () => {

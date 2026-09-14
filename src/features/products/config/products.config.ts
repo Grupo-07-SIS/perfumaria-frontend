@@ -2,7 +2,7 @@ import type { ProductMeasure, ProductStatusFilter } from "../models/products.mod
 
 export const DEFAULT_CRITICAL_STOCK_THRESHOLD = 6;
 
-export const PRODUCTS_PAGE_SIZE = 6;
+export const PRODUCTS_PAGE_SIZE = 10;
 
 export const PRODUCT_STATUS_OPTIONS: Array<{ name: string; value: ProductStatusFilter }> = [
   { name: "Todos os status", value: "todos" },

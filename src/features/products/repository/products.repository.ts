@@ -5,8 +5,12 @@ import type { ProductRequestDto } from "./dto/product-request.dto";
 import type { ProductPageDto, ProductResponseDto } from "./dto/product-response.dto";
 
 interface ListProductsParams {
+  categoriaId?: number;
+  estoqueMin?: number;
+  estoqueMax?: number;
   nome?: string;
   ordenacao?: string;
+  page?: number;
 }
 
 async function parseJsonResponse<T>(response: Response): Promise<T> {
@@ -55,16 +59,20 @@ export const productsRepository = {
     return parseJsonResponse<ProductCategoryResponseDto[]>(response);
   },
 
-  async listProducts({ nome, ordenacao = "nome,asc" }: ListProductsParams = {}): Promise<ProductPageDto> {
+  async listProducts({ categoriaId, estoqueMin, estoqueMax, nome, ordenacao = "nome,asc", page = 0 }: ListProductsParams = {}): Promise<ProductPageDto> {
     const searchParams = new URLSearchParams({
       ordenacao,
-      page: "0",
-      size: String(Math.min(100, Math.max(PRODUCTS_PAGE_SIZE, 100))),
+      page: String(page),
+      size: String(PRODUCTS_PAGE_SIZE),
     });
 
     if (nome?.trim()) {
       searchParams.set("nome", nome.trim());
     }
+
+    if (categoriaId !== undefined) searchParams.set("categoriaId", String(categoriaId));
+    if (estoqueMin !== undefined) searchParams.set("estoqueMin", String(estoqueMin));
+    if (estoqueMax !== undefined) searchParams.set("estoqueMax", String(estoqueMax));
 
     const response = await fetch(`${environment.backendUrl}/produtos?${searchParams.toString()}`, {
       credentials: "include",
