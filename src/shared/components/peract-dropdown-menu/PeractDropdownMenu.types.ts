@@ -1,0 +1,16 @@
+import type { ComponentProps } from "react";
+export type PeractDropdownMenuProps = ComponentProps<typeof import("./PeractDropdownMenu").PeractDropdownMenu>;
+export type PeractDropdownMenuPortalProps = ComponentProps<typeof import("./PeractDropdownMenu").PeractDropdownMenuPortal>;
+export type PeractDropdownMenuTriggerProps = ComponentProps<typeof import("./PeractDropdownMenu").PeractDropdownMenuTrigger>;
+export type PeractDropdownMenuContentProps = ComponentProps<typeof import("./PeractDropdownMenu").PeractDropdownMenuContent>;
+export type PeractDropdownMenuGroupProps = ComponentProps<typeof import("./PeractDropdownMenu").PeractDropdownMenuGroup>;
+export type PeractDropdownMenuLabelProps = ComponentProps<typeof import("./PeractDropdownMenu").PeractDropdownMenuLabel>;
+export type PeractDropdownMenuItemProps = ComponentProps<typeof import("./PeractDropdownMenu").PeractDropdownMenuItem>;
+export type PeractDropdownMenuCheckboxItemProps = ComponentProps<typeof import("./PeractDropdownMenu").PeractDropdownMenuCheckboxItem>;
+export type PeractDropdownMenuRadioGroupProps = ComponentProps<typeof import("./PeractDropdownMenu").PeractDropdownMenuRadioGroup>;
+export type PeractDropdownMenuRadioItemProps = ComponentProps<typeof import("./PeractDropdownMenu").PeractDropdownMenuRadioItem>;
+export type PeractDropdownMenuSeparatorProps = ComponentProps<typeof import("./PeractDropdownMenu").PeractDropdownMenuSeparator>;
+export type PeractDropdownMenuShortcutProps = ComponentProps<typeof import("./PeractDropdownMenu").PeractDropdownMenuShortcut>;
+export type PeractDropdownMenuSubProps = ComponentProps<typeof import("./PeractDropdownMenu").PeractDropdownMenuSub>;
+export type PeractDropdownMenuSubTriggerProps = ComponentProps<typeof import("./PeractDropdownMenu").PeractDropdownMenuSubTrigger>;
+export type PeractDropdownMenuSubContentProps = ComponentProps<typeof import("./PeractDropdownMenu").PeractDropdownMenuSubContent>;
