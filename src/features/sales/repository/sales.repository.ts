@@ -1,11 +1,21 @@
 import type { CatalogItem } from "../models/sales.models";
 import { useApp } from "../../../core/store/AppContext";
-
 export function useSalesRepository() {
-  const { clientes, products, reduceStock, addVenda, setClientes } = useApp();
-  return { clientes, products, reduceStock, addVenda, setClientes };
+  const {
+    clientes,
+    products,
+    reduceStock,
+    addVenda,
+    setClientes
+  } = useApp();
+  return {
+    clientes,
+    products,
+    reduceStock,
+    addVenda,
+    setClientes
+  };
 }
-
 export const decants: CatalogItem[] = [{
   id: -1,
   nome: "Decant Chanel N°5 2ml",
@@ -43,5 +53,4 @@ export const decants: CatalogItem[] = [{
   tipo: "decant",
   volume: "2ml"
 }];
-
 export { triggerBotpressPresencialFlow } from "../../../core/services/botpress";

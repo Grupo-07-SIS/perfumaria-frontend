@@ -1,10 +1,7 @@
 import type { Venda } from "../../../core/store/AppContext";
 import { PeractTag } from "../../../shared/components/peract-tag";
 import { ACC } from "../config/sales-history.config";
-import { Store } from "lucide-react";
-import { MessageCircle } from "lucide-react";
-import { Globe } from "lucide-react";
-
+import { Store, MessageCircle, Globe } from "lucide-react";
 export function CanalBadge({
   venda
 }: {

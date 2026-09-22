@@ -1,14 +1,9 @@
 import type { Venda } from "../../../core/store/AppContext";
-import { PeractModal } from "../../../shared/components/peract-modal";
-import { PeractModalTitle } from "../../../shared/components/peract-modal";
+import { PeractModal, PeractModalTitle } from "../../../shared/components/peract-modal";
 import { StatusBadge } from "./StatusBadge";
 import { CanalBadge } from "./CanalBadge";
 import { PeractButtonPrimitive } from "../../../shared/components/peract-button";
-import { X } from "lucide-react";
-import { Truck } from "lucide-react";
-import { CheckCircle } from "lucide-react";
-import { Package } from "lucide-react";
-
+import { X, Truck, CheckCircle, Package } from "lucide-react";
 export function ReciboModal({
   venda,
   onClose

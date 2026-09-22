@@ -1,5 +1,4 @@
 import { ACC } from "../config/home.config";
-
 export function EmptyChart({
   icon,
   message,

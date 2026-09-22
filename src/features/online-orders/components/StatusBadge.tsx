@@ -1,7 +1,5 @@
 import { PeractTag } from "../../../shared/components/peract-tag";
-import { CheckCircle } from "lucide-react";
-import { Clock } from "lucide-react";
-
+import { CheckCircle, Clock } from "lucide-react";
 export function StatusBadge({
   finalizado
 }: {

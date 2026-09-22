@@ -1,8 +1,6 @@
-import { PeractModal } from "../../../shared/components/peract-modal";
-import { PeractModalTitle } from "../../../shared/components/peract-modal";
+import { PeractModal, PeractModalTitle } from "../../../shared/components/peract-modal";
 import { UserMinus } from "lucide-react";
 import { PeractButtonPrimitive } from "../../../shared/components/peract-button";
-
 export function InativarConfirm({
   nome,
   onClose,

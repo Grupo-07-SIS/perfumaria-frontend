@@ -1,5 +1,3 @@
-import type { Period } from "../models/dashboard.models";
-
 export const chartData = [{
   dia: "18/03",
   vendas: 4,

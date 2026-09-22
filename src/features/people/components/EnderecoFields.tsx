@@ -6,7 +6,6 @@ import { PeractLabel } from "../../../shared/components/peract-label";
 import { PeractInputControl } from "../../../shared/components/peract-input";
 import { PeractNativeSelect } from "../../../shared/components/peract-select";
 import { UF_LIST } from "../config/people.config";
-
 export function EnderecoFields({
   endereco,
   onChange

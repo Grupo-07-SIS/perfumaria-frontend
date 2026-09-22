@@ -1,28 +1,57 @@
 import type { useSalesFacade } from "../facade/useSalesFacade";
-import { CheckCircle } from "lucide-react";
+import { CheckCircle, Store, Globe, MessageCircle, UserPlus, User, Search, X, ShoppingCart, Trash2, Tag, ChevronDown } from "lucide-react";
 import { PeractCard } from "../../../shared/components/peract-card";
 import { PeractButtonPrimitive } from "../../../shared/components/peract-button";
-import { Store } from "lucide-react";
-import { Globe } from "lucide-react";
-import { MessageCircle } from "lucide-react";
-import { UserPlus } from "lucide-react";
-import { User } from "lucide-react";
-import { Search } from "lucide-react";
 import { PeractInputControl } from "../../../shared/components/peract-input";
-import { X } from "lucide-react";
-import { ShoppingCart } from "lucide-react";
 import { PeractTag } from "../../../shared/components/peract-tag";
-import { Trash2 } from "lucide-react";
-import { Tag } from "lucide-react";
 import { PeractField } from "../../../shared/components/peract-field";
 import { PeractLabel } from "../../../shared/components/peract-label";
 import { PeractNativeSelect } from "../../../shared/components/peract-select";
 import { pagamentos } from "../config/sales.config";
-import { ChevronDown } from "lucide-react";
 import { NovoClienteModal } from "./NovoClienteModal";
-
-export function SalesView({ clientes, products, setClientes, clienteSearch, setClienteSearch, clienteSelected, setClienteSelected, clienteOpen, setClienteOpen, itemSearch, setItemSearch, itemOpen, setItemOpen, cart, pagamento, setPagamento, isOnline, setIsOnline, canalOnline, setCanalOnline, frete, setFrete, tipoDesconto, setTipoDesconto, desconto, setDesconto, success, errors, showNovoCliente, setShowNovoCliente, clientesFiltrados, catalogoFiltrado, addToCart, updateQty, removeItem, subtotal, freteVal, descontoAplicado, total, handleFinalizar, displayLabel }: ReturnType<typeof useSalesFacade>) {
-return <div className="p-4 lg:p-6 max-w-[1200px] mx-auto">
+export function SalesView({
+  createCustomer,
+  products,
+  clienteSearch,
+  setClienteSearch,
+  clienteSelected,
+  setClienteSelected,
+  clienteOpen,
+  setClienteOpen,
+  itemSearch,
+  setItemSearch,
+  itemOpen,
+  setItemOpen,
+  cart,
+  pagamento,
+  setPagamento,
+  isOnline,
+  setIsOnline,
+  canalOnline,
+  setCanalOnline,
+  frete,
+  setFrete,
+  tipoDesconto,
+  setTipoDesconto,
+  desconto,
+  setDesconto,
+  success,
+  errors,
+  showNovoCliente,
+  setShowNovoCliente,
+  clientesFiltrados,
+  catalogoFiltrado,
+  addToCart,
+  updateQty,
+  removeItem,
+  subtotal,
+  freteVal,
+  descontoAplicado,
+  total,
+  handleFinalizar,
+  displayLabel
+}: ReturnType<typeof useSalesFacade>) {
+  return <div className="p-4 lg:p-6 max-w-[1200px] mx-auto">
       <div className="mb-5">
         <h1 className="peract-font-color-default">Registrar Venda</h1>
         <nav className="text-xs peract-font-color-muted mt-0.5">
@@ -387,33 +416,6 @@ return <div className="p-4 lg:p-6 max-w-[1200px] mx-auto">
       </div>
 
       {/* ─── Quick New Client Modal ─── */}
-      {showNovoCliente && <NovoClienteModal onClose={() => setShowNovoCliente(false)} onSave={(nome, telefone) => {
-      const newId = Math.max(...clientes.map(c => c.id), 0) + 1;
-      const novoCliente = {
-        id: newId,
-        nome,
-        email: "",
-        telefone,
-        endereco: {
-          cep: "",
-          logradouro: "",
-          numero: "",
-          bairro: "",
-          cidade: "",
-          uf: ""
-        },
-        totalPedidos: 0,
-        ativo: true
-      };
-      setClientes(prev => [...prev, novoCliente]);
-      setClienteSelected({
-        id: newId,
-        nome,
-        telefone,
-        email: ""
-      });
-      setClienteSearch("");
-      setClienteOpen(false);
-    }} />}
+      {showNovoCliente && <NovoClienteModal onClose={() => setShowNovoCliente(false)} onSave={createCustomer} />}
     </div>;
 }

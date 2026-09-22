@@ -3,44 +3,39 @@ import { BodySplashModal } from "./BodySplashModal";
 import { DeleteConfirm } from "./DeleteConfirm";
 import { PeractButtonPrimitive } from "../../../shared/components/peract-button";
 import { exportCSV } from "../services/body-splash.service";
-import { Download } from "lucide-react";
+import { Download, Plus, Sparkles, Search, Pencil, Trash2 } from "lucide-react";
 
 /* ─── Brand accent ─── */
-import { Plus } from "lucide-react";
 
 /* ─── Brand accent ─── */
 import { ACC, VOLUMES } from "../config/body-splash.config";
-import { Sparkles } from "lucide-react";
-
 /* ─── Brand accent ─── */
 import { PeractCard } from "../../../shared/components/peract-card";
-import { Search } from "lucide-react";
-
 /* ─── Brand accent ─── */
 import { PeractInputControl } from "../../../shared/components/peract-input";
-import { PeractTableRoot } from "../../../shared/components/peract-table";
-import { PeractTableHeader } from "../../../shared/components/peract-table";
-import { PeractTableRow } from "../../../shared/components/peract-table";
-import { PeractTableHead } from "../../../shared/components/peract-table";
-import { PeractTableBody } from "../../../shared/components/peract-table";
-import { PeractTableCell } from "../../../shared/components/peract-table";
-import { Pencil } from "lucide-react";
-
-/* ─── Brand accent ─── */
-import { Trash2 } from "lucide-react";
-
+import { PeractTableRoot, PeractTableHeader, PeractTableRow, PeractTableHead, PeractTableBody, PeractTableCell } from "../../../shared/components/peract-table";
 /* ─── Brand accent ─── */
 
-export function BodySplashView({ setItems, showModal, setShowModal, editItem, setEditItem, deleteItem, setDeleteItem, search, setSearch, filtered, handleSave, fmt }: ReturnType<typeof useBodySplashFacade>) {
-return <div className="p-4 lg:p-6 max-w-[1400px] mx-auto">
+export function BodySplashView({
+  confirmDelete,
+  showModal,
+  setShowModal,
+  editItem,
+  setEditItem,
+  deleteItem,
+  setDeleteItem,
+  search,
+  setSearch,
+  filtered,
+  handleSave,
+  fmt
+}: ReturnType<typeof useBodySplashFacade>) {
+  return <div className="p-4 lg:p-6 max-w-[1400px] mx-auto">
       {(showModal || editItem) && <BodySplashModal onClose={() => {
       setShowModal(false);
       setEditItem(null);
     }} onSave={handleSave} edit={editItem ?? undefined} />}
-      {deleteItem && <DeleteConfirm nome={deleteItem.produto} onClose={() => setDeleteItem(null)} onConfirm={() => {
-      setItems(prev => prev.filter(d => d.id !== deleteItem.id));
-      setDeleteItem(null);
-    }} />}
+      {deleteItem && <DeleteConfirm nome={deleteItem.produto} onClose={() => setDeleteItem(null)} onConfirm={confirmDelete} />}
 
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">

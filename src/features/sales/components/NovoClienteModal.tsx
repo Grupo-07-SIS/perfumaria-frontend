@@ -1,14 +1,10 @@
 import { useNovoClienteModalForm } from "../facade/useNovoClienteModalForm";
-import { PeractModal } from "../../../shared/components/peract-modal";
-import { UserPlus } from "lucide-react";
-import { PeractModalTitle } from "../../../shared/components/peract-modal";
+import { PeractModal, PeractModalTitle } from "../../../shared/components/peract-modal";
+import { UserPlus, X, CheckCircle } from "lucide-react";
 import { PeractButtonPrimitive } from "../../../shared/components/peract-button";
-import { X } from "lucide-react";
-import { CheckCircle } from "lucide-react";
 import { PeractField } from "../../../shared/components/peract-field";
 import { PeractLabel } from "../../../shared/components/peract-label";
 import { PeractInputControl } from "../../../shared/components/peract-input";
-
 export function NovoClienteModal({
   onClose,
   onSave
@@ -16,8 +12,21 @@ export function NovoClienteModal({
   onClose: () => void;
   onSave: (nome: string, telefone: string) => void;
 }) {
-const { nome, telefone, setNome, setTelefone, errors, setErrors, success, ACC, handleSave } = useNovoClienteModalForm({ onClose, onSave });
-return <PeractModal className="peract-bg-card peract-radius-lg shadow-2xl max-w-sm" onClose={onClose}>
+  const {
+    nome,
+    telefone,
+    setNome,
+    setTelefone,
+    errors,
+    setErrors,
+    success,
+    ACC,
+    handleSave
+  } = useNovoClienteModalForm({
+    onClose,
+    onSave
+  });
+  return <PeractModal className="peract-bg-card peract-radius-lg shadow-2xl max-w-sm" onClose={onClose}>
         <div className="flex items-center justify-between p-4 border-b peract-border-color">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-lg flex items-center justify-center text-white shrink-0 peract-bg-accent">

@@ -1,5 +1,3 @@
-
-
 export function TooltipVendas({
   active,
   payload,

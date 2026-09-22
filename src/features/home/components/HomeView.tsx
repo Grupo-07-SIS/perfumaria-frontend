@@ -1,43 +1,37 @@
 import type { useHomeFacade } from "../facade/useHomeFacade";
 import { PeractButtonPrimitive } from "../../../shared/components/peract-button";
-import { Eye } from "lucide-react";
+import { Eye, AlertTriangle, ShoppingBag, DollarSign, TrendingUp, Users, BarChart2, Droplets, Package, ArrowRight, ShoppingCart, Globe, Store, FlaskConical } from "lucide-react";
 import { PERIOD_LABELS, DARK, ACC, CAT_COLORS, WARM } from "../config/home.config";
 import type { Period } from "../models/home.models";
-import { AlertTriangle } from "lucide-react";
 import { Link } from "react-router";
 import { KpiCard } from "./KpiCard";
-import { ShoppingBag } from "lucide-react";
 import { fmtBRL, fmtBRLShort } from "../services/home.service";
-import { DollarSign } from "lucide-react";
-import { TrendingUp } from "lucide-react";
-import { Users } from "lucide-react";
 import { PeractCard } from "../../../shared/components/peract-card";
 import { EmptyChart } from "./EmptyChart";
-import { ResponsiveContainer } from "recharts";
-import { BarChart } from "recharts";
-import { CartesianGrid } from "recharts";
-import { XAxis } from "recharts";
-import { YAxis } from "recharts";
-import { Tooltip } from "recharts";
+import { ResponsiveContainer, BarChart, CartesianGrid, XAxis, YAxis, Tooltip, Bar, PieChart, Pie, Cell, Legend } from "recharts";
 import { TooltipFat } from "./TooltipFat";
-import { Bar } from "recharts";
-import { BarChart2 } from "lucide-react";
 import { TooltipVendas } from "./TooltipVendas";
-import { Droplets } from "lucide-react";
 import { PeractTag } from "../../../shared/components/peract-tag";
-import { Package } from "lucide-react";
-import { PieChart } from "recharts";
-import { Pie } from "recharts";
-import { Cell } from "recharts";
-import { Legend } from "recharts";
-import { ArrowRight } from "lucide-react";
-import { ShoppingCart } from "lucide-react";
-import { Globe } from "lucide-react";
-import { Store } from "lucide-react";
-import { FlaskConical } from "lucide-react";
-
-export function HomeView({ isAdmin, period, setPeriod, emptyMode, setEmptyMode, chartData, categoriaData, kpi, criticalProducts, margemPercReal, margemPerc, margemBRL, vendasRecentes, totalVendasKpi, faturamentoKpi, clientesKpi, topProdutos }: ReturnType<typeof useHomeFacade>) {
-return <div className="p-4 lg:p-6 max-w-[1400px] mx-auto">
+export function HomeView({
+  isAdmin,
+  period,
+  setPeriod,
+  emptyMode,
+  setEmptyMode,
+  chartData,
+  categoriaData,
+  kpi,
+  criticalProducts,
+  margemPercReal,
+  margemPerc,
+  margemBRL,
+  vendasRecentes,
+  totalVendasKpi,
+  faturamentoKpi,
+  clientesKpi,
+  topProdutos
+}: ReturnType<typeof useHomeFacade>) {
+  return <div className="p-4 lg:p-6 max-w-[1400px] mx-auto">
 
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">

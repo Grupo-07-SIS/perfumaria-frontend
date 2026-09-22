@@ -1,11 +1,19 @@
 import type { Period } from "../models/home.models";
 import { useApp } from "../../../core/store/AppContext";
-
 export function useHomeRepository() {
-  const { products, clientes, vendas, currentUser } = useApp();
-  return { products, clientes, vendas, currentUser };
+  const {
+    products,
+    clientes,
+    vendas,
+    currentUser
+  } = useApp();
+  return {
+    products,
+    clientes,
+    vendas,
+    currentUser
+  };
 }
-
 export const CHART_DATA: Record<Period, Array<{
   label: string;
   faturamento: number;

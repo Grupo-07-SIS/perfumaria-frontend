@@ -1,7 +1,5 @@
 import { PeractButtonPrimitive } from "../../../shared/components/peract-button";
-import { Pencil } from "lucide-react";
-import { Trash2 } from "lucide-react";
-
+import { Pencil, Trash2 } from "lucide-react";
 export function CardActions({
   onEdit,
   onDelete

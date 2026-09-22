@@ -1,15 +1,11 @@
 import { useRastreioModalForm } from "../facade/useRastreioModalForm";
 import type { Venda } from "../../../core/store/AppContext";
-import { PeractModal } from "../../../shared/components/peract-modal";
-import { PeractModalTitle } from "../../../shared/components/peract-modal";
-import { MessageCircle } from "lucide-react";
+import { PeractModal, PeractModalTitle } from "../../../shared/components/peract-modal";
+import { MessageCircle, X, Send } from "lucide-react";
 import { PeractButtonPrimitive } from "../../../shared/components/peract-button";
-import { X } from "lucide-react";
 import { PeractField } from "../../../shared/components/peract-field";
 import { PeractLabel } from "../../../shared/components/peract-label";
 import { PeractInputControl } from "../../../shared/components/peract-input";
-import { Send } from "lucide-react";
-
 export function RastreioModal({
   venda,
   onClose,
@@ -19,8 +15,11 @@ export function RastreioModal({
   onClose: () => void;
   onConfirm: (codigo: string) => void;
 }) {
-const { codigo, setCodigo } = useRastreioModalForm({ venda, onClose, onConfirm });
-return <PeractModal className="peract-bg-card peract-radius-lg shadow-2xl max-w-sm" onClose={onClose}><PeractModalTitle className="sr-only">Detalhes</PeractModalTitle>
+  const {
+    codigo,
+    setCodigo
+  } = useRastreioModalForm();
+  return <PeractModal className="peract-bg-card peract-radius-lg shadow-2xl max-w-sm" onClose={onClose}><PeractModalTitle className="sr-only">Detalhes</PeractModalTitle>
         <div className="flex items-center justify-between p-4 border-b peract-border-color">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center">

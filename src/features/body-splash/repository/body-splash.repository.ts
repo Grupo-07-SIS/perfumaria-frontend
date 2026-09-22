@@ -1,5 +1,4 @@
 import type { BodySplashItem } from "../models/body-splash.models";
-
 export const initialItems: BodySplashItem[] = [{
   id: 1,
   produto: "Lavanda & Ylang",

@@ -1,27 +1,25 @@
 import { selectOnlineOrders } from "../services/online-orders.service";
-import { useOnlineOrdersRepository } from "../repository/online-orders.repository";
+import { useOnlineOrdersRepository, triggerBotpressOnlineFlow } from "../repository/online-orders.repository";
 import { useState } from "react";
 import type { Venda } from "../../../core/store/AppContext";
-import { triggerBotpressOnlineFlow } from "../repository/online-orders.repository";
-
 export function useOnlineOrdersFacade() {
-const {
+  const {
     vendas,
     updateVendaEnvio,
     updateVenda
   } = useOnlineOrdersRepository();
-const pedidosOnline = vendas.filter(v => v.tipoVenda === "online" && !v.cancelada);
-const [search, setSearch] = useState("");
-const [filtroStatus, setFiltroStatus] = useState<"todos" | "pendente" | "finalizado">("pendente");
-const [filtroCanal, setFiltroCanal] = useState<"todos" | "whatsapp" | "site">("todos");
-const [viewVenda, setViewVenda] = useState<Venda | null>(null);
-const [cancelVenda, setCancelVenda] = useState<Venda | null>(null);
-const [rastreioVenda, setRastreioVenda] = useState<Venda | null>(null);
-const hoje = () => {
+  const pedidosOnline = vendas.filter(v => v.tipoVenda === "online" && !v.cancelada);
+  const [search, setSearch] = useState("");
+  const [filtroStatus, setFiltroStatus] = useState<"todos" | "pendente" | "finalizado">("pendente");
+  const [filtroCanal, setFiltroCanal] = useState<"todos" | "whatsapp" | "site">("todos");
+  const [viewVenda, setViewVenda] = useState<Venda | null>(null);
+  const [cancelVenda, setCancelVenda] = useState<Venda | null>(null);
+  const [rastreioVenda, setRastreioVenda] = useState<Venda | null>(null);
+  const hoje = () => {
     const d = new Date();
     return `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}/${d.getFullYear()}`;
   };
-const triggerOnlineFinalizationFlow = async (venda: Venda, codigoRastreio?: string) => {
+  const triggerOnlineFinalizationFlow = async (venda: Venda, codigoRastreio?: string) => {
     if (!venda.canalOnline) return;
     const desconto = venda.desconto ?? 0;
     const frete = venda.frete ?? 0;
@@ -44,7 +42,7 @@ const triggerOnlineFinalizationFlow = async (venda: Venda, codigoRastreio?: stri
       codigoRastreio: venda.canalOnline === "whatsapp" ? codigoRastreio : undefined
     });
   };
-const handleFinalizar = async (venda: Venda) => {
+  const handleFinalizar = async (venda: Venda) => {
     if (venda.enviado) {
       // desfazer
       updateVendaEnvio(venda.id, false);
@@ -59,7 +57,7 @@ const handleFinalizar = async (venda: Venda) => {
       }
     }
   };
-const confirmarRastreio = async (codigo: string) => {
+  const confirmarRastreio = async (codigo: string) => {
     if (!rastreioVenda) return;
     updateVendaEnvio(rastreioVenda.id, true, hoje(), codigo || undefined);
     try {
@@ -69,7 +67,7 @@ const confirmarRastreio = async (codigo: string) => {
     }
     setRastreioVenda(null);
   };
-const confirmarCancelamento = () => {
+  const confirmarCancelamento = () => {
     if (!cancelVenda) return;
     updateVenda({
       ...cancelVenda,
@@ -78,6 +76,40 @@ const confirmarCancelamento = () => {
     });
     setCancelVenda(null);
   };
-const { pendentes, finalizados, filtered } = selectOnlineOrders({ pedidosOnline, search, filtroStatus, filtroCanal });
-return { vendas, updateVendaEnvio, updateVenda, pedidosOnline, search, setSearch, filtroStatus, setFiltroStatus, filtroCanal, setFiltroCanal, viewVenda, setViewVenda, cancelVenda, setCancelVenda, rastreioVenda, setRastreioVenda, hoje, triggerOnlineFinalizationFlow, handleFinalizar, confirmarRastreio, confirmarCancelamento, pendentes, finalizados, filtered };
+  const {
+    pendentes,
+    finalizados,
+    filtered
+  } = selectOnlineOrders({
+    pedidosOnline,
+    search,
+    filtroStatus,
+    filtroCanal
+  });
+  return {
+    vendas,
+    updateVendaEnvio,
+    updateVenda,
+    pedidosOnline,
+    search,
+    setSearch,
+    filtroStatus,
+    setFiltroStatus,
+    filtroCanal,
+    setFiltroCanal,
+    viewVenda,
+    setViewVenda,
+    cancelVenda,
+    setCancelVenda,
+    rastreioVenda,
+    setRastreioVenda,
+    hoje,
+    triggerOnlineFinalizationFlow,
+    handleFinalizar,
+    confirmarRastreio,
+    confirmarCancelamento,
+    pendentes,
+    finalizados,
+    filtered
+  };
 }

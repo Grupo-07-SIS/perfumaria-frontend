@@ -1,13 +1,8 @@
 import type { BodySplashItem } from "../models/body-splash.models";
-
 export const ACC = "#c29958";
-
 export const DARK = "#050300";
-
 export const WARM = "#f5ede0";
-
 export const bodySplashBase = ["Lavanda & Ylang", "Rosa & Baunilha", "Flor de Laranjeira", "Coco & Baunilha", "Frutas Vermelhas", "Gardênia & Jasmim", "Bambu & Chá Verde", "Pêssego & Mel"];
-
 export const VOLUMES: Array<{
   key: keyof Omit<BodySplashItem, "id" | "produto">;
   label: string;

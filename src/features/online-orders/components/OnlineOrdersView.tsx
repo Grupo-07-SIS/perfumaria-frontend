@@ -3,29 +3,35 @@ import { ReciboModal } from "./ReciboModal";
 import { CancelModal } from "./CancelModal";
 import { RastreioModal } from "./RastreioModal";
 import { ACC } from "../config/online-orders.config";
-import { Package } from "lucide-react";
+import { Package, Clock, CheckCircle, Search, Eye, MessageCircle, RotateCcw, XCircle, Truck } from "lucide-react";
 import { PeractCard } from "../../../shared/components/peract-card";
-import { Clock } from "lucide-react";
-import { CheckCircle } from "lucide-react";
-import { Search } from "lucide-react";
 import { PeractInputControl } from "../../../shared/components/peract-input";
 import { PeractButtonPrimitive } from "../../../shared/components/peract-button";
-import { PeractTableRoot } from "../../../shared/components/peract-table";
-import { PeractTableHeader } from "../../../shared/components/peract-table";
-import { PeractTableRow } from "../../../shared/components/peract-table";
-import { PeractTableHead } from "../../../shared/components/peract-table";
-import { PeractTableBody } from "../../../shared/components/peract-table";
-import { PeractTableCell } from "../../../shared/components/peract-table";
+import { PeractTableRoot, PeractTableHeader, PeractTableRow, PeractTableHead, PeractTableBody, PeractTableCell } from "../../../shared/components/peract-table";
 import { CanalBadge } from "./CanalBadge";
 import { StatusBadge } from "./StatusBadge";
-import { Eye } from "lucide-react";
-import { MessageCircle } from "lucide-react";
-import { RotateCcw } from "lucide-react";
-import { XCircle } from "lucide-react";
-import { Truck } from "lucide-react";
-
-export function OnlineOrdersView({ pedidosOnline, search, setSearch, filtroStatus, setFiltroStatus, filtroCanal, setFiltroCanal, viewVenda, setViewVenda, cancelVenda, setCancelVenda, rastreioVenda, setRastreioVenda, handleFinalizar, confirmarRastreio, confirmarCancelamento, pendentes, finalizados, filtered }: ReturnType<typeof useOnlineOrdersFacade>) {
-return <div className="p-4 lg:p-6 max-w-[1400px] mx-auto">
+export function OnlineOrdersView({
+  pedidosOnline,
+  search,
+  setSearch,
+  filtroStatus,
+  setFiltroStatus,
+  filtroCanal,
+  setFiltroCanal,
+  viewVenda,
+  setViewVenda,
+  cancelVenda,
+  setCancelVenda,
+  rastreioVenda,
+  setRastreioVenda,
+  handleFinalizar,
+  confirmarRastreio,
+  confirmarCancelamento,
+  pendentes,
+  finalizados,
+  filtered
+}: ReturnType<typeof useOnlineOrdersFacade>) {
+  return <div className="p-4 lg:p-6 max-w-[1400px] mx-auto">
       {viewVenda && <ReciboModal venda={viewVenda} onClose={() => setViewVenda(null)} />}
       {cancelVenda && <CancelModal venda={cancelVenda} onClose={() => setCancelVenda(null)} onConfirm={confirmarCancelamento} />}
       {rastreioVenda && <RastreioModal venda={rastreioVenda} onClose={() => setRastreioVenda(null)} onConfirm={confirmarRastreio} />}

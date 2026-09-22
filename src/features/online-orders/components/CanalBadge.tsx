@@ -1,7 +1,5 @@
 import { PeractTag } from "../../../shared/components/peract-tag";
-import { MessageCircle } from "lucide-react";
-import { Globe } from "lucide-react";
-
+import { MessageCircle, Globe } from "lucide-react";
 export function CanalBadge({
   canal
 }: {

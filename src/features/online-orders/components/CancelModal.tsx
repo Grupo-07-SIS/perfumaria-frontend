@@ -1,10 +1,7 @@
 import type { Venda } from "../../../core/store/AppContext";
-import { PeractModal } from "../../../shared/components/peract-modal";
-import { XCircle } from "lucide-react";
-import { PeractModalTitle } from "../../../shared/components/peract-modal";
-import { Clock } from "lucide-react";
+import { PeractModal, PeractModalTitle } from "../../../shared/components/peract-modal";
+import { XCircle, Clock } from "lucide-react";
 import { PeractButtonPrimitive } from "../../../shared/components/peract-button";
-
 export function CancelModal({
   venda,
   onClose,

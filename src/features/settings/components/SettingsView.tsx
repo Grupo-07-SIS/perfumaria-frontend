@@ -1,19 +1,42 @@
 import type { useSettingsFacade } from "../facade/useSettingsFacade";
 import { PeractCard } from "../../../shared/components/peract-card";
 import { PeractButtonPrimitive } from "../../../shared/components/peract-button";
-import { CheckCircle } from "lucide-react";
-import { SlidersHorizontal } from "lucide-react";
+import { CheckCircle, SlidersHorizontal, Save, Lock, EyeOff, Eye, Mail } from "lucide-react";
 import { PeractInputControl } from "../../../shared/components/peract-input";
-import { Save } from "lucide-react";
-import { Lock } from "lucide-react";
 import { PeractField } from "../../../shared/components/peract-field";
 import { PeractLabel } from "../../../shared/components/peract-label";
-import { EyeOff } from "lucide-react";
-import { Eye } from "lucide-react";
-import { Mail } from "lucide-react";
-
-export function SettingsView({ stockThresholds, activeSection, setActiveSection, saved, savedMsg, criticoLimit, setCriticoLimit, senhaAtual, setSenhaAtual, novaSenha, setNovaSenha, confirmSenha, setConfirmSenha, showSenha, setShowSenha, errosSenha, setErrosSenha, novoEmail, setNovoEmail, confirmEmail, setConfirmEmail, senhaConfEmail, setSenhaConfEmail, errosEmail, setErrosEmail, handleSaveEstoque, handleSaveSenha, handleSaveEmail, sections }: ReturnType<typeof useSettingsFacade>) {
-return <div className="p-4 lg:p-6 max-w-[1400px] mx-auto">
+export function SettingsView({
+  stockThresholds,
+  activeSection,
+  setActiveSection,
+  saved,
+  savedMsg,
+  criticoLimit,
+  setCriticoLimit,
+  senhaAtual,
+  setSenhaAtual,
+  novaSenha,
+  setNovaSenha,
+  confirmSenha,
+  setConfirmSenha,
+  showSenha,
+  setShowSenha,
+  errosSenha,
+  setErrosSenha,
+  novoEmail,
+  setNovoEmail,
+  confirmEmail,
+  setConfirmEmail,
+  senhaConfEmail,
+  setSenhaConfEmail,
+  errosEmail,
+  setErrosEmail,
+  handleSaveEstoque,
+  handleSaveSenha,
+  handleSaveEmail,
+  sections
+}: ReturnType<typeof useSettingsFacade>) {
+  return <div className="p-4 lg:p-6 max-w-[1400px] mx-auto">
       <div className="mb-5">
         <h1 className="peract-font-color-default">Configurações</h1>
         <p className="text-xs peract-font-color-muted mt-0.5">Gerencie as configurações do sistema</p>

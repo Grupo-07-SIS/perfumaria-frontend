@@ -1,23 +1,38 @@
 import { useDecantModalForm } from "../facade/useDecantModalForm";
 import type { DecantModalProps } from "../models/decants.models";
-import { PeractModal } from "../../../shared/components/peract-modal";
-import { PeractModalTitle } from "../../../shared/components/peract-modal";
+import { PeractModal, PeractModalTitle } from "../../../shared/components/peract-modal";
 import { PeractButtonPrimitive } from "../../../shared/components/peract-button";
-import { X } from "lucide-react";
-import { CheckCircle } from "lucide-react";
+import { X, CheckCircle } from "lucide-react";
 import { PeractField } from "../../../shared/components/peract-field";
 import { PeractLabel } from "../../../shared/components/peract-label";
 import { PeractNativeSelect } from "../../../shared/components/peract-select";
 import { ACC, perfumesBase } from "../config/decants.config";
 import { PeractInputControl } from "../../../shared/components/peract-input";
-
 export function DecantModal({
   onClose,
   onSave,
   edit
 }: DecantModalProps) {
-const { perfume, preco2ml, preco3ml, preco5ml, preco10ml, setPerfume, setPreco2ml, setPreco3ml, setPreco5ml, setPreco10ml, error, success, handleSave } = useDecantModalForm({ onClose, onSave, edit });
-return <PeractModal className="peract-bg-card peract-radius-lg shadow-2xl max-w-lg max-h-[90vh] overflow-y-auto" onClose={onClose}>
+  const {
+    perfume,
+    preco2ml,
+    preco3ml,
+    preco5ml,
+    preco10ml,
+    setPerfume,
+    setPreco2ml,
+    setPreco3ml,
+    setPreco5ml,
+    setPreco10ml,
+    error,
+    success,
+    handleSave
+  } = useDecantModalForm({
+    onClose,
+    onSave,
+    edit
+  });
+  return <PeractModal className="peract-bg-card peract-radius-lg shadow-2xl max-w-lg max-h-[90vh] overflow-y-auto" onClose={onClose}>
         <div className="flex items-center justify-between p-4 border-b peract-border-color sticky top-0 peract-bg-card">
           <PeractModalTitle className="peract-font-color-default">{edit ? "Editar Decant" : "Cadastrar Decant"}</PeractModalTitle>
           <PeractButtonPrimitive onClick={onClose} className="p-1 rounded-lg hover:bg-gray-100 peract-font-color-muted" variant="plain" size="plain" aria-label="Fechar"><X size={18} /></PeractButtonPrimitive>

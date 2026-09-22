@@ -1,5 +1,4 @@
 import { fmtBRL } from "../services/home.service";
-
 export function TooltipFat({
   active,
   payload,

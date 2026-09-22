@@ -1,8 +1,4 @@
-
-
-
 export type Section = "estoque" | "seguranca";
-
 export interface SettingsFormValues {
   criticoLimit: string;
   senhaAtual: string;

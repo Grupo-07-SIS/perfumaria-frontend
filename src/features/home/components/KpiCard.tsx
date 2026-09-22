@@ -1,8 +1,6 @@
 import { PeractCard } from "../../../shared/components/peract-card";
 import { ACC } from "../config/home.config";
-import { TrendingUp } from "lucide-react";
-import { TrendingDown } from "lucide-react";
-
+import { TrendingUp, TrendingDown } from "lucide-react";
 export function KpiCard({
   title,
   value,

@@ -1,7 +1,3 @@
-
-
-
-
 export interface CatalogItem {
   id: number;
   nome: string;
@@ -10,17 +6,14 @@ export interface CatalogItem {
   volume?: string;
   productContextId?: number;
 }
-
 export interface CartItem {
   catalogItem: CatalogItem;
   quantidade: number;
 }
-
 export interface NovoClienteModalFormValues {
   nome: string;
   telefone: string;
 }
-
 export interface SalesFormValues {
   pagamento: string;
   isOnline: boolean;

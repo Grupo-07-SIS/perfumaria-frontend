@@ -1,66 +1,82 @@
 import { calculateSaleTotals } from "../services/sales.service";
 import { useForm } from "react-hook-form";
 import type { SetStateAction } from "react";
-import type { SalesFormValues } from "../models/sales.models";
-import { useSalesRepository } from "../repository/sales.repository";
-import type { CatalogItem, CartItem } from "../models/sales.models";
-import { decants } from "../repository/sales.repository";
+import type { SalesFormValues, CatalogItem, CartItem } from "../models/sales.models";
+import { useSalesRepository, decants, triggerBotpressPresencialFlow } from "../repository/sales.repository";
 import { useState } from "react";
-import { triggerBotpressPresencialFlow } from "../repository/sales.repository";
-
 export function useSalesFacade() {
-const {
+  const {
     clientes,
     products,
     reduceStock,
     addVenda,
     setClientes
   } = useSalesRepository();
-const catalogProdutos: CatalogItem[] = products.map(p => ({
+  const catalogProdutos: CatalogItem[] = products.map(p => ({
     id: p.id,
     nome: p.name,
     preco: p.preco,
     tipo: "produto" as const,
     productContextId: p.id
   }));
-const catalogo = [...catalogProdutos, ...decants];
-const [clienteSearch, setClienteSearch] = useState("");
-const [clienteSelected, setClienteSelected] = useState<{
+  const catalogo = [...catalogProdutos, ...decants];
+  const [clienteSearch, setClienteSearch] = useState("");
+  const [clienteSelected, setClienteSelected] = useState<{
     id: number;
     nome: string;
     telefone: string;
     email: string;
   } | null>(null);
-const [clienteOpen, setClienteOpen] = useState(false);
-const [itemSearch, setItemSearch] = useState("");
-const [itemOpen, setItemOpen] = useState(false);
-const [cart, setCart] = useState<CartItem[]>([]);
-const form = useForm<SalesFormValues>({ defaultValues: {
-pagamento: "",
-isOnline: false,
-canalOnline: null,
-frete: "",
-tipoDesconto: "percentual",
-desconto: "",
-} });
-const { pagamento, isOnline, canalOnline, frete, tipoDesconto, desconto } = form.watch();
-const setPagamento = (value: SetStateAction<SalesFormValues["pagamento"]>) => form.setValue("pagamento", typeof value === "function" ? value(form.getValues("pagamento")) : value, { shouldDirty: true });
-const setIsOnline = (value: SetStateAction<SalesFormValues["isOnline"]>) => form.setValue("isOnline", typeof value === "function" ? value(form.getValues("isOnline")) : value, { shouldDirty: true });
-const setCanalOnline = (value: SetStateAction<SalesFormValues["canalOnline"]>) => form.setValue("canalOnline", typeof value === "function" ? value(form.getValues("canalOnline")) : value, { shouldDirty: true });
-const setFrete = (value: SetStateAction<SalesFormValues["frete"]>) => form.setValue("frete", typeof value === "function" ? value(form.getValues("frete")) : value, { shouldDirty: true });
-const setTipoDesconto = (value: SetStateAction<SalesFormValues["tipoDesconto"]>) => form.setValue("tipoDesconto", typeof value === "function" ? value(form.getValues("tipoDesconto")) : value, { shouldDirty: true });
-const setDesconto = (value: SetStateAction<SalesFormValues["desconto"]>) => form.setValue("desconto", typeof value === "function" ? value(form.getValues("desconto")) : value, { shouldDirty: true });
-
-const [success, setSuccess] = useState(false);
-const [errors, setErrors] = useState<string[]>([]);
-const [showNovoCliente, setShowNovoCliente] = useState(false);
-const clientesFiltrados = clientes.filter(c => {
+  const [clienteOpen, setClienteOpen] = useState(false);
+  const [itemSearch, setItemSearch] = useState("");
+  const [itemOpen, setItemOpen] = useState(false);
+  const [cart, setCart] = useState<CartItem[]>([]);
+  const form = useForm<SalesFormValues>({
+    defaultValues: {
+      pagamento: "",
+      isOnline: false,
+      canalOnline: null,
+      frete: "",
+      tipoDesconto: "percentual",
+      desconto: ""
+    }
+  });
+  const {
+    pagamento,
+    isOnline,
+    canalOnline,
+    frete,
+    tipoDesconto,
+    desconto
+  } = form.watch();
+  const setPagamento = (value: SetStateAction<SalesFormValues["pagamento"]>) => form.setValue("pagamento", typeof value === "function" ? value(form.getValues("pagamento")) : value, {
+    shouldDirty: true
+  });
+  const setIsOnline = (value: SetStateAction<SalesFormValues["isOnline"]>) => form.setValue("isOnline", typeof value === "function" ? value(form.getValues("isOnline")) : value, {
+    shouldDirty: true
+  });
+  const setCanalOnline = (value: SetStateAction<SalesFormValues["canalOnline"]>) => form.setValue("canalOnline", typeof value === "function" ? value(form.getValues("canalOnline")) : value, {
+    shouldDirty: true
+  });
+  const setFrete = (value: SetStateAction<SalesFormValues["frete"]>) => form.setValue("frete", typeof value === "function" ? value(form.getValues("frete")) : value, {
+    shouldDirty: true
+  });
+  const setTipoDesconto = (value: SetStateAction<SalesFormValues["tipoDesconto"]>) => form.setValue("tipoDesconto", typeof value === "function" ? value(form.getValues("tipoDesconto")) : value, {
+    shouldDirty: true
+  });
+  const setDesconto = (value: SetStateAction<SalesFormValues["desconto"]>) => form.setValue("desconto", typeof value === "function" ? value(form.getValues("desconto")) : value, {
+    shouldDirty: true
+  });
+  const [success, setSuccess] = useState(false);
+  const [errors, setErrors] = useState<string[]>([]);
+  const [showNovoCliente, setShowNovoCliente] = useState(false);
+  const clientesFiltrados = clientes.filter(c => {
     if (c.ativo === false) return false;
     const query = clienteSearch.toLowerCase();
     return c.nome.toLowerCase().includes(query) || c.telefone.includes(query) || c.email.toLowerCase().includes(query);
   });
-const catalogoFiltrado = catalogo.filter(p => p.nome.toLowerCase().includes(itemSearch.toLowerCase()));
-const addToCart = (item: CatalogItem) => {
+  const catalogoFiltrado = catalogo.filter(p => p.nome.toLowerCase().includes(itemSearch.toLowerCase()));
+  const addToCart = (item: CatalogItem) => {
     setCart(prev => {
       const existing = prev.find(i => i.catalogItem.id === item.id);
       if (existing) return prev.map(i => i.catalogItem.id === item.id ? {
@@ -75,7 +91,7 @@ const addToCart = (item: CatalogItem) => {
     setItemSearch("");
     setItemOpen(false);
   };
-const updateQty = (id: number, qty: number) => {
+  const updateQty = (id: number, qty: number) => {
     if (qty <= 0) {
       removeItem(id);
       return;
@@ -85,9 +101,22 @@ const updateQty = (id: number, qty: number) => {
       quantidade: qty
     } : i));
   };
-const removeItem = (id: number) => setCart(prev => prev.filter(i => i.catalogItem.id !== id));
-const { subtotal, freteVal, descontoNum, descontoValor, descontoAplicado, total } = calculateSaleTotals({ cart, isOnline, frete, tipoDesconto, desconto });
-const handleFinalizar = async () => {
+  const removeItem = (id: number) => setCart(prev => prev.filter(i => i.catalogItem.id !== id));
+  const {
+    subtotal,
+    freteVal,
+    descontoNum,
+    descontoValor,
+    descontoAplicado,
+    total
+  } = calculateSaleTotals({
+    cart,
+    isOnline,
+    frete,
+    tipoDesconto,
+    desconto
+  });
+  const handleFinalizar = async () => {
     const errs: string[] = [];
     if (cart.length === 0) errs.push("Adicione pelo menos um item ao carrinho.");
     if (!clienteSelected) errs.push("Selecione um cliente. O vínculo com cliente é obrigatório.");
@@ -164,10 +193,89 @@ const handleFinalizar = async () => {
     setDesconto("");
     setTimeout(() => setSuccess(false), 3500);
   };
-const displayLabel = (c: {
+  const displayLabel = (c: {
     nome: string;
     telefone: string;
   }) => `${c.nome} – ${c.telefone}`;
-return { clientes, products, reduceStock, addVenda, setClientes, catalogProdutos, catalogo, clienteSearch, setClienteSearch, clienteSelected, setClienteSelected, clienteOpen, setClienteOpen, itemSearch, setItemSearch, itemOpen, setItemOpen, cart, setCart, pagamento, setPagamento, isOnline, setIsOnline, canalOnline, setCanalOnline, frete, setFrete, tipoDesconto, setTipoDesconto, desconto, setDesconto, success, setSuccess, errors, setErrors, showNovoCliente, setShowNovoCliente, clientesFiltrados, catalogoFiltrado, addToCart, updateQty, removeItem, subtotal, freteVal, descontoNum, descontoValor, descontoAplicado, total, handleFinalizar, displayLabel };
+  const createCustomer = (nome: string, telefone: string) => {
+    const newId = Math.max(...clientes.map(c => c.id), 0) + 1;
+    const novoCliente = {
+      id: newId,
+      nome,
+      email: "",
+      telefone,
+      endereco: {
+        cep: "",
+        logradouro: "",
+        numero: "",
+        bairro: "",
+        cidade: "",
+        uf: ""
+      },
+      totalPedidos: 0,
+      ativo: true
+    };
+    setClientes(prev => [...prev, novoCliente]);
+    setClienteSelected({
+      id: newId,
+      nome,
+      telefone,
+      email: ""
+    });
+    setClienteSearch("");
+    setClienteOpen(false);
+  };
+  return {
+    clientes,
+    products,
+    reduceStock,
+    addVenda,
+    setClientes,
+    catalogProdutos,
+    catalogo,
+    clienteSearch,
+    setClienteSearch,
+    clienteSelected,
+    setClienteSelected,
+    clienteOpen,
+    setClienteOpen,
+    itemSearch,
+    setItemSearch,
+    itemOpen,
+    setItemOpen,
+    cart,
+    setCart,
+    pagamento,
+    setPagamento,
+    isOnline,
+    setIsOnline,
+    canalOnline,
+    setCanalOnline,
+    frete,
+    setFrete,
+    tipoDesconto,
+    setTipoDesconto,
+    desconto,
+    setDesconto,
+    success,
+    setSuccess,
+    errors,
+    setErrors,
+    showNovoCliente,
+    setShowNovoCliente,
+    clientesFiltrados,
+    catalogoFiltrado,
+    addToCart,
+    updateQty,
+    removeItem,
+    subtotal,
+    freteVal,
+    descontoNum,
+    descontoValor,
+    descontoAplicado,
+    total,
+    handleFinalizar,
+    displayLabel,
+    createCustomer
+  };
 }
-

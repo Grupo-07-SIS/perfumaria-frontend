@@ -1,19 +1,13 @@
 import { useEditModalForm } from "../facade/useEditModalForm";
 import type { Venda } from "../../../core/store/AppContext";
-import { Clock } from "lucide-react";
-import { CheckCircle } from "lucide-react";
-import { XCircle } from "lucide-react";
-import { PeractModal } from "../../../shared/components/peract-modal";
-import { PeractModalTitle } from "../../../shared/components/peract-modal";
+import { Clock, CheckCircle, XCircle, X, ChevronDown } from "lucide-react";
+import { PeractModal, PeractModalTitle } from "../../../shared/components/peract-modal";
 import { PeractButtonPrimitive } from "../../../shared/components/peract-button";
-import { X } from "lucide-react";
 import { CanalBadge } from "./CanalBadge";
 import { PeractLabel } from "../../../shared/components/peract-label";
 import { PeractField } from "../../../shared/components/peract-field";
 import { PeractNativeSelect } from "../../../shared/components/peract-select";
 import { ACC, pagamentosOpcoes } from "../config/sales-history.config";
-import { ChevronDown } from "lucide-react";
-
 export function EditModal({
   venda,
   onClose,
@@ -23,8 +17,19 @@ export function EditModal({
   onClose: () => void;
   onSave: (v: Venda) => void;
 }) {
-const { pagamento, novoStatus, setPagamento, setNovoStatus, statusOpcoes, statusCfg, handleSave } = useEditModalForm({ venda, onClose, onSave });
-return <PeractModal className="peract-bg-card peract-radius-lg shadow-2xl max-w-md max-h-[90vh] overflow-y-auto" onClose={onClose}>
+  const {
+    pagamento,
+    novoStatus,
+    setPagamento,
+    setNovoStatus,
+    statusOpcoes,
+    statusCfg,
+    handleSave
+  } = useEditModalForm({
+    venda,
+    onSave
+  });
+  return <PeractModal className="peract-bg-card peract-radius-lg shadow-2xl max-w-md max-h-[90vh] overflow-y-auto" onClose={onClose}>
         <div className="flex items-center justify-between p-4 border-b peract-border-color sticky top-0 peract-bg-card z-10">
           <div>
             <PeractModalTitle className="peract-font-color-default">Editar Venda</PeractModalTitle>

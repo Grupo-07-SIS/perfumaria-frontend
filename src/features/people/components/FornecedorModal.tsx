@@ -1,23 +1,39 @@
 import { useFornecedorModalForm } from "../facade/useFornecedorModalForm";
 import type { FornecedorModalProps } from "../models/people.models";
 import { ACC } from "../config/people.config";
-import { PeractModal } from "../../../shared/components/peract-modal";
-import { PeractModalTitle } from "../../../shared/components/peract-modal";
+import { PeractModal, PeractModalTitle } from "../../../shared/components/peract-modal";
 import { PeractButtonPrimitive } from "../../../shared/components/peract-button";
-import { X } from "lucide-react";
-import { CheckCircle } from "lucide-react";
+import { X, CheckCircle } from "lucide-react";
 import { PeractField } from "../../../shared/components/peract-field";
 import { PeractLabel } from "../../../shared/components/peract-label";
 import { PeractInputControl } from "../../../shared/components/peract-input";
 import { EnderecoFields } from "./EnderecoFields";
-
 export function FornecedorModal({
   data,
   onClose,
   onSave
 }: FornecedorModalProps) {
-const { razaoSocial, cnpj, email, telefone, endereco, setRazaoSocial, setCnpj, setEmail, setTelefone, setEndereco, errors, success, clearError, handleSave } = useFornecedorModalForm({ data, onClose, onSave });
-return <PeractModal className="peract-bg-card peract-radius-lg shadow-2xl max-w-lg max-h-[90vh] overflow-y-auto" onClose={onClose}>
+  const {
+    razaoSocial,
+    cnpj,
+    email,
+    telefone,
+    endereco,
+    setRazaoSocial,
+    setCnpj,
+    setEmail,
+    setTelefone,
+    setEndereco,
+    errors,
+    success,
+    clearError,
+    handleSave
+  } = useFornecedorModalForm({
+    data,
+    onClose,
+    onSave
+  });
+  return <PeractModal className="peract-bg-card peract-radius-lg shadow-2xl max-w-lg max-h-[90vh] overflow-y-auto" onClose={onClose}>
         <div className="flex items-center justify-between p-4 border-b peract-border-color sticky top-0 peract-bg-card z-10">
           <PeractModalTitle className="peract-font-color-default">{data ? "Editar Fornecedor" : "Novo Fornecedor"}</PeractModalTitle>
           <PeractButtonPrimitive onClick={onClose} className="p-1 rounded-lg hover:bg-gray-100 peract-font-color-muted" variant="plain" size="plain" aria-label="Fechar"><X size={18} /></PeractButtonPrimitive>

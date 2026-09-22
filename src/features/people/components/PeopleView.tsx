@@ -5,35 +5,45 @@ import { FuncionarioModal } from "./FuncionarioModal";
 import { DeleteConfirm } from "./DeleteConfirm";
 import { InativarConfirm } from "./InativarConfirm";
 import { PeractButtonPrimitive } from "../../../shared/components/peract-button";
-import { Plus } from "lucide-react";
+import { Plus, Search, UserCheck, UserX, Users, User, Pencil, UserMinus, Phone, Mail, MapPin, Truck, Trash2 } from "lucide-react";
 import { ACC, DARK } from "../config/people.config";
 import { PeractCard } from "../../../shared/components/peract-card";
-import { Search } from "lucide-react";
 import { PeractInputControl } from "../../../shared/components/peract-input";
 import type { StatusFiltro } from "../models/people.models";
-import { UserCheck } from "lucide-react";
-import { UserX } from "lucide-react";
-import { Users } from "lucide-react";
-import { User } from "lucide-react";
 import { StatusBadge } from "./StatusBadge";
-import { Pencil } from "lucide-react";
-import { UserMinus } from "lucide-react";
-import { Phone } from "lucide-react";
-import { Mail } from "lucide-react";
-import { MapPin } from "lucide-react";
 import { formatEndereco } from "../services/people.service";
-import { Truck } from "lucide-react";
 import { CardActions } from "./CardActions";
-import { PeractTableRoot } from "../../../shared/components/peract-table";
-import { PeractTableHeader } from "../../../shared/components/peract-table";
-import { PeractTableRow } from "../../../shared/components/peract-table";
-import { PeractTableHead } from "../../../shared/components/peract-table";
-import { PeractTableBody } from "../../../shared/components/peract-table";
-import { PeractTableCell } from "../../../shared/components/peract-table";
-import { Trash2 } from "lucide-react";
-
-export function PeopleView({ clientes, setFornecedores, setFuncionarios, aba, setAba, search, setSearch, statusFiltro, setStatusFiltro, modal, setModal, deleteTarget, setDeleteTarget, inativarTarget, setInativarTarget, clientesAtivos, clientesInativos, tabs, saveCliente, saveFornecedor, saveFuncionario, toggleAtivo, filtClientes, filtFornecedores, filtFuncionarios, openNew, newLabel }: ReturnType<typeof usePeopleFacade>) {
-return <div className="p-4 lg:p-6 max-w-[1400px] mx-auto">
+import { PeractTableRoot, PeractTableHeader, PeractTableRow, PeractTableHead, PeractTableBody, PeractTableCell } from "../../../shared/components/peract-table";
+export function PeopleView({
+  clientes,
+  requestSupplierDeletion,
+  requestEmployeeDeletion,
+  aba,
+  setAba,
+  search,
+  setSearch,
+  statusFiltro,
+  setStatusFiltro,
+  modal,
+  setModal,
+  deleteTarget,
+  setDeleteTarget,
+  inativarTarget,
+  setInativarTarget,
+  clientesAtivos,
+  clientesInativos,
+  tabs,
+  saveCliente,
+  saveFornecedor,
+  saveFuncionario,
+  toggleAtivo,
+  filtClientes,
+  filtFornecedores,
+  filtFuncionarios,
+  openNew,
+  newLabel
+}: ReturnType<typeof usePeopleFacade>) {
+  return <div className="p-4 lg:p-6 max-w-[1400px] mx-auto">
       {modal?.type === "cliente" && <ClienteModal data={modal.data} onClose={() => setModal(null)} onSave={saveCliente} />}
       {modal?.type === "fornecedor" && <FornecedorModal data={modal.data} onClose={() => setModal(null)} onSave={saveFornecedor} />}
       {modal?.type === "funcionario" && <FuncionarioModal data={modal.data} onClose={() => setModal(null)} onSave={saveFuncionario} />}
@@ -186,10 +196,7 @@ return <div className="p-4 lg:p-6 max-w-[1400px] mx-auto">
                 <CardActions onEdit={() => setModal({
             type: "fornecedor",
             data: f
-          })} onDelete={() => setDeleteTarget({
-            nome: f.razaoSocial,
-            fn: () => setFornecedores(prev => prev.filter(x => x.id !== f.id))
-          })} />
+          })} onDelete={() => requestSupplierDeletion(f)} />
               </div>
               <div className="flex flex-col gap-1.5">
                 <div className="flex items-center gap-2 text-xs peract-font-color-muted"><Phone size={12} className="shrink-0" />{f.telefone || "—"}</div>
@@ -240,10 +247,7 @@ return <div className="p-4 lg:p-6 max-w-[1400px] mx-auto">
                       type: "funcionario",
                       data: f
                     })} className="p-1.5 rounded-lg peract-font-color-muted hover:bg-gray-100 transition-colors" title="Editar" variant="plain" size="plain" aria-label="Editar"><Pencil size={14} /></PeractButtonPrimitive>
-                          <PeractButtonPrimitive onClick={() => setDeleteTarget({
-                      nome: f.nome,
-                      fn: () => setFuncionarios(prev => prev.filter(x => x.id !== f.id))
-                    })} className="p-1.5 rounded-lg peract-font-color-muted hover:bg-red-50 hover:text-red-600 transition-colors" title="Excluir" variant="plain" size="plain" aria-label="Excluir"><Trash2 size={14} /></PeractButtonPrimitive>
+                          <PeractButtonPrimitive onClick={() => requestEmployeeDeletion(f)} className="p-1.5 rounded-lg peract-font-color-muted hover:bg-red-50 hover:text-red-600 transition-colors" title="Excluir" variant="plain" size="plain" aria-label="Excluir"><Trash2 size={14} /></PeractButtonPrimitive>
                         </div>
                       </PeractTableCell>
                     </PeractTableRow>)}
@@ -269,10 +273,7 @@ return <div className="p-4 lg:p-6 max-w-[1400px] mx-auto">
                   <CardActions onEdit={() => setModal({
               type: "funcionario",
               data: f
-            })} onDelete={() => setDeleteTarget({
-              nome: f.nome,
-              fn: () => setFuncionarios(prev => prev.filter(x => x.id !== f.id))
-            })} />
+            })} onDelete={() => requestEmployeeDeletion(f)} />
                 </div>
                 <div className="mt-2 flex flex-col gap-1">
                   <div className="flex items-center gap-2 text-xs peract-font-color-muted"><Mail size={12} className="shrink-0" />{f.email}</div>

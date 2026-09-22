@@ -1,7 +1,4 @@
-import { Clock } from "lucide-react";
-import { CheckCircle } from "lucide-react";
-import { XCircle } from "lucide-react";
-
+import { Clock, CheckCircle, XCircle } from "lucide-react";
 export function StatusBadge({
   status
 }: {

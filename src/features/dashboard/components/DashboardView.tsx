@@ -2,30 +2,20 @@ import type { useDashboardFacade } from "../facade/useDashboardFacade";
 import { periodLabels, axisProps, tooltipStyle, PIE_COLORS } from "../config/dashboard.config";
 import type { Period } from "../models/dashboard.models";
 import { PeractButtonPrimitive } from "../../../shared/components/peract-button";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, ShoppingBag, DollarSign, Droplets, ArrowRight, ShoppingCart, Package } from "lucide-react";
 import { Link } from "react-router";
 import { KpiCard } from "./KpiCard";
-import { ShoppingBag } from "lucide-react";
-import { DollarSign } from "lucide-react";
-import { Droplets } from "lucide-react";
 import { PeractCard } from "../../../shared/components/peract-card";
-import { ResponsiveContainer } from "recharts";
-import { BarChart } from "recharts";
-import { CartesianGrid } from "recharts";
-import { XAxis } from "recharts";
-import { YAxis } from "recharts";
-import { Tooltip } from "recharts";
-import { Bar } from "recharts";
-import { ArrowRight } from "lucide-react";
-import { ShoppingCart } from "lucide-react";
-import { PieChart } from "recharts";
-import { Pie } from "recharts";
-import { Cell } from "recharts";
-import { Legend } from "recharts";
-import { Package } from "lucide-react";
-
-export function DashboardView({ period, setPeriod, chartData, criticalStock, categoryData, recentActivities }: ReturnType<typeof useDashboardFacade>) {
-return <div className="p-4 lg:p-6 max-w-[1400px] mx-auto">
+import { ResponsiveContainer, BarChart, CartesianGrid, XAxis, YAxis, Tooltip, Bar, PieChart, Pie, Cell, Legend } from "recharts";
+export function DashboardView({
+  period,
+  setPeriod,
+  chartData,
+  criticalStock,
+  categoryData,
+  recentActivities
+}: ReturnType<typeof useDashboardFacade>) {
+  return <div className="p-4 lg:p-6 max-w-[1400px] mx-auto">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
         <div>

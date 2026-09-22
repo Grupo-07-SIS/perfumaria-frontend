@@ -3,32 +3,31 @@ import { DecantModal } from "./DecantModal";
 import { DeleteConfirm } from "./DeleteConfirm";
 import { PeractButtonPrimitive } from "../../../shared/components/peract-button";
 import { exportCSV } from "../services/decants.service";
-import { Download } from "lucide-react";
-import { Plus } from "lucide-react";
+import { Download, Plus, Droplets, Search, Pencil, Trash2 } from "lucide-react";
 import { ACC } from "../config/decants.config";
-import { Droplets } from "lucide-react";
 import { PeractCard } from "../../../shared/components/peract-card";
-import { Search } from "lucide-react";
 import { PeractInputControl } from "../../../shared/components/peract-input";
-import { PeractTableRoot } from "../../../shared/components/peract-table";
-import { PeractTableHeader } from "../../../shared/components/peract-table";
-import { PeractTableRow } from "../../../shared/components/peract-table";
-import { PeractTableHead } from "../../../shared/components/peract-table";
-import { PeractTableBody } from "../../../shared/components/peract-table";
-import { PeractTableCell } from "../../../shared/components/peract-table";
-import { Pencil } from "lucide-react";
-import { Trash2 } from "lucide-react";
-
-export function DecantsView({ setDecants, showModal, setShowModal, editDecant, setEditDecant, deleteDecant, setDeleteDecant, search, setSearch, filtered, handleSave, fmt }: ReturnType<typeof useDecantsFacade>) {
-return <div className="p-4 lg:p-6 max-w-[1400px] mx-auto">
+import { PeractTableRoot, PeractTableHeader, PeractTableRow, PeractTableHead, PeractTableBody, PeractTableCell } from "../../../shared/components/peract-table";
+export function DecantsView({
+  confirmDelete,
+  showModal,
+  setShowModal,
+  editDecant,
+  setEditDecant,
+  deleteDecant,
+  setDeleteDecant,
+  search,
+  setSearch,
+  filtered,
+  handleSave,
+  fmt
+}: ReturnType<typeof useDecantsFacade>) {
+  return <div className="p-4 lg:p-6 max-w-[1400px] mx-auto">
       {(showModal || editDecant) && <DecantModal onClose={() => {
       setShowModal(false);
       setEditDecant(null);
     }} onSave={handleSave} edit={editDecant ?? undefined} />}
-      {deleteDecant && <DeleteConfirm nome={deleteDecant.perfume} onClose={() => setDeleteDecant(null)} onConfirm={() => {
-      setDecants(prev => prev.filter(d => d.id !== deleteDecant.id));
-      setDeleteDecant(null);
-    }} />}
+      {deleteDecant && <DeleteConfirm nome={deleteDecant.perfume} onClose={() => setDeleteDecant(null)} onConfirm={confirmDelete} />}
 
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">

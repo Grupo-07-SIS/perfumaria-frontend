@@ -2,28 +2,39 @@ import type { useSalesHistoryFacade } from "../facade/useSalesHistoryFacade";
 import { ReciboModal } from "./ReciboModal";
 import { EditModal } from "./EditModal";
 import { PeractCard } from "../../../shared/components/peract-card";
-import { Search } from "lucide-react";
+import { Search, Eye, Pencil, Truck } from "lucide-react";
 import { PeractInputControl } from "../../../shared/components/peract-input";
 import { PeractNativeSelect } from "../../../shared/components/peract-select";
 import { ACC, pagamentosOpcoes } from "../config/sales-history.config";
 import { PeractButtonPrimitive } from "../../../shared/components/peract-button";
 import type { StatusFilter } from "../models/sales-history.models";
-import { PeractTableRoot } from "../../../shared/components/peract-table";
-import { PeractTableHeader } from "../../../shared/components/peract-table";
-import { PeractTableRow } from "../../../shared/components/peract-table";
-import { PeractTableHead } from "../../../shared/components/peract-table";
-import { PeractTableBody } from "../../../shared/components/peract-table";
-import { PeractTableCell } from "../../../shared/components/peract-table";
+import { PeractTableRoot, PeractTableHeader, PeractTableRow, PeractTableHead, PeractTableBody, PeractTableCell } from "../../../shared/components/peract-table";
 import { getVendaStatus } from "../services/sales-history.service";
 import { CanalBadge } from "./CanalBadge";
 import { PeractTag } from "../../../shared/components/peract-tag";
 import { StatusBadge } from "./StatusBadge";
-import { Eye } from "lucide-react";
-import { Pencil } from "lucide-react";
-import { Truck } from "lucide-react";
-
-export function SalesHistoryView({ isAdmin, search, setSearch, pagamentoFilter, setPagamentoFilter, tipoFilter, setTipoFilter, statusFilter, setStatusFilter, viewVenda, setViewVenda, editVenda, setEditVenda, vendasExibidas, finalizadas, canceladas, totalFaturamento, filtered, handleSaveEdit }: ReturnType<typeof useSalesHistoryFacade>) {
-return <div className="p-4 lg:p-6 max-w-[1400px] mx-auto">
+export function SalesHistoryView({
+  isAdmin,
+  search,
+  setSearch,
+  pagamentoFilter,
+  setPagamentoFilter,
+  tipoFilter,
+  setTipoFilter,
+  statusFilter,
+  setStatusFilter,
+  viewVenda,
+  setViewVenda,
+  editVenda,
+  setEditVenda,
+  vendasExibidas,
+  finalizadas,
+  canceladas,
+  totalFaturamento,
+  filtered,
+  handleSaveEdit
+}: ReturnType<typeof useSalesHistoryFacade>) {
+  return <div className="p-4 lg:p-6 max-w-[1400px] mx-auto">
       {viewVenda && <ReciboModal venda={viewVenda} onClose={() => setViewVenda(null)} />}
       {editVenda && <EditModal venda={editVenda} onClose={() => setEditVenda(null)} onSave={handleSaveEdit} />}
 

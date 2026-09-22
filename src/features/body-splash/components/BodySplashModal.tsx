@@ -1,14 +1,12 @@
 import { useBodySplashModalForm } from "../facade/useBodySplashModalForm";
 import type { ModalProps } from "../models/body-splash.models";
 import { VOLUMES, ACC, bodySplashBase } from "../config/body-splash.config";
-import { PeractModal } from "../../../shared/components/peract-modal";
-import { PeractModalTitle } from "../../../shared/components/peract-modal";
+import { PeractModal, PeractModalTitle } from "../../../shared/components/peract-modal";
 import { PeractButtonPrimitive } from "../../../shared/components/peract-button";
-import { X } from "lucide-react";
+import { X, CheckCircle } from "lucide-react";
 
 /* ─── Brand accent ─── */
 /* ─── Brand accent ─── */
-import { CheckCircle } from "lucide-react";
 
 /* ─── Brand accent ─── */
 /* ─── Brand accent ─── */
@@ -16,14 +14,25 @@ import { PeractField } from "../../../shared/components/peract-field";
 import { PeractLabel } from "../../../shared/components/peract-label";
 import { PeractNativeSelect } from "../../../shared/components/peract-select";
 import { PeractInputControl } from "../../../shared/components/peract-input";
-
 export function BodySplashModal({
   onClose,
   onSave,
   edit
 }: ModalProps) {
-const { produto, precos, setProduto, setPrecos, error, success, handleSave } = useBodySplashModalForm({ onClose, onSave, edit });
-return <PeractModal className="peract-bg-card peract-radius-lg shadow-2xl max-w-lg max-h-[90vh] overflow-y-auto" onClose={onClose}>
+  const {
+    produto,
+    precos,
+    setProduto,
+    setPrecos,
+    error,
+    success,
+    handleSave
+  } = useBodySplashModalForm({
+    onClose,
+    onSave,
+    edit
+  });
+  return <PeractModal className="peract-bg-card peract-radius-lg shadow-2xl max-w-lg max-h-[90vh] overflow-y-auto" onClose={onClose}>
         <div className="flex items-center justify-between p-4 border-b peract-border-color sticky top-0 peract-bg-card">
           <PeractModalTitle className="peract-font-color-default">{edit ? "Editar Body Splash" : "Cadastrar Body Splash"}</PeractModalTitle>
           <PeractButtonPrimitive onClick={onClose} className="p-1 rounded-lg hover:bg-gray-100 peract-font-color-muted" variant="plain" size="plain" aria-label="Fechar"><X size={18} /></PeractButtonPrimitive>

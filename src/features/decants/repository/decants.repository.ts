@@ -1,5 +1,4 @@
 import type { Decant } from "../models/decants.models";
-
 export const initialDecants: Decant[] = [{
   id: 1,
   perfume: "Chanel N°5",

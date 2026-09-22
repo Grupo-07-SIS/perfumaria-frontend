@@ -1,7 +1,5 @@
-import { PeractModal } from "../../../shared/components/peract-modal";
-import { PeractModalTitle } from "../../../shared/components/peract-modal";
+import { PeractModal, PeractModalTitle } from "../../../shared/components/peract-modal";
 import { PeractButtonPrimitive } from "../../../shared/components/peract-button";
-
 export function DeleteConfirm({
   nome,
   onClose,
