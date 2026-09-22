@@ -1,0 +1,11 @@
+import type { ComponentProps } from "react";
+export type PeractDrawerProps = ComponentProps<typeof import("./PeractDrawer").PeractDrawer>;
+export type PeractDrawerPortalProps = ComponentProps<typeof import("./PeractDrawer").PeractDrawerPortal>;
+export type PeractDrawerOverlayProps = ComponentProps<typeof import("./PeractDrawer").PeractDrawerOverlay>;
+export type PeractDrawerTriggerProps = ComponentProps<typeof import("./PeractDrawer").PeractDrawerTrigger>;
+export type PeractDrawerCloseProps = ComponentProps<typeof import("./PeractDrawer").PeractDrawerClose>;
+export type PeractDrawerContentProps = ComponentProps<typeof import("./PeractDrawer").PeractDrawerContent>;
+export type PeractDrawerHeaderProps = ComponentProps<typeof import("./PeractDrawer").PeractDrawerHeader>;
+export type PeractDrawerFooterProps = ComponentProps<typeof import("./PeractDrawer").PeractDrawerFooter>;
+export type PeractDrawerTitleProps = ComponentProps<typeof import("./PeractDrawer").PeractDrawerTitle>;
+export type PeractDrawerDescriptionProps = ComponentProps<typeof import("./PeractDrawer").PeractDrawerDescription>;
