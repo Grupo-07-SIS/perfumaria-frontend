@@ -1,10 +1,10 @@
-import { forwardRef, type ElementRef } from "react";
+import { forwardRef, type ComponentRef } from "react";
 import * as CheckboxPrimitive from "@radix-ui/react-checkbox";
 import { CheckIcon, MinusIcon } from "lucide-react";
 import { cn } from "../ui/utils";
 import type { PeractCheckboxProps } from "./PeractCheckbox.types";
 
-export const PeractCheckbox = forwardRef<ElementRef<typeof CheckboxPrimitive.Root>, PeractCheckboxProps>(
+export const PeractCheckbox = forwardRef<ComponentRef<typeof CheckboxPrimitive.Root>, PeractCheckboxProps>(
   function PeractCheckbox({ className, checked, ...props }, ref) {
     return (
       <CheckboxPrimitive.Root
