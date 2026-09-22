@@ -10,6 +10,7 @@ const peractButtonVariants = cva("peract-sans-font inline-flex items-center just
       outline: "border bg-background text-foreground hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50",
       secondary: "bg-secondary text-secondary-foreground hover:bg-secondary/80",
       ghost: "hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50",
+      plain: "",
       link: "text-primary underline-offset-4 hover:underline"
     },
     size: {
@@ -17,6 +18,7 @@ const peractButtonVariants = cva("peract-sans-font inline-flex items-center just
       sm: "h-8 rounded-md gap-1.5 px-3 has-[>svg]:px-2.5",
       lg: "h-10 rounded-md px-6 has-[>svg]:px-4",
       icon: "size-9 rounded-md"
+      ,plain: "h-auto p-0"
     }
   },
   defaultVariants: {
@@ -24,20 +26,21 @@ const peractButtonVariants = cva("peract-sans-font inline-flex items-center just
     size: "default"
   }
 });
-function PeractButtonPrimitive({
+const PeractButtonPrimitive = React.forwardRef<HTMLButtonElement, React.ComponentPropsWithoutRef<"button"> & VariantProps<typeof peractButtonVariants> & {
+  asChild?: boolean;
+}>(function PeractButtonPrimitive({
   className,
   variant,
   size,
   asChild = false,
+  type,
   ...props
-}: React.ComponentProps<"button"> & VariantProps<typeof peractButtonVariants> & {
-  asChild?: boolean;
-}) {
+}, ref) {
   const Comp = asChild ? Slot : "button";
-  return <Comp data-slot="button" className={cn(peractButtonVariants({
+  return <Comp ref={ref} type={type ?? (asChild ? undefined : "button")} data-slot="button" className={cn(peractButtonVariants({
     variant,
     size,
     className
   }))} {...props} />;
-}
+});
 export { PeractButtonPrimitive, peractButtonVariants };
