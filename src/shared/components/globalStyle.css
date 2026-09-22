@@ -1,4 +1,10 @@
 @layer base {
+  :root {
+    --peract-layer-overlay: 50;
+    --peract-layer-modal: 51;
+    --peract-layer-popup: 60;
+  }
+
   @property --tw-font-weight {
     syntax: "*";
     inherits: false;
@@ -6,6 +12,43 @@
 }
 
 @layer components {
+  .peract-popup-layer {
+    z-index: var(--peract-layer-popup);
+  }
+
+  .peract-bg-accent {
+    background-color: var(--brand-accent);
+  }
+
+  .peract-border-color {
+    border-color: var(--border);
+  }
+
+  .peract-border-color-accent {
+    border-color: var(--brand-accent);
+  }
+
+  .peract-modal-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: var(--peract-layer-overlay);
+    background: rgb(0 0 0 / 50%);
+  }
+
+  .peract-modal-surface {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    z-index: var(--peract-layer-modal);
+    transform: translate(-50%, -50%);
+    width: calc(100% - 2rem);
+    max-width: 32rem;
+    max-height: calc(100dvh - 2rem);
+    overflow-y: auto;
+    border-radius: var(--radius);
+    box-shadow: 0 24px 64px rgb(0 0 0 / 20%);
+  }
+
   .peract-field-control {
     width: 100%;
     min-width: 0;
