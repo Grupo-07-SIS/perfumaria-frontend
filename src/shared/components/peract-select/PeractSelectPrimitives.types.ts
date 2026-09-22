@@ -1,0 +1,11 @@
+import type { ComponentProps } from "react";
+export type PeractSelectRootProps = ComponentProps<typeof import("./PeractSelectPrimitives").PeractSelectRoot>;
+export type PeractSelectContentProps = ComponentProps<typeof import("./PeractSelectPrimitives").PeractSelectContent>;
+export type PeractSelectGroupProps = ComponentProps<typeof import("./PeractSelectPrimitives").PeractSelectGroup>;
+export type PeractSelectItemProps = ComponentProps<typeof import("./PeractSelectPrimitives").PeractSelectItem>;
+export type PeractSelectLabelProps = ComponentProps<typeof import("./PeractSelectPrimitives").PeractSelectLabel>;
+export type PeractSelectScrollDownButtonProps = ComponentProps<typeof import("./PeractSelectPrimitives").PeractSelectScrollDownButton>;
+export type PeractSelectScrollUpButtonProps = ComponentProps<typeof import("./PeractSelectPrimitives").PeractSelectScrollUpButton>;
+export type PeractSelectSeparatorProps = ComponentProps<typeof import("./PeractSelectPrimitives").PeractSelectSeparator>;
+export type PeractSelectTriggerProps = ComponentProps<typeof import("./PeractSelectPrimitives").PeractSelectTrigger>;
+export type PeractSelectValueProps = ComponentProps<typeof import("./PeractSelectPrimitives").PeractSelectValue>;

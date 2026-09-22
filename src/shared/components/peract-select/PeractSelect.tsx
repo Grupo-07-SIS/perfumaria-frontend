@@ -1,10 +1,10 @@
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "../ui/select";
+  PeractSelectRoot as Select,
+  PeractSelectContent as SelectContent,
+  PeractSelectItem as SelectItem,
+  PeractSelectTrigger as SelectTrigger,
+  PeractSelectValue as SelectValue,
+} from "./PeractSelectPrimitives";
 import { cn } from "../ui/utils";
 import type { PeractSelectProps } from "./PeractSelect.types";
 
