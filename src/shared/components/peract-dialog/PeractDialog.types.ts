@@ -1,0 +1,11 @@
+import type { ComponentProps } from "react";
+export type PeractDialogProps = ComponentProps<typeof import("./PeractDialog").PeractDialog>;
+export type PeractDialogCloseProps = ComponentProps<typeof import("./PeractDialog").PeractDialogClose>;
+export type PeractDialogContentProps = ComponentProps<typeof import("./PeractDialog").PeractDialogContent>;
+export type PeractDialogDescriptionProps = ComponentProps<typeof import("./PeractDialog").PeractDialogDescription>;
+export type PeractDialogFooterProps = ComponentProps<typeof import("./PeractDialog").PeractDialogFooter>;
+export type PeractDialogHeaderProps = ComponentProps<typeof import("./PeractDialog").PeractDialogHeader>;
+export type PeractDialogOverlayProps = ComponentProps<typeof import("./PeractDialog").PeractDialogOverlay>;
+export type PeractDialogPortalProps = ComponentProps<typeof import("./PeractDialog").PeractDialogPortal>;
+export type PeractDialogTitleProps = ComponentProps<typeof import("./PeractDialog").PeractDialogTitle>;
+export type PeractDialogTriggerProps = ComponentProps<typeof import("./PeractDialog").PeractDialogTrigger>;
