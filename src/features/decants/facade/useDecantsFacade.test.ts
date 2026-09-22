@@ -29,4 +29,20 @@ describe("useDecantsFacade", () => {
     expect(result.current.decants.slice(0, -1)).toEqual(original);
     expect(result.current.editDecant).toBeNull();
   });
+
+  it("deletes only the confirmed decant and ignores an absent target", () => {
+    const { result } = renderHook(() => useDecantsFacade());
+    const original = result.current.decants;
+    act(() => result.current.confirmDelete());
+    expect(result.current.decants).toEqual(original);
+    act(() => result.current.setDeleteDecant(original[0]));
+    act(() => result.current.setDeleteDecant(null));
+    expect(result.current.decants).toEqual(original);
+    act(() => result.current.setDeleteDecant(original[0]));
+    act(() => result.current.confirmDelete());
+    expect(result.current.decants).toEqual(original.slice(1));
+    expect(result.current.deleteDecant).toBeNull();
+    act(() => result.current.confirmDelete());
+    expect(result.current.decants).toEqual(original.slice(1));
+  });
 });

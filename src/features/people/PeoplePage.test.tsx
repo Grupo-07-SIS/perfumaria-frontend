@@ -1,4 +1,4 @@
-import { render, screen, within } from "@testing-library/react";
+import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { AppProvider } from "../../core/store/AppContext";
@@ -109,5 +109,39 @@ describe("People: caracterizacao de filtros e permissoes", () => {
     await user.type(screen.getByPlaceholderText("Buscar por nome ou telefone..."), "Ana Lima");
     expect(screen.getByText("Nenhum cliente encontrado")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /Ana Lima/ })).not.toBeInTheDocument();
+  });
+
+  it("descarta edicao cancelada e restaura os dados do cliente ao reabrir", () => {
+    render(<AppProvider><PeoplePage /></AppProvider>);
+    fireEvent.change(screen.getByPlaceholderText("Buscar cliente..."), { target: { value: "Ana Lima" } });
+    fireEvent.click(screen.getByRole("button", { name: "Editar", exact: true }));
+    fireEvent.change(screen.getByPlaceholderText("Ex: Ana Lima"), { target: { value: "Rascunho descartado" } });
+    fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Cancelar" }));
+    fireEvent.click(screen.getByRole("button", { name: "Editar", exact: true }));
+    expect(screen.getByPlaceholderText("Ex: Ana Lima")).toHaveValue("Ana Lima");
+    fireEvent.change(screen.getByPlaceholderText("Ex: Ana Lima"), { target: { value: "Ana revisada" } });
+    fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Salvar" }));
+    fireEvent.change(screen.getByPlaceholderText("Buscar cliente..."), { target: { value: "Ana revisada" } });
+    expect(screen.getByText("Ana revisada")).toBeInTheDocument();
+  });
+
+  it.fails("risco preexistente: fechamento atrasado nao deveria fechar um novo cadastro", () => {
+    vi.useFakeTimers();
+    try {
+      render(<AppProvider><PeoplePage /></AppProvider>);
+      fireEvent.click(screen.getAllByRole("button", { name: "Novo cliente" })[0]);
+      fireEvent.change(screen.getByPlaceholderText("Ex: Ana Lima"), { target: { value: "Cliente salvo" } });
+      fireEvent.change(screen.getByPlaceholderText("(11) 99999-9999"), { target: { value: "11912345678" } });
+      fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Salvar" }));
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+      fireEvent.click(screen.getAllByRole("button", { name: "Novo cliente" })[0]);
+      fireEvent.change(screen.getByPlaceholderText("Ex: Ana Lima"), { target: { value: "Segundo cadastro" } });
+      act(() => vi.advanceTimersByTime(1200));
+      expect(screen.getByRole("dialog", { name: "Novo Cliente" })).toBeInTheDocument();
+      expect(screen.getByPlaceholderText("Ex: Ana Lima")).toHaveValue("Segundo cadastro");
+    } finally {
+      vi.clearAllTimers();
+      vi.useRealTimers();
+    }
   });
 });
