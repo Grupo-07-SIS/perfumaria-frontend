@@ -1,5 +1,15 @@
 # QA independente: revalidacao final focada Peract
 
+## Verificacao final pelo implementador
+
+Apos o encerramento da revalidacao independente abaixo e a limpeza dos imports:
+
+- `npm test -- --reporter=dot --maxWorkers=4`: 76 arquivos e 389 testes aprovados, zero falhas, 127.53s.
+- `npm run build`: sucesso, 2388 modulos transformados, 28.79s.
+- Os testes focados de produto/categoria tambem passaram: 6 testes em 2 arquivos.
+- Esta execucao atualiza o estado final da suite/build; o relato independente abaixo preserva o que o QA executou em cada rodada.
+- Typecheck dedicado e persistencia real no backend continuam nao verificados.
+
 Data: 2026-09-22. Branch verificada: `feat/design-system`.
 Servidor existente: http://127.0.0.1:5174/. Esta revalidacao substitui o FAIL da segunda rodada exclusivamente quanto ao retorno de foco apos Escape.
 
