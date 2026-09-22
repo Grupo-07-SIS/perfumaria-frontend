@@ -1,8 +1,8 @@
-import { useEffect } from "react";
+import { lazy, Suspense, useEffect } from "react";
 import { RouterProvider } from "react-router";
 import { router } from "./routes";
 import { AppProvider, useApp } from "./context/AppContext";
-import { LoginPage } from "../features/login/LoginPage";
+const LoginPage = lazy(async () => ({ default: (await import("../features/login/LoginPage")).LoginPage }));
 
 function VLibras() {
   useEffect(() => {
@@ -34,7 +34,7 @@ function VLibras() {
 
 function AppContent() {
   const { isLoggedIn } = useApp();
-  if (!isLoggedIn) return <LoginPage />;
+  if (!isLoggedIn) return <Suspense fallback={<div role="status" className="peract-font-color-muted p-6">Carregando...</div>}><LoginPage /></Suspense>;
   return <RouterProvider router={router} />;
 }
 
