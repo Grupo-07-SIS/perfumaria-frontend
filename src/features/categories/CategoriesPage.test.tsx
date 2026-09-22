@@ -48,17 +48,17 @@ describe("CategoriesPage", () => {
   });
 
   it("shows error, loading and modal states", () => {
-    useCategoriesFacadeMock.mockReturnValue({
+    const facade = {
       categories: [],
       closeDeleteConfirm: vi.fn(),
       closeForm: vi.fn(),
       confirmDelete: vi.fn(),
       currentPage: 1,
-      deleteTarget: { id: 1, linkedProducts: 2, nome: "Perfumes" },
+      deleteTarget: null,
       error: "Não foi possível carregar as categorias.",
       formTarget: { id: 1, nome: "Perfumes" },
       isDeleteSubmitting: false,
-      isFormOpen: true,
+      isFormOpen: false,
       isLoading: true,
       isSubmitting: false,
       openCreateForm: vi.fn(),
@@ -68,13 +68,19 @@ describe("CategoriesPage", () => {
       setCurrentPage: vi.fn(),
       submitCategory: vi.fn().mockResolvedValue(undefined),
       totalPages: 1,
-    });
+    };
+    useCategoriesFacadeMock.mockReturnValue(facade);
 
-    render(<CategoriesPage />);
+    const { rerender } = render(<CategoriesPage />);
 
     expect(screen.getByRole("alert")).toHaveTextContent("Não foi possível carregar as categorias.");
     expect(screen.getByText("Carregando categorias...")).toBeInTheDocument();
-    expect(screen.getByText("Editar Categoria")).toBeInTheDocument();
+    useCategoriesFacadeMock.mockReturnValue({ ...facade, isFormOpen: true });
+    rerender(<CategoriesPage />);
+    expect(screen.getByRole("dialog", { name: "Editar Categoria" })).toBeInTheDocument();
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    useCategoriesFacadeMock.mockReturnValue({ ...facade, deleteTarget: { id: 1, linkedProducts: 2, nome: "Perfumes" } });
+    rerender(<CategoriesPage />);
     expect(screen.getByText("Excluir categoria")).toBeInTheDocument();
   });
 });
