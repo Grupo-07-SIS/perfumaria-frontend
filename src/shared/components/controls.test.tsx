@@ -3,11 +3,40 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { PeractButtonPrimitive } from "./peract-button";
-import { PeractInputControl } from "./peract-input";
-import { PeractNativeSelect } from "./peract-select";
+import { PeractInput, PeractInputControl } from "./peract-input";
+import { PeractNativeSelect, PeractSelect } from "./peract-select";
+import { PeractField } from "./peract-field";
+import { PeractLabel } from "./peract-label";
 import { PeractTextarea } from "./peract-textarea";
 
 describe("Peract native controls", () => {
+  it("associates composed labels with unique field controls", () => {
+    render(<>
+      <PeractField><PeractLabel>Nome</PeractLabel><PeractInputControl /></PeractField>
+      <PeractField><PeractLabel>Categoria</PeractLabel><PeractNativeSelect><option>Perfume</option></PeractNativeSelect></PeractField>
+    </>);
+    expect(screen.getByLabelText("Nome")).toHaveAttribute("id");
+    expect(screen.getByLabelText("Categoria")).toHaveAttribute("id");
+    expect(screen.getByLabelText("Nome").id).not.toBe(screen.getByLabelText("Categoria").id);
+  });
+
+  it("uses children for input labels and describes errors", () => {
+    render(<PeractInput required validation="invalid" errorText="Nome obrigatorio">Nome</PeractInput>);
+    const input = screen.getByRole("textbox", { name: /Nome/ });
+    expect(input).toBeRequired();
+    expect(input).toHaveAttribute("aria-invalid", "true");
+    expect(input).toHaveAccessibleDescription("Nome obrigatorio");
+  });
+
+  it("uses children for select labels and forwards disabled and required", () => {
+    render(<PeractSelect data={[{ value: "perfume", name: "Perfume" }]} required disabled validation="invalid" errorText="Selecione uma categoria">Categoria</PeractSelect>);
+    const select = screen.getByRole("combobox", { name: /Categoria/ });
+    expect(select).toBeDisabled();
+    expect(select).toHaveAttribute("aria-required", "true");
+    expect(select).toHaveAttribute("aria-invalid", "true");
+    expect(select).toHaveAccessibleDescription("Selecione uma categoria");
+  });
+
   it("forwards button refs and submits only when requested", async () => {
     const user = userEvent.setup();
     const submit = vi.fn(event => event.preventDefault());

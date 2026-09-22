@@ -3,7 +3,7 @@
 import * as React from "react";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { XIcon } from "lucide-react";
-import { cn } from "../ui/utils";
+import { cn } from "../../utils/cn";
 function PeractDialog({
   ...props
 }: React.ComponentProps<typeof DialogPrimitive.Root>) {

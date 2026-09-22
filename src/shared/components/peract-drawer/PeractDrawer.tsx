@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { Drawer as DrawerPrimitive } from "vaul";
-import { cn } from "../ui/utils";
+import { cn } from "../../utils/cn";
 function PeractDrawer({
   ...props
 }: React.ComponentProps<typeof DrawerPrimitive.Root>) {

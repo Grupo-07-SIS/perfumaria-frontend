@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import * as AlertDialogPrimitive from "@radix-ui/react-alert-dialog";
-import { cn } from "../ui/utils";
+import { cn } from "../../utils/cn";
 import { peractButtonVariants as buttonVariants } from "../peract-button";
 function PeractAlertDialog({
   ...props

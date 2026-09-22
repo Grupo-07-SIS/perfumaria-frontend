@@ -1,6 +1,6 @@
 import * as React from "react";
 import { ChevronLeftIcon, ChevronRightIcon, MoreHorizontalIcon } from "lucide-react";
-import { cn } from "../ui/utils";
+import { cn } from "../../utils/cn";
 import { PeractButtonPrimitive as Button, peractButtonVariants as buttonVariants } from "../peract-button";
 function PeractPaginationRoot({
   className,

@@ -3,7 +3,7 @@
 import * as React from "react";
 import { Command as CommandPrimitive } from "cmdk";
 import { SearchIcon } from "lucide-react";
-import { cn } from "../ui/utils";
+import { cn } from "../../utils/cn";
 import { PeractDialog as Dialog, PeractDialogContent as DialogContent, PeractDialogDescription as DialogDescription, PeractDialogHeader as DialogHeader, PeractDialogTitle as DialogTitle } from "../peract-dialog";
 function PeractCommand({
   className,

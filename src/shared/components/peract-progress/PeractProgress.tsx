@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import * as ProgressPrimitive from "@radix-ui/react-progress";
-import { cn } from "../ui/utils";
+import { cn } from "../../utils/cn";
 function PeractProgress({
   className,
   value,

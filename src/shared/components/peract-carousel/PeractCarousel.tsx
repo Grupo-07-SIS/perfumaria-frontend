@@ -3,7 +3,7 @@
 import * as React from "react";
 import useEmblaCarousel, { type UseEmblaCarouselType } from "embla-carousel-react";
 import { ArrowLeft, ArrowRight } from "lucide-react";
-import { cn } from "../ui/utils";
+import { cn } from "../../utils/cn";
 import { PeractButtonPrimitive as Button } from "../peract-button";
 type PeractCarouselApi = UseEmblaCarouselType[1];
 type UseCarouselParameters = Parameters<typeof useEmblaCarousel>;

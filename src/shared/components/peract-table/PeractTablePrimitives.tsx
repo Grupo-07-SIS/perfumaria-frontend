@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { cn } from "../ui/utils";
+import { cn } from "../../utils/cn";
 function PeractTableRoot({
   className,
   ...props
