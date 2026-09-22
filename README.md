@@ -8,4 +8,66 @@
   Run `npm i` to install the dependencies.
 
   Run `npm run dev` to start the development server.
+
+## Peract Design System
+
+Reusable UI lives in `src/shared/components/peract-*`, with public exports in
+each `index.ts` and separate prop types. The old `ui/*` modules only reexport
+the Peract API for compatibility; new code should import from `peract-*`.
+Shared helpers live in `src/shared/utils` and `src/shared/hooks`.
+
+Use `children` for visible text. Legacy `label`, `title` and `content` props
+remain as compatibility fallbacks on existing components.
+
+```tsx
+<PeractButton action={save}>Salvar</PeractButton>
+<PeractInput value={name} onValueChange={setName} required>Nome</PeractInput>
+<PeractSelect data={options} value={category} onValueChange={setCategory}>
+  Categoria
+</PeractSelect>
+```
+
+For native events, refs and React Hook Form `register`, use
+`PeractInputControl`, `PeractNativeSelect` and `PeractTextarea`. Compose them
+with `PeractField` and `PeractLabel` to associate a unique control ID:
+
+```tsx
+<PeractField>
+  <PeractLabel>Quantidade</PeractLabel>
+  <PeractInputControl type="number" min={0} {...register("quantity")} />
+</PeractField>
+```
+
+Compound APIs are available for menus, dialogs, tables, tabs and navigation.
+`PeractTableRoot`, `PeractSelectRoot` and `PeractPaginationRoot` are the
+composition primitives; `PeractTable`, `PeractSelect` and `PeractPagination`
+retain their existing higher-level APIs. `PeractButtonPrimitive` supports
+`asChild`, native events and variants; both button APIs default to
+`type="button"`, so submit actions must explicitly use `type="submit"`.
+
+`PeractModal` requires `PeractModalTitle` in its children, traps focus,
+supports Escape and restores focus to the opening action. Handle save
+errors inside the dialog, since the background is inaccessible while open.
+`PeractModalAction` also supports `submitting`, composed `heading` and
+`actions`, with legacy text props retained for compatibility.
+
+Use tokens and `peract-*` classes from `globalStyle.css`. Modal overlays,
+surfaces and select popups use distinct layer tokens to keep options above
+dialogs. Existing visual identity and third-party interaction engines are
+preserved.
+
+Screens are loaded lazily from `src/features`; `src/app/pages` retains
+compatibility reexports. This UI migration preserves existing business and
+data flows; it is not a redesign of those layers.
+
+## Validation
+
+Run `npm test` for the Vitest suite and `npm run build` for production output.
+The suite includes export compatibility contracts as well as behavioral
+tests; export contracts alone do not establish interaction coverage.
+
+See [runtime-validation-report.md](runtime-validation-report.md) for QA
+evidence, desktop/mobile checks and limitations. Browser validation uses
+mocked APIs, not real backend persistence. A standalone TypeScript check
+was not performed; Vite build does not substitute for typechecking.
   
