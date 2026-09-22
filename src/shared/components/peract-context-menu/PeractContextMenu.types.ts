@@ -1,0 +1,16 @@
+import type { ComponentProps } from "react";
+export type PeractContextMenuProps = ComponentProps<typeof import("./PeractContextMenu").PeractContextMenu>;
+export type PeractContextMenuTriggerProps = ComponentProps<typeof import("./PeractContextMenu").PeractContextMenuTrigger>;
+export type PeractContextMenuContentProps = ComponentProps<typeof import("./PeractContextMenu").PeractContextMenuContent>;
+export type PeractContextMenuItemProps = ComponentProps<typeof import("./PeractContextMenu").PeractContextMenuItem>;
+export type PeractContextMenuCheckboxItemProps = ComponentProps<typeof import("./PeractContextMenu").PeractContextMenuCheckboxItem>;
+export type PeractContextMenuRadioItemProps = ComponentProps<typeof import("./PeractContextMenu").PeractContextMenuRadioItem>;
+export type PeractContextMenuLabelProps = ComponentProps<typeof import("./PeractContextMenu").PeractContextMenuLabel>;
+export type PeractContextMenuSeparatorProps = ComponentProps<typeof import("./PeractContextMenu").PeractContextMenuSeparator>;
+export type PeractContextMenuShortcutProps = ComponentProps<typeof import("./PeractContextMenu").PeractContextMenuShortcut>;
+export type PeractContextMenuGroupProps = ComponentProps<typeof import("./PeractContextMenu").PeractContextMenuGroup>;
+export type PeractContextMenuPortalProps = ComponentProps<typeof import("./PeractContextMenu").PeractContextMenuPortal>;
+export type PeractContextMenuSubProps = ComponentProps<typeof import("./PeractContextMenu").PeractContextMenuSub>;
+export type PeractContextMenuSubContentProps = ComponentProps<typeof import("./PeractContextMenu").PeractContextMenuSubContent>;
+export type PeractContextMenuSubTriggerProps = ComponentProps<typeof import("./PeractContextMenu").PeractContextMenuSubTrigger>;
+export type PeractContextMenuRadioGroupProps = ComponentProps<typeof import("./PeractContextMenu").PeractContextMenuRadioGroup>;
