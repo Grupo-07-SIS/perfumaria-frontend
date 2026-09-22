@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
-import { useApp } from "../../../app/context/AppContext";
+import { useApp } from "../../../core/store/AppContext";
 import type { LoginFormData, LoginFormFacade } from "../models/login.models";
 import { executeLogin, hasAuthenticatedSession } from "../services/login.service";
 

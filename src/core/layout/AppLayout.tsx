@@ -3,7 +3,7 @@ import { useState, useRef, useEffect } from "react";
 import { Outlet, NavLink, useLocation } from "react-router";
 import logoImg from "figma:asset/19603bc35fe7f283ff1a83c590f928c9d0bfe9cf.png";
 import { LayoutDashboard, Package, ChevronDown, ChevronRight, Menu, X, User, ChevronLeft, Droplets, ShoppingBag, Users, Settings, Bell, LogOut, ShieldCheck, UserCheck, Sparkles } from "lucide-react";
-import { useApp } from "../../app/context/AppContext";
+import { useApp } from "../store/AppContext";
 import { PeractButton } from "../../shared/components/peract-button";
 import { PeractTag } from "../../shared/components/peract-tag";
 const C = {

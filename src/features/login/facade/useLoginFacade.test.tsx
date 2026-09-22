@@ -6,7 +6,7 @@ const { executeLoginMock, useAppMock } = vi.hoisted(() => ({
   useAppMock: vi.fn(),
 }));
 
-vi.mock("../../../app/context/AppContext", () => ({
+vi.mock("../../../core/store/AppContext", () => ({
   useApp: useAppMock,
 }));
 

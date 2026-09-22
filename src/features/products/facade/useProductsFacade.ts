@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useApp } from "../../../app/context/AppContext";
+import { useApp } from "../../../core/store/AppContext";
 import {
   DEFAULT_CRITICAL_STOCK_THRESHOLD,
 } from "../config/products.config";

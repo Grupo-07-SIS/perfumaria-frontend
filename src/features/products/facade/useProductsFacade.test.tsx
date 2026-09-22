@@ -15,7 +15,7 @@ const {
   updateProductMock: vi.fn(),
 }));
 
-vi.mock("../../../app/context/AppContext", () => ({
+vi.mock("../../../core/store/AppContext", () => ({
   useApp: () => ({ stockThresholds: { critico: 6 } }),
 }));
 
