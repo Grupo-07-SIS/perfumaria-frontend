@@ -57,8 +57,32 @@ dialogs. Existing visual identity and third-party interaction engines are
 preserved.
 
 Screens are loaded lazily from `src/features`; `src/app/pages` retains
-compatibility reexports. This UI migration preserves existing business and
-data flows; it is not a redesign of those layers.
+compatibility reexports. Existing business rules and data flows are preserved.
+
+## Feature Architecture
+
+Decants, Body Splash, Home, Dashboard, Sales, Sales History, Online Orders,
+People and Settings now follow the feature boundaries already used by
+Products, Categories and Login:
+
+- `*Page.tsx`: composition of a facade and feature-specific UI.
+- `components/`: views and dialogs receiving data and actions through props.
+- `facade/`: local state, orchestration and typed React Hook Form state.
+- `services/`: calculations, filters, validation and export operations.
+- `repository/`: feature data access, including adapters to the existing local store.
+- `models/`: domain and form types; `config/`: feature options and presentation configuration.
+
+Only layers with an existing responsibility are created. No HTTP endpoints,
+DTOs, mappers or persistence contracts were invented for local demo data.
+Dashboard keeps its existing compatibility entry without adding a new route.
+The shared store and Botpress implementation live in `core/store` and
+`core/services`; old `app/context` and `app/services` paths reexport them.
+
+The boundary tests guard composition-only entries and prevent direct runtime
+imports from repositories or the shared store inside feature components.
+See [guidelines/feature-refactor-qa.md](guidelines/feature-refactor-qa.md) for
+characterization tests and known inherited limitations, including delayed
+modal callbacks, local-only security settings and existing table type exports.
 
 ## Validation
 
