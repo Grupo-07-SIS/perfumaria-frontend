@@ -6,6 +6,38 @@
 }
 
 @layer components {
+  .peract-field-control {
+    width: 100%;
+    min-width: 0;
+    min-height: 2.25rem;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--border);
+    border-radius: calc(var(--radius) - 2px);
+    background: var(--input-background);
+    color: var(--foreground);
+    font-family: inherit;
+    font-size: 0.875rem;
+    outline: none;
+  }
+
+  .peract-field-control:focus-visible {
+    border-color: var(--ring);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--ring) 18%, transparent);
+  }
+
+  .peract-field-control[aria-invalid="true"] {
+    border-color: var(--destructive);
+  }
+
+  .peract-field-control:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
+
+  .peract-field-control::placeholder {
+    color: var(--muted-foreground);
+  }
+
   .peract-focus-ring:focus-visible {
     outline: 2px solid var(--ring);
     outline-offset: 2px;
