@@ -109,11 +109,13 @@ export async function dispatchBotpressFlow(
     } catch (error) {
         const durationMs = nowMs() - startMs;
         const status = axios.isAxiosError(error) ? error.response?.status : undefined;
-        const errorMessage = status
-            ? `Falha ao acionar Botpress: ${status}`
-            : error instanceof Error
-              ? error.message
-              : "Erro desconhecido ao acionar Botpress";
+        let errorMessage = "Erro desconhecido ao acionar Botpress";
+
+        if (status) {
+            errorMessage = `Falha ao acionar Botpress: ${status}`;
+        } else if (error instanceof Error) {
+            errorMessage = error.message;
+        }
 
         emitTelemetry({
             type: "request_failed",
