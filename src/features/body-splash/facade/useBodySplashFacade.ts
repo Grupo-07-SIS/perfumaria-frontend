@@ -1,38 +1,63 @@
-import { useState } from "react";
-import type { BodySplashItem } from "../models/body-splash.models";
-import { initialItems } from "../repository/body-splash.repository";
+import { useEffect, useState } from "react";
+import type { BodySplashItem, BodySplashModalFormValues, BodySplashProductOption } from "../models/body-splash.models";
+import { createBodySplash, fetchBodySplashCatalog, removeBodySplash, updateBodySplash } from "../services/body-splash.service";
+
 export function useBodySplashFacade() {
-  const [items, setItems] = useState<BodySplashItem[]>(initialItems);
+  const [items, setItems] = useState<BodySplashItem[]>([]);
+  const [productOptions, setProductOptions] = useState<BodySplashProductOption[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState("");
   const [showModal, setShowModal] = useState(false);
   const [editItem, setEditItem] = useState<BodySplashItem | null>(null);
   const [deleteItem, setDeleteItem] = useState<BodySplashItem | null>(null);
   const [search, setSearch] = useState("");
+
+  useEffect(() => {
+    fetchBodySplashCatalog()
+      .then(catalog => {
+        setItems(catalog.page.content);
+        setProductOptions(catalog.productOptions);
+      })
+      .catch(() => setError("Não foi possível carregar os preços de Body Splash."))
+      .finally(() => setIsLoading(false));
+  }, []);
+
   const filtered = items.filter(d => d.produto.toLowerCase().includes(search.toLowerCase()));
-  const handleSave = (data: Omit<BodySplashItem, "id">) => {
-    if (editItem) {
-      setItems(prev => prev.map(d => d.id === editItem.id ? {
-        ...d,
-        ...data
-      } : d));
-    } else {
-      const newId = Math.max(...items.map(d => d.id), 0) + 1;
-      setItems(prev => [...prev, {
-        id: newId,
-        ...data
-      }]);
+
+  const handleSave = async (values: BodySplashModalFormValues) => {
+    setError("");
+    try {
+      if (editItem) {
+        const saved = await updateBodySplash(editItem, values);
+        setItems(prev => prev.map(item => item.id === saved.id ? saved : item));
+      } else {
+        const saved = await createBodySplash(values);
+        setItems(prev => [...prev, saved]);
+      }
+      setEditItem(null);
+      setShowModal(false);
+    } catch (requestError) {
+      setError("Não foi possível salvar o Body Splash.");
+      throw requestError;
     }
-    setEditItem(null);
-    setShowModal(false);
   };
   const fmt = (v: number) => `R$ ${v.toFixed(2).replace(".", ",")}`;
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (!deleteItem) return;
-    setItems(prev => prev.filter(d => d.id !== deleteItem.id));
-    setDeleteItem(null);
+    setError("");
+    try {
+      const deletedId = await removeBodySplash(deleteItem);
+      setItems(prev => prev.filter(item => item.id !== deletedId));
+      setDeleteItem(null);
+    } catch {
+      setError("Não foi possível excluir o Body Splash.");
+    }
   };
   return {
     items,
-    setItems,
+    productOptions,
+    isLoading,
+    error,
     showModal,
     setShowModal,
     editItem,

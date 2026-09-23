@@ -10,7 +10,7 @@ export function useBodySplashModalForm({
 }: ModalProps) {
   const form = useForm<BodySplashModalFormValues>({
     defaultValues: {
-      produto: edit?.produto ?? "",
+      produtoId: String(edit?.produtoId ?? ""),
       precos: {
         preco10ml: String(edit?.preco10ml ?? ""),
         preco15ml: String(edit?.preco15ml ?? ""),
@@ -21,10 +21,10 @@ export function useBodySplashModalForm({
     }
   });
   const {
-    produto,
+    produtoId,
     precos
   } = form.watch();
-  const setProduto = (value: SetStateAction<BodySplashModalFormValues["produto"]>) => form.setValue("produto", typeof value === "function" ? value(form.getValues("produto")) : value, {
+  const setProdutoId = (value: SetStateAction<BodySplashModalFormValues["produtoId"]>) => form.setValue("produtoId", typeof value === "function" ? value(form.getValues("produtoId")) : value, {
     shouldDirty: true
   });
   const setPrecos = (value: SetStateAction<BodySplashModalFormValues["precos"]>) => form.setValue("precos", typeof value === "function" ? value(form.getValues("precos")) : value, {
@@ -32,28 +32,24 @@ export function useBodySplashModalForm({
   });
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
-  const handleSave = () => {
+  const handleSave = async () => {
     const validationError = validateBodySplash(form.getValues());
     if (validationError) {
       setError(validationError);
       return;
     }
     setError("");
-    setSuccess(true);
-    onSave({
-      produto,
-      preco10ml: parseFloat(precos.preco10ml),
-      preco15ml: parseFloat(precos.preco15ml),
-      preco20ml: parseFloat(precos.preco20ml),
-      preco25ml: parseFloat(precos.preco25ml),
-      preco30ml: parseFloat(precos.preco30ml)
-    });
-    setTimeout(onClose, 1200);
+    try {
+      await onSave({ produtoId, precos });
+      setSuccess(true);
+    } catch {
+      setError("Não foi possível salvar o Body Splash.");
+    }
   };
   return {
-    produto,
+    produtoId,
     precos,
-    setProduto,
+    setProdutoId,
     setPrecos,
     error,
     success,

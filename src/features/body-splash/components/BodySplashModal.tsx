@@ -1,6 +1,6 @@
 import { useBodySplashModalForm } from "../facade/useBodySplashModalForm";
 import type { ModalProps } from "../models/body-splash.models";
-import { VOLUMES, ACC, bodySplashBase } from "../config/body-splash.config";
+import { VOLUMES, ACC } from "../config/body-splash.config";
 import { PeractModal, PeractModalTitle } from "../../../shared/components/peract-modal";
 import { PeractButtonPrimitive } from "../../../shared/components/peract-button";
 import { X, CheckCircle } from "lucide-react";
@@ -17,12 +17,13 @@ import { PeractInputControl } from "../../../shared/components/peract-input";
 export function BodySplashModal({
   onClose,
   onSave,
+  productOptions,
   edit
 }: ModalProps) {
   const {
-    produto,
+    produtoId,
     precos,
-    setProduto,
+    setProdutoId,
     setPrecos,
     error,
     success,
@@ -45,12 +46,13 @@ export function BodySplashModal({
 
           {/* Produto */}
           <PeractField>
-            <PeractLabel className="text-sm text-gray-700 block mb-1.5">Body Splash vinculado *</PeractLabel>
-            <PeractNativeSelect value={produto} onChange={e => setProduto(e.target.value)} className="w-full border peract-border-color rounded-lg px-3 py-2 text-sm text-gray-700 focus:outline-none" style={{
+            <PeractLabel htmlFor="body-splash-product" className="text-sm text-gray-700 block mb-1.5">Body Splash vinculado *</PeractLabel>
+            <PeractNativeSelect id="body-splash-product" value={produtoId} onChange={e => setProdutoId(e.target.value)} className="w-full border peract-border-color rounded-lg px-3 py-2 text-sm text-gray-700 focus:outline-none" style={{
           outline: "none"
         }} onFocus={e => e.target.style.borderColor = ACC} onBlur={e => e.target.style.borderColor = ""}>
               <option value="">Selecionar Body Splash...</option>
-              {bodySplashBase.map(p => <option key={p} value={p}>{p}</option>)}
+              {!edit?.produtoId && edit?.produto && <option value="" disabled>{edit.produto}</option>}
+              {productOptions.map(option => <option key={option.id} value={option.id}>{option.nome}</option>)}
             </PeractNativeSelect>
             <p className="text-xs peract-font-color-muted mt-1">Selecione o produto base vinculado aos frascos.</p>
           </PeractField>
@@ -63,10 +65,10 @@ export function BodySplashModal({
             key,
             label
           }) => <PeractField key={key}>
-                  <PeractLabel className="text-xs peract-font-color-muted block mb-1">Frasco {label}</PeractLabel>
+                  <PeractLabel htmlFor={`body-splash-price-${label}`} className="text-xs peract-font-color-muted block mb-1">Frasco {label}</PeractLabel>
                   <div className="relative">
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 peract-font-color-muted text-sm">R$</span>
-                    <PeractInputControl type="number" min={0} step={0.01} value={precos[key]} onChange={e => setPrecos(p => ({
+                    <PeractInputControl id={`body-splash-price-${label}`} type="number" min={0} step={0.01} value={precos[key]} onChange={e => setPrecos(p => ({
                 ...p,
                 [key]: e.target.value
               }))} placeholder="0,00" className="w-full border peract-border-color rounded-lg pl-8 pr-3 py-2 text-sm peract-font-color-default focus:outline-none" onFocus={e => e.target.style.borderColor = ACC} onBlur={e => e.target.style.borderColor = ""} />

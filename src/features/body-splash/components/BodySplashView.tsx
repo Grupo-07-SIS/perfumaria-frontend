@@ -18,6 +18,9 @@ import { PeractTableRoot, PeractTableHeader, PeractTableRow, PeractTableHead, Pe
 
 export function BodySplashView({
   confirmDelete,
+  productOptions,
+  isLoading,
+  error,
   showModal,
   setShowModal,
   editItem,
@@ -34,7 +37,7 @@ export function BodySplashView({
       {(showModal || editItem) && <BodySplashModal onClose={() => {
       setShowModal(false);
       setEditItem(null);
-    }} onSave={handleSave} edit={editItem ?? undefined} />}
+    }} onSave={handleSave} productOptions={productOptions} edit={editItem ?? undefined} />}
       {deleteItem && <DeleteConfirm nome={deleteItem.produto} onClose={() => setDeleteItem(null)} onConfirm={confirmDelete} />}
 
       {/* Header */}
@@ -66,6 +69,9 @@ export function BodySplashView({
           </p>
         </div>
       </div>
+
+      {error && <p role="alert" className="text-sm text-red-600 mb-4">{error}</p>}
+      {isLoading && <p className="text-sm peract-font-color-muted mb-4">Carregando preços de Body Splash...</p>}
 
       {/* Search */}
       <PeractCard className="peract-bg-card rounded-xl border peract-border-color p-3 mb-4 shadow-sm">
