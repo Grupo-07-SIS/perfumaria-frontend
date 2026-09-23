@@ -1,4 +1,5 @@
-import { environment } from "../../../environment";
+import axios from "axios";
+import { apiClient } from "../../../core/services/http-client";
 import type { LoginRequestDto } from "./dto/login-request.dto";
 import type { LoginResponseDto } from "./dto/login-response.dto";
 
@@ -8,19 +9,15 @@ interface AuthenticateParams {
 
 export const loginRepository = {
   async authenticate({ credentials }: AuthenticateParams): Promise<LoginResponseDto> {
-    const response = await fetch(`${environment.backendUrl}/auth/login`, {
-      body: JSON.stringify(credentials),
-      credentials: "include",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      method: "POST",
-    });
+    try {
+      const response = await apiClient.post<LoginResponseDto>("/auth/login", credentials);
+      return response.data;
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        throw new Error(`LOGIN_REQUEST_FAILED:${error.response?.status ?? "unknown"}`);
+      }
 
-    if (!response.ok) {
-      throw new Error(`LOGIN_REQUEST_FAILED:${response.status}`);
+      throw error;
     }
-
-    return response.json() as Promise<LoginResponseDto>;
   },
 };
