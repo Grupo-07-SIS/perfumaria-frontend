@@ -1,3 +1,4 @@
+import axios from "axios";
 import { flowStrategyRegistry } from "./botpress-strategies";
 import { emitTelemetry } from "./botpress-telemetry";
 import type { BotpressFlowType, BotpressSalePayload } from "./botpress-types";
@@ -88,23 +89,31 @@ export async function dispatchBotpressFlow(
         codigoVenda: payload.codigoVenda,
     });
 
-    let response: Response;
-
     try {
-        response = await fetch(botpressWebhookUrl, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-                eventType: strategy.eventType,
-                payload: normalizedPayload,
-            }),
+        const response = await axios.post(botpressWebhookUrl, {
+            eventType: strategy.eventType,
+            payload: normalizedPayload,
+        });
+
+        emitTelemetry({
+            type: "request_succeeded",
+            requestId,
+            flow,
+            eventType: strategy.eventType,
+            saleChannel,
+            status: response.status,
+            durationMs: nowMs() - startMs,
+            timestamp: new Date().toISOString(),
+            codigoVenda: payload.codigoVenda,
         });
     } catch (error) {
         const durationMs = nowMs() - startMs;
-        const errorMessage =
-            error instanceof Error ? error.message : "Erro desconhecido ao acionar Botpress";
+        const status = axios.isAxiosError(error) ? error.response?.status : undefined;
+        const errorMessage = status
+            ? `Falha ao acionar Botpress: ${status}`
+            : error instanceof Error
+              ? error.message
+              : "Erro desconhecido ao acionar Botpress";
 
         emitTelemetry({
             type: "request_failed",
@@ -112,45 +121,17 @@ export async function dispatchBotpressFlow(
             flow,
             eventType: strategy.eventType,
             saleChannel,
+            ...(status !== undefined ? { status } : {}),
             durationMs,
             error: errorMessage,
             timestamp: new Date().toISOString(),
             codigoVenda: payload.codigoVenda,
         });
 
+        if (status) {
+            throw new Error(`${errorMessage} (requestId: ${requestId})`);
+        }
+
         throw error;
     }
-
-    const durationMs = nowMs() - startMs;
-
-    if (!response.ok) {
-        emitTelemetry({
-            type: "request_failed",
-            requestId,
-            flow,
-            eventType: strategy.eventType,
-            saleChannel,
-            status: response.status,
-            durationMs,
-            error: `Falha ao acionar Botpress: ${response.status}`,
-            timestamp: new Date().toISOString(),
-            codigoVenda: payload.codigoVenda,
-        });
-
-        throw new Error(
-            `Falha ao acionar Botpress: ${response.status} (requestId: ${requestId})`,
-        );
-    }
-
-    emitTelemetry({
-        type: "request_succeeded",
-        requestId,
-        flow,
-        eventType: strategy.eventType,
-        saleChannel,
-        status: response.status,
-        durationMs,
-        timestamp: new Date().toISOString(),
-        codigoVenda: payload.codigoVenda,
-    });
 }
