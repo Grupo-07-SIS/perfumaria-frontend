@@ -1,7 +1,7 @@
 import { Pencil, Tag, Trash2 } from "lucide-react";
 import { PeractButton } from "../../../shared/components/peract-button";
 import { PeractPagination } from "../../../shared/components/peract-pagination";
-import { PeractTable } from "../../../shared/components/peract-table";
+import { PeractTable, PeractTableCell, PeractTableRow } from "../../../shared/components/peract-table";
 import type { Category, CategoryDeleteTarget, CategoryFormTarget } from "../models/categories.models";
 interface CategoriesTableProps {
   categories: Category[];
@@ -35,22 +35,18 @@ export function CategoriesTable({
   }, {
     name: "Ações",
     value: "actions"
-  }]} renderRow={category => <tr key={category.id} className="transition-colors hover:bg-gray-50/50">
-          <td className="px-4 py-3 font-mono text-sm peract-font-color-muted">#{category.id}</td>
-          <td className="px-4 py-3">
+  }]} renderRow={category => <PeractTableRow key={category.id} className="transition-colors hover:bg-gray-50/50">
+          <PeractTableCell className="px-4 py-3 font-mono text-sm peract-font-color-muted">#{category.id}</PeractTableCell>
+          <PeractTableCell className="px-4 py-3">
             <div className="flex items-center gap-2">
-              <div className="flex h-6 w-6 items-center justify-center rounded-md" style={{
-          background: "#FFF3E8"
-        }}>
-                <Tag size={12} style={{
-            color: "#A67449"
-          }} />
+              <div className="flex h-6 w-6 items-center justify-center peract-radius-sm peract-bg-accent-soft">
+                <Tag size={12} className="peract-font-color-accent" />
               </div>
               <span className="text-sm font-medium peract-font-color-default">{category.nome}</span>
             </div>
-          </td>
-          <td className="px-4 py-3"><span className="text-sm text-gray-600">{category.linkedProducts} produto(s)</span></td>
-          <td className="px-4 py-3">
+          </PeractTableCell>
+          <PeractTableCell className="px-4 py-3"><span className="text-sm text-gray-600">{category.linkedProducts} produto(s)</span></PeractTableCell>
+          <PeractTableCell className="px-4 py-3">
             <div className="flex items-center gap-2">
               <PeractButton action={() => onEditCategory({
           id: category.id,
@@ -62,6 +58,6 @@ export function CategoriesTable({
           nome: category.nome
         })} className="h-8 w-8 peract-font-color-muted hover:bg-red-50 hover:text-red-600" size="icon" theme="secondary" title="Excluir"><Trash2 size={15} /></PeractButton>
             </div>
-          </td>
-        </tr>} />;
+          </PeractTableCell>
+        </PeractTableRow>} />;
 }

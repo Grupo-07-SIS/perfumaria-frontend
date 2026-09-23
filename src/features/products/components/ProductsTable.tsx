@@ -3,7 +3,7 @@ import { CheckCircle } from "lucide-react";
 import { PeractButton } from "../../../shared/components/peract-button";
 import { PeractCard } from "../../../shared/components/peract-card";
 import { PeractPagination } from "../../../shared/components/peract-pagination";
-import { PeractTable } from "../../../shared/components/peract-table";
+import { PeractTable, PeractTableCell, PeractTableRow } from "../../../shared/components/peract-table";
 import { PeractTag } from "../../../shared/components/peract-tag";
 import { PRODUCTS_PAGE_SIZE } from "../config/products.config";
 import type { ProductDeleteTarget, ProductFormTarget, ProductListItem, ProductSortField, ProductStockStatus } from "../models/products.models";
@@ -126,21 +126,21 @@ export function ProductsTable({
         value: "actions"
       }]} onOrderColumn={field => onSort(field as ProductSortField)} renderHeaderLabel={column => column.orderColumn ? <div className="flex items-center gap-1">{column.name}<SortIcon active={sortField === column.value} ascending={sortAscending} /></div> : column.name} renderRow={product => {
         const status = statusConfig[product.estoqueStatus];
-        return <tr key={product.id} className="transition-colors hover:bg-gray-50/50">
-                <td className="whitespace-nowrap px-4 py-3 text-sm font-medium peract-font-color-default">{product.nome}</td>
-                <td className="px-4 py-3 text-sm text-gray-600">{product.marca || <span className="text-gray-300">—</span>}</td>
-                <td className="px-4 py-3"><PeractTag>{product.categoriaNome}</PeractTag></td>
-                <td className="px-4 py-3">{product.volumeLabel ? <PeractTag className="w-fit bg-blue-50 text-blue-600" icon={<Ruler size={10} />}>{product.volumeLabel}</PeractTag> : <span className="text-xs italic text-gray-300">—</span>}</td>
-                <td className="px-4 py-3 text-sm font-medium peract-font-color-default">{product.estoqueAtual}</td>
-                <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-700">R$ {product.precoVenda.toFixed(2)}</td>
-                <td className="whitespace-nowrap px-4 py-3 text-sm peract-font-color-muted">{product.precoCompra ? `R$ ${product.precoCompra.toFixed(2)}` : <span className="text-gray-300">—</span>}</td>
-                <td className="px-4 py-3">{product.margemCalculada !== null ? <PeractTag type={product.margemCalculada >= 35 ? "success" : product.margemCalculada >= 20 ? "warning" : "alert"}>{product.margemCalculada.toFixed(1)}%</PeractTag> : <span className="text-xs text-gray-300">—</span>}</td>
-                <td className="px-4 py-3"><PeractTag className="border-0" icon={status.icon} style={{
+        return <PeractTableRow key={product.id} className="transition-colors hover:bg-gray-50/50">
+                <PeractTableCell className="whitespace-nowrap px-4 py-3 text-sm font-medium peract-font-color-default">{product.nome}</PeractTableCell>
+                <PeractTableCell className="px-4 py-3 text-sm text-gray-600">{product.marca || <span className="text-gray-300">—</span>}</PeractTableCell>
+                <PeractTableCell className="px-4 py-3"><PeractTag>{product.categoriaNome}</PeractTag></PeractTableCell>
+                <PeractTableCell className="px-4 py-3">{product.volumeLabel ? <PeractTag className="w-fit bg-blue-50 text-blue-600" icon={<Ruler size={10} />}>{product.volumeLabel}</PeractTag> : <span className="text-xs italic text-gray-300">—</span>}</PeractTableCell>
+                <PeractTableCell className="px-4 py-3 text-sm font-medium peract-font-color-default">{product.estoqueAtual}</PeractTableCell>
+                <PeractTableCell className="whitespace-nowrap px-4 py-3 text-sm text-gray-700">R$ {product.precoVenda.toFixed(2)}</PeractTableCell>
+                <PeractTableCell className="whitespace-nowrap px-4 py-3 text-sm peract-font-color-muted">{product.precoCompra ? `R$ ${product.precoCompra.toFixed(2)}` : <span className="text-gray-300">—</span>}</PeractTableCell>
+                <PeractTableCell className="px-4 py-3">{product.margemCalculada !== null ? <PeractTag type={product.margemCalculada >= 35 ? "success" : product.margemCalculada >= 20 ? "warning" : "alert"}>{product.margemCalculada.toFixed(1)}%</PeractTag> : <span className="text-xs text-gray-300">—</span>}</PeractTableCell>
+                <PeractTableCell className="px-4 py-3"><PeractTag className="border-0" icon={status.icon} style={{
               background: status.bg,
               color: status.color
-            }}>{status.label}</PeractTag></td>
-                <td className="px-4 py-3">{renderActions(product)}</td>
-              </tr>;
+            }}>{status.label}</PeractTag></PeractTableCell>
+                <PeractTableCell className="px-4 py-3">{renderActions(product)}</PeractTableCell>
+              </PeractTableRow>;
       }} />
       </div>
 
