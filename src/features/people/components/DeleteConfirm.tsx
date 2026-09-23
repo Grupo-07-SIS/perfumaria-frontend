@@ -7,7 +7,7 @@ export function DeleteConfirm({
 }: {
   nome: string;
   onClose: () => void;
-  onConfirm: () => void;
+  onConfirm: () => void | Promise<void>;
 }) {
   return <PeractModal className="peract-bg-card peract-radius-lg shadow-2xl max-w-sm" onClose={onClose}>
         <div className="p-4 border-b peract-border-color"><PeractModalTitle className="peract-font-color-default">Confirmar exclusão</PeractModalTitle></div>

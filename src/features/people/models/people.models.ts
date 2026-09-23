@@ -28,17 +28,17 @@ export interface EnderecoFieldsProps {
 export interface ClienteModalProps {
   data?: Cliente;
   onClose: () => void;
-  onSave: (d: Omit<Cliente, "id" | "totalPedidos" | "ativo">) => void;
+  onSave: (d: ClienteModalFormValues) => void | Promise<void>;
 }
 export interface FornecedorModalProps {
   data?: Fornecedor;
   onClose: () => void;
-  onSave: (d: Omit<Fornecedor, "id" | "totalCompras">) => void;
+  onSave: (d: FornecedorModalFormValues) => void | Promise<void>;
 }
 export interface FuncionarioModalProps {
   data?: Funcionario;
   onClose: () => void;
-  onSave: (d: Omit<Funcionario, "id">) => void;
+  onSave: (d: Omit<FuncionarioModalFormValues, "confirmSenha">) => void | Promise<void>;
 }
 export interface ClienteModalFormValues {
   nome: string;

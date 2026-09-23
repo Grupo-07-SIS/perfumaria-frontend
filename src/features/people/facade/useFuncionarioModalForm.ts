@@ -43,7 +43,7 @@ export function useFuncionarioModalForm({
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [success, setSuccess] = useState(false);
   const isNew = !data;
-  const handleSave = () => {
+  const handleSave = async () => {
     const e = validateFuncionario({
       nome,
       email,
@@ -55,14 +55,17 @@ export function useFuncionarioModalForm({
       setErrors(e);
       return;
     }
-    setSuccess(true);
-    onSave({
-      nome: nome.trim(),
-      cargo,
-      email: email.trim(),
-      senha: senha || data?.senha
-    });
-    setTimeout(onClose, 1200);
+    try {
+      await onSave({
+        nome: nome.trim(),
+        cargo,
+        email: email.trim(),
+        senha: senha || data?.senha
+      });
+      setSuccess(true);
+    } catch {
+      setErrors({ form: "Não foi possível salvar o funcionário." });
+    }
   };
   return {
     nome,

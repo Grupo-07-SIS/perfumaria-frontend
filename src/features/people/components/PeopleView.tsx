@@ -3,7 +3,6 @@ import { ClienteModal } from "./ClienteModal";
 import { FornecedorModal } from "./FornecedorModal";
 import { FuncionarioModal } from "./FuncionarioModal";
 import { DeleteConfirm } from "./DeleteConfirm";
-import { InativarConfirm } from "./InativarConfirm";
 import { PeractButtonPrimitive } from "../../../shared/components/peract-button";
 import { Plus, Search, UserCheck, UserX, Users, User, Pencil, UserMinus, Phone, Mail, MapPin, Truck, Trash2 } from "lucide-react";
 import { ACC, DARK } from "../config/people.config";
@@ -16,6 +15,9 @@ import { CardActions } from "./CardActions";
 import { PeractTableRoot, PeractTableHeader, PeractTableRow, PeractTableHead, PeractTableBody, PeractTableCell } from "../../../shared/components/peract-table";
 export function PeopleView({
   clientes,
+  isLoading,
+  error,
+  requestClientDeletion,
   requestSupplierDeletion,
   requestEmployeeDeletion,
   aba,
@@ -28,15 +30,12 @@ export function PeopleView({
   setModal,
   deleteTarget,
   setDeleteTarget,
-  inativarTarget,
-  setInativarTarget,
   clientesAtivos,
   clientesInativos,
   tabs,
   saveCliente,
   saveFornecedor,
   saveFuncionario,
-  toggleAtivo,
   filtClientes,
   filtFornecedores,
   filtFuncionarios,
@@ -47,13 +46,9 @@ export function PeopleView({
       {modal?.type === "cliente" && <ClienteModal data={modal.data} onClose={() => setModal(null)} onSave={saveCliente} />}
       {modal?.type === "fornecedor" && <FornecedorModal data={modal.data} onClose={() => setModal(null)} onSave={saveFornecedor} />}
       {modal?.type === "funcionario" && <FuncionarioModal data={modal.data} onClose={() => setModal(null)} onSave={saveFuncionario} />}
-      {deleteTarget && <DeleteConfirm nome={deleteTarget.nome} onClose={() => setDeleteTarget(null)} onConfirm={() => {
-      deleteTarget.fn();
+      {deleteTarget && <DeleteConfirm nome={deleteTarget.nome} onClose={() => setDeleteTarget(null)} onConfirm={async () => {
+      await deleteTarget.fn();
       setDeleteTarget(null);
-    }} />}
-      {inativarTarget && <InativarConfirm nome={inativarTarget.nome} onClose={() => setInativarTarget(null)} onConfirm={() => {
-      toggleAtivo(inativarTarget.id, false);
-      setInativarTarget(null);
     }} />}
 
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
@@ -65,6 +60,9 @@ export function PeopleView({
           <Plus size={16} /> {newLabel}
         </PeractButtonPrimitive>
       </div>
+
+      {error && <p role="alert" className="text-sm text-red-600 mb-4">{error}</p>}
+      {isLoading && <p className="text-sm peract-font-color-muted mb-4">Carregando pessoas...</p>}
 
       {/* Tabs */}
       <div className="flex overflow-x-auto border-b peract-border-color mb-4">
@@ -162,11 +160,9 @@ export function PeopleView({
                 })} className="p-1.5 rounded-lg peract-font-color-muted transition-colors hover:bg-gray-100" title="Editar" variant="plain" size="plain" aria-label="Editar">
                         <Pencil size={14} />
                       </PeractButtonPrimitive>
-                      {isAtivo ? <PeractButtonPrimitive onClick={() => setInativarTarget(c)} className="p-1.5 rounded-lg peract-font-color-muted transition-colors hover:bg-amber-50 hover:text-amber-600" title="Inativar cliente" variant="plain" size="plain" aria-label="Inativar cliente">
-                          <UserMinus size={14} />
-                        </PeractButtonPrimitive> : <PeractButtonPrimitive onClick={() => toggleAtivo(c.id, true)} className="p-1.5 rounded-lg peract-font-color-muted transition-colors hover:bg-green-50 hover:text-green-600" title="Reativar cliente" variant="plain" size="plain" aria-label="Reativar cliente">
-                          <UserCheck size={14} />
-                        </PeractButtonPrimitive>}
+                      <PeractButtonPrimitive onClick={() => requestClientDeletion(c)} className="p-1.5 rounded-lg peract-font-color-muted transition-colors hover:bg-red-50 hover:text-red-600" title="Excluir cliente" variant="plain" size="plain" aria-label="Excluir cliente">
+                        <UserMinus size={14} />
+                      </PeractButtonPrimitive>
                     </div>
                   </div>
                   <div className="flex flex-col gap-1.5">

@@ -43,7 +43,7 @@ export function useClienteModalForm({
     ...p,
     [key]: ""
   }));
-  const handleSave = () => {
+  const handleSave = async () => {
     const e = validateCliente({
       nome,
       telefone
@@ -53,14 +53,17 @@ export function useClienteModalForm({
       return;
     }
     setErrors({});
-    setSuccess(true);
-    onSave({
-      nome: nome.trim(),
-      email: email.trim(),
-      telefone: telefone.trim(),
-      endereco
-    });
-    setTimeout(onClose, 1200);
+    try {
+      await onSave({
+        nome: nome.trim(),
+        email: email.trim(),
+        telefone: telefone.trim(),
+        endereco
+      });
+      setSuccess(true);
+    } catch {
+      setErrors({ form: "Não foi possível salvar o cliente." });
+    }
   };
   return {
     nome,
