@@ -47,6 +47,16 @@ describe("funcionariosRepository", () => {
     expect(apiClientGetMock).toHaveBeenCalledWith("/funcionarios");
   });
 
+  it("envia busca e status como query params quando informados", async () => {
+    apiClientGetMock.mockResolvedValue({ data: [response] });
+
+    await funcionariosRepository.listFuncionarios({ busca: "Beatriz", status: 1 });
+
+    expect(apiClientGetMock).toHaveBeenCalledWith("/funcionarios", {
+      params: { busca: "Beatriz", status: 1 },
+    });
+  });
+
   it("cria, atualiza e exclui usando UUID e o payload OpenAPI", async () => {
     const updatePayload = { nome: "Beatriz Revisada", email: payload.email, fkTipoUsuario: 1 };
     apiClientPostMock.mockResolvedValue({ data: response });

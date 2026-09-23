@@ -39,6 +39,13 @@ describe("clientesService", () => {
     await expect(fetchClientes()).resolves.toEqual([model]);
   });
 
+  it("encaminha busca e status para a listagem remota", async () => {
+    listClientesMock.mockResolvedValue([response]);
+
+    await expect(fetchClientes({ busca: "Ana", status: 0 })).resolves.toEqual([model]);
+    expect(listClientesMock).toHaveBeenCalledWith({ busca: "Ana", status: 0 });
+  });
+
   it("mapeia criacao e atualizacao sem enviar campos somente de resposta", async () => {
     createClienteMock.mockResolvedValue(response);
     updateClienteMock.mockResolvedValue({ ...response, nome: "Ana Revisada" });

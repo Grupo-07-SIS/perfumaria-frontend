@@ -3,23 +3,29 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const {
   createClienteMock,
+  createFornecedorMock,
   createFuncionarioMock,
   fetchClientesMock,
+  fetchFornecedoresMock,
   fetchFuncionariosMock,
   removeClienteMock,
+  removeFornecedorMock,
   removeFuncionarioMock,
-  setFornecedoresMock,
   updateClienteMock,
+  updateFornecedorMock,
   updateFuncionarioMock,
 } = vi.hoisted(() => ({
   createClienteMock: vi.fn(),
+  createFornecedorMock: vi.fn(),
   createFuncionarioMock: vi.fn(),
   fetchClientesMock: vi.fn(),
+  fetchFornecedoresMock: vi.fn(),
   fetchFuncionariosMock: vi.fn(),
   removeClienteMock: vi.fn(),
+  removeFornecedorMock: vi.fn(),
   removeFuncionarioMock: vi.fn(),
-  setFornecedoresMock: vi.fn(),
   updateClienteMock: vi.fn(),
+  updateFornecedorMock: vi.fn(),
   updateFuncionarioMock: vi.fn(),
 }));
 
@@ -34,6 +40,12 @@ vi.mock("../services/funcionarios.service", () => ({
   fetchFuncionarios: fetchFuncionariosMock,
   removeFuncionario: removeFuncionarioMock,
   updateFuncionario: updateFuncionarioMock,
+}));
+vi.mock("../services/fornecedores.service", () => ({
+  createFornecedor: createFornecedorMock,
+  fetchFornecedores: fetchFornecedoresMock,
+  removeFornecedor: removeFornecedorMock,
+  updateFornecedor: updateFornecedorMock,
 }));
 
 const endereco = {
@@ -60,11 +72,11 @@ const funcionarioOriginal = {
   email: "beatriz@example.test",
   cargo: "Funcionário" as const,
 };
-const fornecedorLocal = {
+const fornecedorRemoto = {
   id: 4,
-  razaoSocial: "Frascos Local Ltda",
+  razaoSocial: "Frascos Remoto Ltda",
   cnpj: "12.345.678/0001-90",
-  email: "local@example.test",
+  email: "remoto@example.test",
   telefone: "1133334444",
   endereco,
   totalCompras: 8,
@@ -80,8 +92,8 @@ vi.mock("../repository/people.repository", () => ({
   usePeopleRepository: () => ({
     clientes: [],
     setClientes: vi.fn(),
-    fornecedores: [fornecedorLocal],
-    setFornecedores: setFornecedoresMock,
+    fornecedores: [],
+    setFornecedores: vi.fn(),
     funcionarios: [],
     setFuncionarios: vi.fn(),
     currentUser,
@@ -90,26 +102,81 @@ vi.mock("../repository/people.repository", () => ({
 
 import { usePeopleFacade } from "./usePeopleFacade";
 
-describe("usePeopleFacade com clientes e funcionarios remotos", () => {
+describe("usePeopleFacade com pessoas remotas", () => {
   beforeEach(() => {
     vi.resetAllMocks();
     fetchClientesMock.mockResolvedValue([clienteOriginal]);
+    fetchFornecedoresMock.mockResolvedValue([fornecedorRemoto]);
     fetchFuncionariosMock.mockResolvedValue([funcionarioOriginal]);
   });
 
-  it("carrega clientes e funcionarios no mount e preserva fornecedor e usuario locais", async () => {
+  it("carrega clientes, fornecedores e funcionarios juntos no mount", async () => {
     const { result } = renderHook(() => usePeopleFacade());
 
     expect(result.current.isLoading).toBe(true);
-    expect(result.current.fornecedores).toEqual([fornecedorLocal]);
     expect(result.current.currentUser).toEqual(currentUser);
 
     await waitFor(() => expect(result.current.isLoading).toBe(false));
     expect(fetchClientesMock).toHaveBeenCalledTimes(1);
+    expect(fetchFornecedoresMock).toHaveBeenCalledTimes(1);
     expect(fetchFuncionariosMock).toHaveBeenCalledTimes(1);
     expect(result.current.clientes).toEqual([clienteOriginal]);
+    expect(result.current.fornecedores).toEqual([fornecedorRemoto]);
     expect(result.current.funcionarios).toEqual([funcionarioOriginal]);
     expect(result.current.error).toBe("");
+  });
+
+  it("mantem os resultados remotos enquanto o usuario apenas digita", async () => {
+    const { result } = renderHook(() => usePeopleFacade());
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    vi.clearAllMocks();
+
+    act(() => result.current.setSearch("resultado inexistente"));
+
+    expect(result.current.filtClientes).toEqual([clienteOriginal]);
+    expect(fetchClientesMock).not.toHaveBeenCalled();
+    expect(fetchFornecedoresMock).not.toHaveBeenCalled();
+    expect(fetchFuncionariosMock).not.toHaveBeenCalled();
+  });
+
+  it("submete busca somente para a aba ativa e deriva o status de clientes", async () => {
+    const { result } = renderHook(() => usePeopleFacade());
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    vi.clearAllMocks();
+
+    act(() => {
+      result.current.setSearch("Ana");
+      result.current.setStatusFiltro("inativos");
+    });
+    await act(async () => result.current.submitSearch());
+    expect(fetchClientesMock).toHaveBeenLastCalledWith({ busca: "Ana", status: 0 });
+    expect(fetchFornecedoresMock).not.toHaveBeenCalled();
+    expect(fetchFuncionariosMock).not.toHaveBeenCalled();
+
+    vi.clearAllMocks();
+    act(() => result.current.setStatusFiltro("todos"));
+    await act(async () => result.current.submitSearch());
+    expect(fetchClientesMock).toHaveBeenLastCalledWith({ busca: "Ana" });
+
+    vi.clearAllMocks();
+    act(() => {
+      result.current.setAba("fornecedores");
+      result.current.setSearch("Frascos");
+    });
+    await act(async () => result.current.submitSearch());
+    expect(fetchFornecedoresMock).toHaveBeenLastCalledWith({ busca: "Frascos" });
+    expect(fetchClientesMock).not.toHaveBeenCalled();
+    expect(fetchFuncionariosMock).not.toHaveBeenCalled();
+
+    vi.clearAllMocks();
+    act(() => {
+      result.current.setAba("funcionarios");
+      result.current.setSearch("Beatriz");
+    });
+    await act(async () => result.current.submitSearch());
+    expect(fetchFuncionariosMock).toHaveBeenLastCalledWith({ busca: "Beatriz" });
+    expect(fetchClientesMock).not.toHaveBeenCalled();
+    expect(fetchFornecedoresMock).not.toHaveBeenCalled();
   });
 
   it("expõe erro de carga e encerra loading quando uma integracao falha", async () => {
@@ -234,22 +301,92 @@ describe("usePeopleFacade com clientes e funcionarios remotos", () => {
     expect(result.current.funcionarios).toEqual([criado]);
   });
 
-  it("mantem CRUD de fornecedores exclusivamente no repository local", async () => {
+  it("cria, atualiza e exclui fornecedor somente depois do backend confirmar", async () => {
+    const criado = { ...fornecedorRemoto, id: 32, razaoSocial: "Nova Essencia Ltda" };
+    const revisado = { ...fornecedorRemoto, razaoSocial: "Frascos Revisada Ltda" };
+    let resolveCreate!: (value: typeof criado) => void;
+    let resolveUpdate!: (value: typeof revisado) => void;
+    let resolveDelete!: (value: number) => void;
+    createFornecedorMock.mockImplementation(() => new Promise(resolve => { resolveCreate = resolve; }));
+    updateFornecedorMock.mockImplementation(() => new Promise(resolve => { resolveUpdate = resolve; }));
+    removeFornecedorMock.mockImplementation(() => new Promise(resolve => { resolveDelete = resolve; }));
     const { result } = renderHook(() => usePeopleFacade());
     await waitFor(() => expect(result.current.isLoading).toBe(false));
 
-    act(() => result.current.setModal({ type: "fornecedor", data: fornecedorLocal }));
-    act(() => result.current.saveFornecedor({
-      razaoSocial: "Frascos Locais Revisada",
-      cnpj: fornecedorLocal.cnpj,
-      email: fornecedorLocal.email,
-      telefone: fornecedorLocal.telefone,
-      endereco,
-    }));
-    expect(setFornecedoresMock).toHaveBeenCalledTimes(1);
+    act(() => result.current.setModal({ type: "fornecedor" }));
+    let createPromise!: Promise<void>;
+    act(() => {
+      createPromise = result.current.saveFornecedor({
+        razaoSocial: criado.razaoSocial,
+        cnpj: criado.cnpj,
+        email: criado.email,
+        telefone: criado.telefone,
+        endereco,
+      });
+    });
+    expect(result.current.fornecedores).toEqual([fornecedorRemoto]);
+    expect(result.current.modal?.type).toBe("fornecedor");
+    await act(async () => {
+      resolveCreate(criado);
+      await createPromise;
+    });
+    expect(result.current.fornecedores).toEqual([fornecedorRemoto, criado]);
+    expect(result.current.modal).toBeNull();
 
-    act(() => result.current.requestSupplierDeletion(fornecedorLocal));
-    act(() => result.current.deleteTarget!.fn());
-    expect(setFornecedoresMock).toHaveBeenCalledTimes(2);
+    act(() => result.current.setModal({ type: "fornecedor", data: fornecedorRemoto }));
+    let updatePromise!: Promise<void>;
+    act(() => {
+      updatePromise = result.current.saveFornecedor({
+        razaoSocial: revisado.razaoSocial,
+        cnpj: revisado.cnpj,
+        email: revisado.email,
+        telefone: revisado.telefone,
+        endereco,
+      });
+    });
+    expect(result.current.fornecedores[0]).toEqual(fornecedorRemoto);
+    await act(async () => {
+      resolveUpdate(revisado);
+      await updatePromise;
+    });
+    expect(result.current.fornecedores).toEqual([revisado, criado]);
+
+    act(() => result.current.requestSupplierDeletion(revisado));
+    let deletePromise!: Promise<void>;
+    act(() => { deletePromise = result.current.deleteTarget!.fn(); });
+    expect(result.current.fornecedores).toEqual([revisado, criado]);
+    await act(async () => {
+      resolveDelete(revisado.id);
+      await deletePromise;
+    });
+    expect(result.current.fornecedores).toEqual([criado]);
+    expect(result.current.deleteTarget).toBeNull();
+  });
+
+  it("mantem fornecedor e alvos abertos quando uma mutacao remota falha", async () => {
+    createFornecedorMock.mockRejectedValueOnce(new Error("PEOPLE_SUPPLIERS_CREATE_FAILED:500"));
+    removeFornecedorMock.mockRejectedValueOnce(new Error("PEOPLE_SUPPLIERS_DELETE_FAILED:500"));
+    const { result } = renderHook(() => usePeopleFacade());
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+    act(() => result.current.setModal({ type: "fornecedor" }));
+    await act(async () => {
+      await expect(result.current.saveFornecedor({
+        razaoSocial: "Falha Ltda",
+        cnpj: fornecedorRemoto.cnpj,
+        email: fornecedorRemoto.email,
+        telefone: fornecedorRemoto.telefone,
+        endereco,
+      })).rejects.toThrow("PEOPLE_SUPPLIERS_CREATE_FAILED:500");
+    });
+    expect(result.current.fornecedores).toEqual([fornecedorRemoto]);
+    expect(result.current.modal?.type).toBe("fornecedor");
+
+    act(() => result.current.requestSupplierDeletion(fornecedorRemoto));
+    await act(async () => {
+      await expect(result.current.deleteTarget!.fn()).rejects.toThrow("PEOPLE_SUPPLIERS_DELETE_FAILED:500");
+    });
+    expect(result.current.fornecedores).toEqual([fornecedorRemoto]);
+    expect(result.current.deleteTarget?.nome).toBe(fornecedorRemoto.razaoSocial);
   });
 });

@@ -53,6 +53,18 @@ describe("clientesRepository", () => {
     });
   });
 
+  it("envia busca e status junto da paginacao", async () => {
+    apiClientGetMock.mockResolvedValue({
+      data: { content: [response], number: 0, size: 100, totalElements: 1, totalPages: 1 },
+    });
+
+    await clientesRepository.listClientes({ busca: "Ana", status: 1 });
+
+    expect(apiClientGetMock).toHaveBeenCalledWith("/clientes", {
+      params: { page: 0, size: 100, busca: "Ana", status: 1 },
+    });
+  });
+
   it("cria, atualiza e exclui usando exatamente o contrato OpenAPI", async () => {
     apiClientPostMock.mockResolvedValue({ data: response });
     apiClientPutMock.mockResolvedValue({ data: { ...response, nome: "Ana Revisada" } });

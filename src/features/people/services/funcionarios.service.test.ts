@@ -42,6 +42,13 @@ describe("funcionariosService", () => {
     await expect(fetchFuncionarios()).resolves.toEqual([model]);
   });
 
+  it("encaminha busca e status para a listagem remota", async () => {
+    listFuncionariosMock.mockResolvedValue([response]);
+
+    await expect(fetchFuncionarios({ busca: "Beatriz", status: 1 })).resolves.toEqual([model]);
+    expect(listFuncionariosMock).toHaveBeenCalledWith({ busca: "Beatriz", status: 1 });
+  });
+
   it("mapeia criacao e atualizacao com os IDs de tipo de usuario", async () => {
     createFuncionarioMock.mockResolvedValue(response);
     updateFuncionarioMock.mockResolvedValue({
