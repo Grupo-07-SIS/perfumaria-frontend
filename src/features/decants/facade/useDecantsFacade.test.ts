@@ -1,48 +1,121 @@
-import { act, renderHook } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { act, renderHook, waitFor } from "@testing-library/react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+const {
+  createDecantMock,
+  fetchDecantsMock,
+  fetchPerfumeOptionsMock,
+  removeDecantMock,
+  updateDecantMock,
+} = vi.hoisted(() => ({
+  createDecantMock: vi.fn(),
+  fetchDecantsMock: vi.fn(),
+  fetchPerfumeOptionsMock: vi.fn(),
+  removeDecantMock: vi.fn(),
+  updateDecantMock: vi.fn(),
+}));
+
+vi.mock("../services/decants.service", () => ({
+  createDecant: createDecantMock,
+  fetchDecants: fetchDecantsMock,
+  fetchPerfumeOptions: fetchPerfumeOptionsMock,
+  removeDecant: removeDecantMock,
+  updateDecant: updateDecantMock,
+}));
+
 import { useDecantsFacade } from "./useDecantsFacade";
 
+const original = { id: 1, perfumeId: 7, perfume: "Chanel N°5", preco2ml: 12, preco3ml: 17, preco5ml: 25, preco10ml: 45 };
+const created = { id: 2, perfumeId: 8, perfume: "Libre", preco2ml: 13, preco3ml: 18, preco5ml: 26, preco10ml: 47 };
+const formData = { perfumeId: "8", preco2ml: "13", preco3ml: "18", preco5ml: "26", preco10ml: "47" };
+
 describe("useDecantsFacade", () => {
-  it("filters without changing the source collection", () => {
-    const { result } = renderHook(() => useDecantsFacade());
-    const originalCount = result.current.decants.length;
-    act(() => result.current.setSearch("chanel"));
-    expect(result.current.filtered.map((decant) => decant.perfume)).toEqual(["Chanel N°5"]);
-    act(() => result.current.setSearch("inexistente"));
-    expect(result.current.filtered).toEqual([]);
-    expect(result.current.decants).toHaveLength(originalCount);
+  beforeEach(() => {
+    vi.resetAllMocks();
+    fetchDecantsMock.mockResolvedValue({ content: [original], number: 0, totalElements: 1, totalPages: 1 });
+    fetchPerfumeOptionsMock.mockResolvedValue([{ id: 7, nome: "Chanel N°5" }, { id: 8, nome: "Libre" }]);
   });
 
-  it("creates and edits a decant without mutating other entries", () => {
+  it("loads decants and perfume options on mount and exposes loading state", async () => {
     const { result } = renderHook(() => useDecantsFacade());
-    const original = result.current.decants;
-    const data = { perfume: "Novo perfume", preco2ml: 10, preco3ml: 15, preco5ml: 20, preco10ml: 30 };
+
+    expect(result.current.isLoading).toBe(true);
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+    expect(fetchDecantsMock).toHaveBeenCalledTimes(1);
+    expect(fetchPerfumeOptionsMock).toHaveBeenCalledTimes(1);
+    expect(result.current.decants).toEqual([original]);
+    expect(result.current.perfumeOptions).toEqual([{ id: 7, nome: "Chanel N°5" }, { id: 8, nome: "Libre" }]);
+    expect(result.current.error).toBe("");
+  });
+
+  it("surfaces list failures without keeping stale loading state", async () => {
+    fetchDecantsMock.mockRejectedValue(new Error("DECANTS_LIST_FAILED:503"));
+    fetchPerfumeOptionsMock.mockRejectedValue(new Error("DECANTS_PRODUCTS_LIST_FAILED:503"));
+    const { result } = renderHook(() => useDecantsFacade());
+
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    expect(result.current.decants).toEqual([]);
+    expect(result.current.perfumeOptions).toEqual([]);
+    expect(result.current.error).toBeTruthy();
+  });
+
+  it("adds a created decant only after the backend succeeds", async () => {
+    let resolveCreate!: (value: typeof created) => void;
+    createDecantMock.mockImplementation(() => new Promise((resolve) => { resolveCreate = resolve; }));
+    const { result } = renderHook(() => useDecantsFacade());
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
     act(() => result.current.setShowModal(true));
-    act(() => result.current.handleSave(data));
-    expect(result.current.decants).toHaveLength(original.length + 1);
+
+    let savePromise!: Promise<void>;
+    act(() => { savePromise = result.current.handleSave(formData); });
+    expect(result.current.decants).toEqual([original]);
+    expect(result.current.showModal).toBe(true);
+
+    await act(async () => {
+      resolveCreate(created);
+      await savePromise;
+    });
+    expect(result.current.decants).toEqual([original, created]);
     expect(result.current.showModal).toBe(false);
-    const created = result.current.decants.at(-1)!;
-    expect(original.some((decant) => decant.id === created.id)).toBe(false);
-    act(() => result.current.setEditDecant(created));
-    act(() => result.current.handleSave({ ...data, preco2ml: 25 }));
-    expect(result.current.decants.at(-1)).toEqual({ ...created, preco2ml: 25 });
-    expect(result.current.decants.slice(0, -1)).toEqual(original);
-    expect(result.current.editDecant).toBeNull();
   });
 
-  it("deletes only the confirmed decant and ignores an absent target", () => {
+  it("updates and deletes only after successful service calls", async () => {
+    updateDecantMock.mockResolvedValue({ ...original, preco2ml: 14 });
+    removeDecantMock.mockResolvedValue(1);
     const { result } = renderHook(() => useDecantsFacade());
-    const original = result.current.decants;
-    act(() => result.current.confirmDelete());
-    expect(result.current.decants).toEqual(original);
-    act(() => result.current.setDeleteDecant(original[0]));
-    act(() => result.current.setDeleteDecant(null));
-    expect(result.current.decants).toEqual(original);
-    act(() => result.current.setDeleteDecant(original[0]));
-    act(() => result.current.confirmDelete());
-    expect(result.current.decants).toEqual(original.slice(1));
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+    act(() => result.current.setEditDecant(original));
+    await act(async () => {
+      await result.current.handleSave({ ...formData, perfumeId: "7", preco2ml: "14" });
+    });
+    expect(result.current.decants).toEqual([{ ...original, preco2ml: 14 }]);
+    expect(updateDecantMock).toHaveBeenCalledWith(original, { ...formData, perfumeId: "7", preco2ml: "14" });
+
+    act(() => result.current.setDeleteDecant({ ...original, preco2ml: 14 }));
+    await act(async () => { await result.current.confirmDelete(); });
+    expect(result.current.decants).toEqual([]);
     expect(result.current.deleteDecant).toBeNull();
-    act(() => result.current.confirmDelete());
-    expect(result.current.decants).toEqual(original.slice(1));
+  });
+
+  it("keeps state and targets intact when a mutation fails", async () => {
+    createDecantMock.mockRejectedValue(new Error("DECANTS_CREATE_FAILED:500"));
+    removeDecantMock.mockRejectedValue(new Error("DECANTS_DELETE_FAILED:500"));
+    const { result } = renderHook(() => useDecantsFacade());
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+    act(() => result.current.setShowModal(true));
+    await act(async () => {
+      await expect(result.current.handleSave(formData)).rejects.toThrow();
+    });
+    expect(result.current.decants).toEqual([original]);
+    expect(result.current.showModal).toBe(true);
+
+    act(() => result.current.setDeleteDecant(original));
+    await act(async () => { await result.current.confirmDelete(); });
+    expect(result.current.decants).toEqual([original]);
+    expect(result.current.deleteDecant).toEqual(original);
+    expect(result.current.error).toBeTruthy();
   });
 });
