@@ -87,6 +87,19 @@ describe("bodySplashService", () => {
     expect(listProductsMock).toHaveBeenCalledWith();
   });
 
+  it("forwards the remote search while preserving product option reconciliation", async () => {
+    listBodySplashesMock.mockResolvedValue({ content: [response], number: 0, totalElements: 1, totalPages: 1 });
+    listProductsMock.mockResolvedValue({
+      content: [{ id: 8, nome: "Rosa & Baunilha" }, { id: 7, nome: "lavanda & ylang" }],
+    });
+
+    await expect(fetchBodySplashCatalog({ busca: "Lavanda", page: 0, size: 10 })).resolves.toEqual({
+      page: { content: [model], number: 0, totalElements: 1, totalPages: 1 },
+      productOptions: [{ id: 7, nome: "lavanda & ylang" }, { id: 8, nome: "Rosa & Baunilha" }],
+    });
+    expect(listBodySplashesMock).toHaveBeenCalledWith({ busca: "Lavanda", page: 0, size: 10 });
+  });
+
   it("preserves an unmatched response name with an undefined product id", async () => {
     listBodySplashesMock.mockResolvedValue({
       content: [{ ...response, produtoNome: "Produto legado" }],

@@ -78,6 +78,37 @@ describe("useBodySplashFacade", () => {
     expect(result.current.error).toBe("");
   });
 
+  it("keeps the current backend results intact while the search text is edited", async () => {
+    const { result } = renderHook(() => useBodySplashFacade());
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+    act(() => result.current.setSearch("Rosa"));
+
+    expect(result.current.filtered).toEqual([original]);
+    expect(fetchBodySplashCatalogMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("replaces the current results with the reconciled backend response on search submit", async () => {
+    fetchBodySplashCatalogMock
+      .mockResolvedValueOnce({
+        page: { content: [original], number: 0, totalElements: 1, totalPages: 1 },
+        productOptions,
+      })
+      .mockResolvedValueOnce({
+        page: { content: [created], number: 0, totalElements: 1, totalPages: 1 },
+        productOptions,
+      });
+    const { result } = renderHook(() => useBodySplashFacade());
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+    act(() => result.current.setSearch("Rosa"));
+    await act(async () => result.current.submitSearch());
+
+    expect(fetchBodySplashCatalogMock).toHaveBeenLastCalledWith({ busca: "Rosa", page: 0, size: 10 });
+    expect(result.current.filtered).toEqual([created]);
+    expect(result.current.productOptions).toEqual(productOptions);
+  });
+
   it("surfaces list failures without keeping stale loading state", async () => {
     fetchBodySplashCatalogMock.mockRejectedValue(new Error("BODY_SPLASH_LIST_FAILED:503"));
     const { result } = renderHook(() => useBodySplashFacade());

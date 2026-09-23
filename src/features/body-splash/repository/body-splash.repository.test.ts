@@ -59,6 +59,17 @@ describe("bodySplashRepository", () => {
     });
   });
 
+  it("sends search, page and size as query params", async () => {
+    apiClientGetMock.mockResolvedValue({ data: emptyPage });
+    const params = { busca: "Rosa", page: 1, size: 25 };
+
+    await bodySplashRepository.listBodySplashes(params);
+
+    expect(apiClientGetMock).toHaveBeenCalledWith("/body-splash", {
+      params: { busca: "Rosa", page: 1, size: 25 },
+    });
+  });
+
   it("loads product options with the required pagination and ordering", async () => {
     const productPage = { ...emptyPage, content: [{ id: 7, nome: "Lavanda & Ylang" }], size: 100 };
     apiClientGetMock.mockResolvedValue({ data: productPage });
