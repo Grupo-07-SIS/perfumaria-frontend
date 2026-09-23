@@ -10,6 +10,9 @@ import { PeractInputControl } from "../../../shared/components/peract-input";
 import { PeractTableRoot, PeractTableHeader, PeractTableRow, PeractTableHead, PeractTableBody, PeractTableCell } from "../../../shared/components/peract-table";
 export function DecantsView({
   confirmDelete,
+  perfumeOptions,
+  isLoading,
+  error,
   showModal,
   setShowModal,
   editDecant,
@@ -26,7 +29,7 @@ export function DecantsView({
       {(showModal || editDecant) && <DecantModal onClose={() => {
       setShowModal(false);
       setEditDecant(null);
-    }} onSave={handleSave} edit={editDecant ?? undefined} />}
+    }} onSave={handleSave} perfumeOptions={perfumeOptions} edit={editDecant ?? undefined} />}
       {deleteDecant && <DeleteConfirm nome={deleteDecant.perfume} onClose={() => setDeleteDecant(null)} onConfirm={confirmDelete} />}
 
       {/* Header */}
@@ -58,6 +61,9 @@ export function DecantsView({
           </p>
         </div>
       </div>
+
+      {error && <p role="alert" className="text-sm text-red-600 mb-4">{error}</p>}
+      {isLoading && <p className="text-sm peract-font-color-muted mb-4">Carregando decants...</p>}
 
       {/* Search */}
       <PeractCard className="peract-bg-card rounded-xl border peract-border-color p-3 mb-4 shadow-sm">

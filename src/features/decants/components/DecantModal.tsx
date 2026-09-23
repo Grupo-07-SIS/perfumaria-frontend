@@ -6,20 +6,21 @@ import { X, CheckCircle } from "lucide-react";
 import { PeractField } from "../../../shared/components/peract-field";
 import { PeractLabel } from "../../../shared/components/peract-label";
 import { PeractNativeSelect } from "../../../shared/components/peract-select";
-import { ACC, perfumesBase } from "../config/decants.config";
+import { ACC } from "../config/decants.config";
 import { PeractInputControl } from "../../../shared/components/peract-input";
 export function DecantModal({
   onClose,
   onSave,
+  perfumeOptions,
   edit
 }: DecantModalProps) {
   const {
-    perfume,
+    perfumeId,
     preco2ml,
     preco3ml,
     preco5ml,
     preco10ml,
-    setPerfume,
+    setPerfumeId,
     setPreco2ml,
     setPreco3ml,
     setPreco5ml,
@@ -44,10 +45,10 @@ export function DecantModal({
           {error && <p className="text-sm text-red-600">{error}</p>}
 
           <PeractField>
-            <PeractLabel className="text-sm text-gray-700 block mb-1.5">Perfume vinculado *</PeractLabel>
-            <PeractNativeSelect value={perfume} onChange={e => setPerfume(e.target.value)} className="w-full border peract-border-color rounded-lg px-3 py-2 text-sm text-gray-700 focus:outline-none" onFocus={e => e.target.style.borderColor = ACC} onBlur={e => e.target.style.borderColor = ""}>
+            <PeractLabel htmlFor="decant-perfume" className="text-sm text-gray-700 block mb-1.5">Perfume vinculado *</PeractLabel>
+            <PeractNativeSelect id="decant-perfume" value={perfumeId} onChange={e => setPerfumeId(e.target.value)} className="w-full border peract-border-color rounded-lg px-3 py-2 text-sm text-gray-700 focus:outline-none" onFocus={e => e.target.style.borderColor = ACC} onBlur={e => e.target.style.borderColor = ""}>
               <option value="">Selecionar perfume em estoque...</option>
-              {perfumesBase.map(p => <option key={p} value={p}>{p}</option>)}
+              {perfumeOptions.map(option => <option key={option.id} value={option.id}>{option.nome}</option>)}
             </PeractNativeSelect>
             <p className="text-xs peract-font-color-muted mt-1">Apenas perfumes cadastrados são exibidos.</p>
           </PeractField>
@@ -76,10 +77,10 @@ export function DecantModal({
             val,
             set
           }) => <PeractField key={label}>
-                  <PeractLabel className="text-xs peract-font-color-muted block mb-1">Preço {label}</PeractLabel>
+                  <PeractLabel htmlFor={`decant-price-${label}`} className="text-xs peract-font-color-muted block mb-1">Preço {label}</PeractLabel>
                   <div className="relative">
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 peract-font-color-muted text-sm">R$</span>
-                    <PeractInputControl type="number" min={0} step={0.01} value={val} onChange={e => set(e.target.value)} placeholder="0,00" className="w-full border peract-border-color rounded-lg pl-8 pr-3 py-2 text-sm peract-font-color-default focus:outline-none" onFocus={e => e.target.style.borderColor = ACC} onBlur={e => e.target.style.borderColor = ""} />
+                    <PeractInputControl id={`decant-price-${label}`} type="number" min={0} step={0.01} value={val} onChange={e => set(e.target.value)} placeholder="0,00" className="w-full border peract-border-color rounded-lg pl-8 pr-3 py-2 text-sm peract-font-color-default focus:outline-none" onFocus={e => e.target.style.borderColor = ACC} onBlur={e => e.target.style.borderColor = ""} />
                   </div>
                 </PeractField>)}
             </div>

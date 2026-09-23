@@ -10,7 +10,7 @@ export function useDecantModalForm({
 }: DecantModalProps) {
   const form = useForm<DecantModalFormValues>({
     defaultValues: {
-      perfume: edit?.perfume ?? "",
+      perfumeId: String(edit?.perfumeId ?? ""),
       preco2ml: String(edit?.preco2ml ?? ""),
       preco3ml: String(edit?.preco3ml ?? ""),
       preco5ml: String(edit?.preco5ml ?? ""),
@@ -18,13 +18,13 @@ export function useDecantModalForm({
     }
   });
   const {
-    perfume,
+    perfumeId,
     preco2ml,
     preco3ml,
     preco5ml,
     preco10ml
   } = form.watch();
-  const setPerfume = (value: SetStateAction<DecantModalFormValues["perfume"]>) => form.setValue("perfume", typeof value === "function" ? value(form.getValues("perfume")) : value, {
+  const setPerfumeId = (value: SetStateAction<DecantModalFormValues["perfumeId"]>) => form.setValue("perfumeId", typeof value === "function" ? value(form.getValues("perfumeId")) : value, {
     shouldDirty: true
   });
   const setPreco2ml = (value: SetStateAction<DecantModalFormValues["preco2ml"]>) => form.setValue("preco2ml", typeof value === "function" ? value(form.getValues("preco2ml")) : value, {
@@ -41,30 +41,27 @@ export function useDecantModalForm({
   });
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
-  const handleSave = () => {
+  const handleSave = async () => {
     const validationError = validateDecant(form.getValues());
     if (validationError) {
       setError(validationError);
       return;
     }
     setError("");
-    setSuccess(true);
-    onSave({
-      perfume,
-      preco2ml: parseFloat(preco2ml),
-      preco3ml: parseFloat(preco3ml),
-      preco5ml: parseFloat(preco5ml),
-      preco10ml: parseFloat(preco10ml)
-    });
-    setTimeout(onClose, 1200);
+    try {
+      await onSave({ perfumeId, preco2ml, preco3ml, preco5ml, preco10ml });
+      setSuccess(true);
+    } catch {
+      setError("Não foi possível salvar o decant.");
+    }
   };
   return {
-    perfume,
+    perfumeId,
     preco2ml,
     preco3ml,
     preco5ml,
     preco10ml,
-    setPerfume,
+    setPerfumeId,
     setPreco2ml,
     setPreco3ml,
     setPreco5ml,
