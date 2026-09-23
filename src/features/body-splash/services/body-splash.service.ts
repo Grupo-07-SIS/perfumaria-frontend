@@ -18,9 +18,11 @@ function normalizeName(value: string) {
   return value.trim().toLocaleLowerCase("pt-BR");
 }
 
-export async function fetchBodySplashCatalog() {
+export async function fetchBodySplashCatalog(params: { page?: number; size?: number; produtoId?: number; busca?: string } = {}) {
   const [page, productsPage] = await Promise.all([
-    bodySplashRepository.listBodySplashes(),
+    Object.keys(params).length === 0
+      ? bodySplashRepository.listBodySplashes()
+      : bodySplashRepository.listBodySplashes(params),
     bodySplashRepository.listProducts(),
   ]);
   const productOptions = productsPage.content

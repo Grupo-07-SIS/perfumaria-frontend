@@ -29,6 +29,7 @@ export function BodySplashView({
   setDeleteItem,
   search,
   setSearch,
+  submitSearch,
   filtered,
   handleSave,
   fmt
@@ -77,7 +78,9 @@ export function BodySplashView({
       <PeractCard className="peract-bg-card rounded-xl border peract-border-color p-3 mb-4 shadow-sm">
         <div className="flex items-center gap-2 border peract-border-color rounded-lg px-3 py-2 max-w-sm">
           <Search size={15} className="peract-font-color-muted shrink-0" />
-          <PeractInputControl type="text" placeholder="Buscar por nome do body splash..." value={search} onChange={e => setSearch(e.target.value)} className="text-sm outline-none flex-1 peract-font-color-default placeholder:text-gray-400" />
+          <PeractInputControl type="search" placeholder="Buscar por nome do body splash..." value={search} onChange={e => setSearch(e.target.value)} onKeyDown={event => {
+          if (event.key === "Enter") void submitSearch();
+        }} className="text-sm outline-none flex-1 peract-font-color-default placeholder:text-gray-400" />
         </div>
       </PeractCard>
 

@@ -22,7 +22,21 @@ export function useBodySplashFacade() {
       .finally(() => setIsLoading(false));
   }, []);
 
-  const filtered = items.filter(d => d.produto.toLowerCase().includes(search.toLowerCase()));
+  const submitSearch = async () => {
+    setIsLoading(true);
+    setError("");
+    try {
+      const catalog = await fetchBodySplashCatalog({ busca: search.trim(), page: 0, size: 10 });
+      setItems(catalog.page.content);
+      setProductOptions(catalog.productOptions);
+    } catch {
+      setError("Não foi possível carregar os preços de Body Splash.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const filtered = items;
 
   const handleSave = async (values: BodySplashModalFormValues) => {
     setError("");
@@ -66,6 +80,7 @@ export function useBodySplashFacade() {
     setDeleteItem,
     search,
     setSearch,
+    submitSearch,
     filtered,
     handleSave,
     fmt,

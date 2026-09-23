@@ -7,6 +7,7 @@ interface ListBodySplashesParams {
   page?: number;
   size?: number;
   produtoId?: number;
+  busca?: string;
 }
 
 async function requestData<T>(request: Promise<AxiosResponse<T>>, errorCode: string): Promise<T> {
