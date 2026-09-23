@@ -1,4 +1,22 @@
-import { CargoFuncionario, Endereco, Cliente, Fornecedor, Funcionario } from "../../../core/store/AppContext";
+import type { CargoFuncionario, Endereco, Fornecedor } from "../../../core/store/AppContext";
+
+export type { CargoFuncionario, Endereco, Fornecedor };
+export interface Cliente {
+  id: number;
+  nome: string;
+  email: string;
+  telefone: string;
+  endereco: Endereco;
+  totalPedidos: number;
+  ativo?: boolean;
+}
+export interface Funcionario {
+  id: string;
+  nome: string;
+  cargo: CargoFuncionario;
+  email: string;
+  senha?: string;
+}
 export type Aba = "clientes" | "fornecedores" | "funcionarios";
 export type StatusFiltro = "todos" | "ativos" | "inativos";
 export interface EnderecoFieldsProps {
