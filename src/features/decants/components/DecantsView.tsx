@@ -8,6 +8,7 @@ import { ACC } from "../config/decants.config";
 import { PeractCard } from "../../../shared/components/peract-card";
 import { PeractInputControl } from "../../../shared/components/peract-input";
 import { PeractTableRoot, PeractTableHeader, PeractTableRow, PeractTableHead, PeractTableBody, PeractTableCell } from "../../../shared/components/peract-table";
+import { PeractPagination } from "../../../shared/components/peract-pagination";
 export function DecantsView({
   confirmDelete,
   perfumeOptions,
@@ -21,6 +22,11 @@ export function DecantsView({
   setDeleteDecant,
   search,
   setSearch,
+  submitSearch,
+  currentPage,
+  setCurrentPage,
+  totalElements,
+  totalPages,
   filtered,
   handleSave,
   fmt
@@ -69,7 +75,9 @@ export function DecantsView({
       <PeractCard className="peract-bg-card rounded-xl border peract-border-color p-3 mb-4 shadow-sm">
         <div className="flex items-center gap-2 border peract-border-color rounded-lg px-3 py-2 max-w-sm">
           <Search size={15} className="peract-font-color-muted shrink-0" />
-          <PeractInputControl type="text" placeholder="Buscar por perfume..." value={search} onChange={e => setSearch(e.target.value)} className="text-sm outline-none flex-1 peract-font-color-default placeholder:text-gray-400" />
+          <PeractInputControl type="search" placeholder="Buscar por perfume..." value={search} onChange={e => setSearch(e.target.value)} onKeyDown={event => {
+          if (event.key === "Enter") void submitSearch();
+        }} className="text-sm outline-none flex-1 peract-font-color-default placeholder:text-gray-400" />
         </div>
       </PeractCard>
 
@@ -126,7 +134,10 @@ export function DecantsView({
           </PeractTableRoot>
         </div>
         <div className="px-4 py-3 border-t border-gray-50">
-          <p className="text-xs peract-font-color-muted">{filtered.length} decant(s) cadastrado(s)</p>
+          <div className="flex items-center justify-between gap-4">
+            <p className="text-xs peract-font-color-muted">{totalElements} decant(s) cadastrado(s)</p>
+            <PeractPagination currentPage={currentPage} totalPages={totalPages} onPageChange={page => void setCurrentPage(page)} />
+          </div>
         </div>
       </PeractCard>
 

@@ -10,7 +10,7 @@ export function validateDecant(values: DecantModalFormValues) {
   return "";
 }
 
-export async function fetchDecants(params: { page?: number; size?: number; perfumeId?: number } = {}) {
+export async function fetchDecants(params: { page?: number; size?: number; perfumeId?: number; busca?: string } = {}) {
   const page = await decantsRepository.listDecants(params);
   return { ...page, content: page.content.map(toDecantModel) };
 }

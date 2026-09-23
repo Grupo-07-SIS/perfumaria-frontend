@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import type { Decant, DecantModalFormValues, PerfumeOption } from "../models/decants.models";
 import { createDecant, fetchDecants, fetchPerfumeOptions, removeDecant, updateDecant } from "../services/decants.service";
 
+const PAGE_SIZE = 10;
+
 export function useDecantsFacade() {
   const [decants, setDecants] = useState<Decant[]>([]);
   const [perfumeOptions, setPerfumeOptions] = useState<PerfumeOption[]>([]);
@@ -11,18 +13,54 @@ export function useDecantsFacade() {
   const [editDecant, setEditDecant] = useState<Decant | null>(null);
   const [deleteDecant, setDeleteDecant] = useState<Decant | null>(null);
   const [search, setSearch] = useState("");
+  const [submittedSearch, setSubmittedSearch] = useState("");
+  const [currentPage, setCurrentPageState] = useState(1);
+  const [totalElements, setTotalElements] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
 
   useEffect(() => {
-    Promise.all([fetchDecants(), fetchPerfumeOptions()])
+    Promise.all([
+      fetchDecants({ busca: "", page: 0, size: PAGE_SIZE }),
+      fetchPerfumeOptions(),
+    ])
       .then(([page, options]) => {
         setDecants(page.content);
+        setCurrentPageState(1);
+        setTotalElements(page.totalElements);
+        setTotalPages(page.totalPages);
         setPerfumeOptions(options);
       })
       .catch(() => setError("Não foi possível carregar os decants."))
       .finally(() => setIsLoading(false));
   }, []);
 
-  const filtered = decants.filter(d => d.perfume.toLowerCase().includes(search.toLowerCase()));
+  const loadPage = async (page: number, busca: string) => {
+    setIsLoading(true);
+    setError("");
+    try {
+      const response = await fetchDecants({ busca, page: page - 1, size: PAGE_SIZE });
+      setDecants(response.content);
+      setCurrentPageState(page);
+      setTotalElements(response.totalElements);
+      setTotalPages(response.totalPages);
+    } catch {
+      setError("Não foi possível carregar os decants.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const submitSearch = async () => {
+    const normalizedSearch = search.trim();
+    setSubmittedSearch(normalizedSearch);
+    await loadPage(1, normalizedSearch);
+  };
+
+  const setCurrentPage = async (page: number) => {
+    await loadPage(page, submittedSearch);
+  };
+
+  const filtered = decants;
 
   const handleSave = async (values: DecantModalFormValues) => {
     setError("");
@@ -66,6 +104,11 @@ export function useDecantsFacade() {
     setDeleteDecant,
     search,
     setSearch,
+    submitSearch,
+    currentPage,
+    setCurrentPage,
+    totalElements,
+    totalPages,
     filtered,
     handleSave,
     fmt,
