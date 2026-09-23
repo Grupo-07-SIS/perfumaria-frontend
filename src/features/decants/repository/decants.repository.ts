@@ -1,37 +1,43 @@
-import type { Decant } from "../models/decants.models";
-export const initialDecants: Decant[] = [{
-  id: 1,
-  perfume: "Chanel N°5",
-  preco2ml: 12.00,
-  preco3ml: 17.00,
-  preco5ml: 25.00,
-  preco10ml: 45.00
-}, {
-  id: 2,
-  perfume: "Dior Sauvage",
-  preco2ml: 14.00,
-  preco3ml: 19.00,
-  preco5ml: 28.00,
-  preco10ml: 50.00
-}, {
-  id: 3,
-  perfume: "YSL Libre",
-  preco2ml: 13.00,
-  preco3ml: 18.00,
-  preco5ml: 26.00,
-  preco10ml: 47.00
-}, {
-  id: 4,
-  perfume: "Creed Aventus",
-  preco2ml: 20.00,
-  preco3ml: 28.00,
-  preco5ml: 42.00,
-  preco10ml: 78.00
-}, {
-  id: 5,
-  perfume: "Tom Ford Black Orchid",
-  preco2ml: 18.00,
-  preco3ml: 25.00,
-  preco5ml: 38.00,
-  preco10ml: 70.00
-}];
+import axios, { type AxiosResponse } from "axios";
+import { apiClient } from "../../../core/services/http-client";
+import type { DecantRequestDto } from "./dto/decant-request.dto";
+import type { DecantPageDto, DecantResponseDto, PerfumeProductPageDto } from "./dto/decant-response.dto";
+
+interface ListDecantsParams {
+  page?: number;
+  size?: number;
+  perfumeId?: number;
+}
+
+async function requestData<T>(request: Promise<AxiosResponse<T>>, errorCode: string): Promise<T> {
+  try {
+    return (await request).data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      throw new Error(`${errorCode}:${error.response?.status ?? "unknown"}`);
+    }
+    throw error;
+  }
+}
+
+export const decantsRepository = {
+  listDecants(params: ListDecantsParams = {}): Promise<DecantPageDto> {
+    return requestData(apiClient.get<DecantPageDto>("/decants", {
+      params: { page: 0, size: 10, ...params },
+    }), "DECANTS_LIST_FAILED");
+  },
+  listPerfumeProducts(): Promise<PerfumeProductPageDto> {
+    return requestData(apiClient.get<PerfumeProductPageDto>("/produtos", {
+      params: { page: 0, size: 100, ordenacao: "nome,asc" },
+    }), "DECANTS_PRODUCTS_LIST_FAILED");
+  },
+  createDecant(payload: DecantRequestDto): Promise<DecantResponseDto> {
+    return requestData(apiClient.post<DecantResponseDto>("/decants", payload), "DECANTS_CREATE_FAILED");
+  },
+  updateDecant(id: number, payload: DecantRequestDto): Promise<DecantResponseDto> {
+    return requestData(apiClient.put<DecantResponseDto>(`/decants/${id}`, payload), "DECANTS_UPDATE_FAILED");
+  },
+  async deleteDecant(id: number): Promise<void> {
+    await requestData(apiClient.delete<void>(`/decants/${id}`), "DECANTS_DELETE_FAILED");
+  },
+};
