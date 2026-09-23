@@ -49,7 +49,7 @@ describe("decantsRepository", () => {
   });
 
   it("creates, updates and deletes with the OpenAPI payload", async () => {
-    const response = { id: 11, perfumeId: 7, perfumeNome: "Chanel N°5", precos: payload };
+    const response = { id: 11, perfumeNome: "Chanel N°5", ...payload };
     apiClientPostMock.mockResolvedValue({ data: response });
     apiClientPutMock.mockResolvedValue({ data: response });
     apiClientDeleteMock.mockResolvedValue({ data: undefined });

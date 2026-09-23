@@ -2,12 +2,15 @@ import { describe, expect, it } from "vitest";
 import { toDecantModel, toDecantRequestDto, toPerfumeOption } from "./decant.mapper";
 
 describe("decantMapper", () => {
-  it("maps nested prices and keeps the perfume id and display name", () => {
+  it("maps flat prices and keeps the perfume id and display name", () => {
     expect(toDecantModel({
       id: 11,
       perfumeId: 7,
       perfumeNome: "Chanel N°5",
-      precos: { preco2ml: 12, preco3ml: 17, preco5ml: 25, preco10ml: 45 },
+      preco2ml: 12,
+      preco3ml: 17,
+      preco5ml: 25,
+      preco10ml: 45,
     })).toEqual({
       id: 11,
       perfumeId: 7,

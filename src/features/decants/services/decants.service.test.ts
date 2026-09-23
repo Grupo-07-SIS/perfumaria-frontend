@@ -34,7 +34,7 @@ import {
 
 const formData = { perfumeId: "7", preco2ml: "12", preco3ml: "17", preco5ml: "25", preco10ml: "45" };
 const request = { perfumeId: 7, preco2ml: 12, preco3ml: 17, preco5ml: 25, preco10ml: 45 };
-const response = { id: 11, perfumeId: 7, perfumeNome: "Chanel N°5", precos: request };
+const response = { id: 11, perfumeNome: "Chanel N°5", ...request };
 const model = { id: 11, perfumeId: 7, perfume: "Chanel N°5", preco2ml: 12, preco3ml: 17, preco5ml: 25, preco10ml: 45 };
 
 describe("decantsService", () => {
@@ -56,7 +56,7 @@ describe("decantsService", () => {
 
   it("maps create and update forms and returns the saved model", async () => {
     createDecantMock.mockResolvedValue(response);
-    updateDecantMock.mockResolvedValue({ ...response, precos: { ...request, preco2ml: 14 } });
+    updateDecantMock.mockResolvedValue({ ...response, preco2ml: 14 });
 
     await expect(createDecant(formData)).resolves.toEqual(model);
     await expect(updateDecant(model, { ...formData, preco2ml: "14" })).resolves.toEqual({ ...model, preco2ml: 14 });
