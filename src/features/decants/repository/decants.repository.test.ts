@@ -39,6 +39,17 @@ describe("decantsRepository", () => {
     });
   });
 
+  it("sends search, page and size as query params", async () => {
+    apiClientGetMock.mockResolvedValue({ data: emptyPage });
+    const params = { busca: "Libre", page: 1, size: 25 };
+
+    await decantsRepository.listDecants(params);
+
+    expect(apiClientGetMock).toHaveBeenCalledWith("/decants", {
+      params: { busca: "Libre", page: 1, size: 25 },
+    });
+  });
+
   it("loads perfume options from products using the required ordering", async () => {
     const productPage = { ...emptyPage, content: [{ id: 7, nome: "Chanel N°5" }], size: 100 };
     apiClientGetMock.mockResolvedValue({ data: productPage });

@@ -49,6 +49,55 @@ describe("useDecantsFacade", () => {
     expect(result.current.error).toBe("");
   });
 
+  it("loads and exposes the pagination metadata returned by the backend", async () => {
+    fetchDecantsMock.mockResolvedValue({ content: [original], number: 1, totalElements: 23, totalPages: 3 });
+
+    const { result } = renderHook(() => useDecantsFacade());
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+    expect(fetchDecantsMock).toHaveBeenCalledWith({ busca: "", page: 0, size: 10 });
+    expect(result.current.currentPage).toBe(1);
+    expect(result.current.totalElements).toBe(23);
+    expect(result.current.totalPages).toBe(3);
+  });
+
+  it("keeps the server page intact while editing and searches remotely on submit", async () => {
+    fetchDecantsMock
+      .mockResolvedValueOnce({ content: [original], number: 0, totalElements: 1, totalPages: 1 })
+      .mockResolvedValueOnce({ content: [created], number: 0, totalElements: 1, totalPages: 1 });
+
+    const { result } = renderHook(() => useDecantsFacade());
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+    act(() => result.current.setSearch("Libre"));
+    expect(result.current.filtered).toEqual([original]);
+    expect(fetchDecantsMock).toHaveBeenCalledTimes(1);
+
+    await act(async () => result.current.submitSearch());
+
+    expect(fetchDecantsMock).toHaveBeenLastCalledWith({ busca: "Libre", page: 0, size: 10 });
+    expect(result.current.filtered).toEqual([created]);
+    expect(result.current.currentPage).toBe(1);
+  });
+
+  it("converts the one-based UI page to the zero-based API page", async () => {
+    fetchDecantsMock.mockImplementation(async ({ page = 0 } = {}) => ({
+      content: page === 2 ? [created] : [original],
+      number: page,
+      totalElements: 23,
+      totalPages: 3,
+    }));
+
+    const { result } = renderHook(() => useDecantsFacade());
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+    await act(async () => result.current.setCurrentPage(3));
+
+    expect(fetchDecantsMock).toHaveBeenLastCalledWith({ busca: "", page: 2, size: 10 });
+    expect(result.current.currentPage).toBe(3);
+    expect(result.current.filtered).toEqual([created]);
+  });
+
   it("surfaces list failures without keeping stale loading state", async () => {
     fetchDecantsMock.mockRejectedValue(new Error("DECANTS_LIST_FAILED:503"));
     fetchPerfumeOptionsMock.mockRejectedValue(new Error("DECANTS_PRODUCTS_LIST_FAILED:503"));
