@@ -1,13 +1,17 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { fetchMock, sessionClearMock, sessionRestoreMock, sessionSaveMock } = vi.hoisted(() => ({
-  fetchMock: vi.fn(),
+const { apiClientPostMock, sessionClearMock, sessionRestoreMock, sessionSaveMock } = vi.hoisted(() => ({
+  apiClientPostMock: vi.fn(),
   sessionClearMock: vi.fn(),
   sessionRestoreMock: vi.fn(),
   sessionSaveMock: vi.fn(),
 }));
 
-vi.stubGlobal("fetch", fetchMock);
+vi.mock("./http-client", () => ({
+  apiClient: {
+    post: apiClientPostMock,
+  },
+}));
 
 vi.mock("../auth/session.service", () => ({
   sessionService: {
@@ -66,15 +70,21 @@ describe("authService", () => {
   });
 
   it("delegates logout to backend and always clears the local session", async () => {
-    fetchMock.mockResolvedValue({ ok: true });
+    apiClientPostMock.mockResolvedValue({ data: undefined });
 
     await authService.logout();
 
-    expect(fetchMock).toHaveBeenCalledWith("http://localhost:8080/auth/logout", {
-      credentials: "include",
-      method: "POST",
-    });
+    expect(apiClientPostMock).toHaveBeenCalledWith("/auth/logout");
     expect(sessionClearMock).toHaveBeenCalled();
+  });
+
+  it("clears the local session when the logout request fails", async () => {
+    apiClientPostMock.mockRejectedValue(new Error("Network Error"));
+
+    await expect(authService.logout()).rejects.toThrow("Network Error");
+
+    expect(apiClientPostMock).toHaveBeenCalledWith("/auth/logout");
+    expect(sessionClearMock).toHaveBeenCalledOnce();
   });
 
   it("restores the saved session from sessionService", () => {
