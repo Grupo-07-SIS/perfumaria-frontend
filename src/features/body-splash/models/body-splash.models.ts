@@ -1,5 +1,6 @@
 export interface BodySplashItem {
   id: number;
+  produtoId?: number;
   produto: string; // body splash product name (e.g. "Lavanda & Ylang")
   preco10ml: number;
   preco15ml: number;
@@ -7,12 +8,17 @@ export interface BodySplashItem {
   preco25ml: number;
   preco30ml: number;
 }
+export interface BodySplashProductOption {
+  id: number;
+  nome: string;
+}
 export interface ModalProps {
   onClose: () => void;
-  onSave: (d: Omit<BodySplashItem, "id">) => void;
+  onSave: (values: BodySplashModalFormValues) => Promise<void>;
+  productOptions: BodySplashProductOption[];
   edit?: BodySplashItem;
 }
 export interface BodySplashModalFormValues {
-  produto: string;
+  produtoId: string;
   precos: Record<string, string>;
 }
