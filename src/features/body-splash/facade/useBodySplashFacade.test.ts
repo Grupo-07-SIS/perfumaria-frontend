@@ -1,0 +1,168 @@
+import { act, renderHook, waitFor } from "@testing-library/react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+const {
+  createBodySplashMock,
+  fetchBodySplashCatalogMock,
+  removeBodySplashMock,
+  updateBodySplashMock,
+} = vi.hoisted(() => ({
+  createBodySplashMock: vi.fn(),
+  fetchBodySplashCatalogMock: vi.fn(),
+  removeBodySplashMock: vi.fn(),
+  updateBodySplashMock: vi.fn(),
+}));
+
+vi.mock("../services/body-splash.service", () => ({
+  createBodySplash: createBodySplashMock,
+  fetchBodySplashCatalog: fetchBodySplashCatalogMock,
+  removeBodySplash: removeBodySplashMock,
+  updateBodySplash: updateBodySplashMock,
+}));
+
+import { useBodySplashFacade } from "./useBodySplashFacade";
+
+const original = {
+  id: 1,
+  produtoId: 7,
+  produto: "Lavanda & Ylang",
+  preco10ml: 8,
+  preco15ml: 11,
+  preco20ml: 14,
+  preco25ml: 17,
+  preco30ml: 20,
+};
+const created = {
+  id: 2,
+  produtoId: 8,
+  produto: "Rosa & Baunilha",
+  preco10ml: 9,
+  preco15ml: 12,
+  preco20ml: 15,
+  preco25ml: 18,
+  preco30ml: 21,
+};
+const formData = {
+  produtoId: "8",
+  precos: {
+    preco10ml: "9",
+    preco15ml: "12",
+    preco20ml: "15",
+    preco25ml: "18",
+    preco30ml: "21",
+  },
+};
+const productOptions = [
+  { id: 7, nome: "Lavanda & Ylang" },
+  { id: 8, nome: "Rosa & Baunilha" },
+];
+
+describe("useBodySplashFacade", () => {
+  beforeEach(() => {
+    vi.resetAllMocks();
+    fetchBodySplashCatalogMock.mockResolvedValue({
+      page: { content: [original], number: 0, totalElements: 1, totalPages: 1 },
+      productOptions,
+    });
+  });
+
+  it("loads items and product options on mount and exposes loading state", async () => {
+    const { result } = renderHook(() => useBodySplashFacade());
+
+    expect(result.current.isLoading).toBe(true);
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+    expect(fetchBodySplashCatalogMock).toHaveBeenCalledTimes(1);
+    expect(result.current.items).toEqual([original]);
+    expect(result.current.productOptions).toEqual(productOptions);
+    expect(result.current.error).toBe("");
+  });
+
+  it("surfaces list failures without keeping stale loading state", async () => {
+    fetchBodySplashCatalogMock.mockRejectedValue(new Error("BODY_SPLASH_LIST_FAILED:503"));
+    const { result } = renderHook(() => useBodySplashFacade());
+
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    expect(result.current.items).toEqual([]);
+    expect(result.current.productOptions).toEqual([]);
+    expect(result.current.error).toBeTruthy();
+  });
+
+  it("adds a created item only after the backend succeeds", async () => {
+    let resolveCreate!: (value: typeof created) => void;
+    createBodySplashMock.mockImplementation(() => new Promise((resolve) => { resolveCreate = resolve; }));
+    const { result } = renderHook(() => useBodySplashFacade());
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    act(() => result.current.setShowModal(true));
+
+    let savePromise!: Promise<void>;
+    act(() => { savePromise = result.current.handleSave(formData); });
+    expect(result.current.items).toEqual([original]);
+    expect(result.current.showModal).toBe(true);
+
+    await act(async () => {
+      resolveCreate(created);
+      await savePromise;
+    });
+    expect(result.current.items).toEqual([original, created]);
+    expect(result.current.showModal).toBe(false);
+  });
+
+  it("updates and deletes only after successful service calls", async () => {
+    const updated = { ...original, preco10ml: 10 };
+    let resolveUpdate!: (value: typeof updated) => void;
+    let resolveDelete!: (value: number) => void;
+    updateBodySplashMock.mockImplementation(() => new Promise((resolve) => { resolveUpdate = resolve; }));
+    removeBodySplashMock.mockImplementation(() => new Promise((resolve) => { resolveDelete = resolve; }));
+    const { result } = renderHook(() => useBodySplashFacade());
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+    act(() => result.current.setEditItem(original));
+    let updatePromise!: Promise<void>;
+    act(() => {
+      updatePromise = result.current.handleSave({
+        ...formData,
+        produtoId: "7",
+        precos: { ...formData.precos, preco10ml: "10" },
+      });
+    });
+    expect(result.current.items).toEqual([original]);
+    await act(async () => {
+      resolveUpdate(updated);
+      await updatePromise;
+    });
+    expect(result.current.items).toEqual([updated]);
+
+    act(() => result.current.setDeleteItem(updated));
+    let deletePromise!: Promise<void>;
+    act(() => { deletePromise = result.current.confirmDelete(); });
+    expect(result.current.items).toEqual([updated]);
+    expect(result.current.deleteItem).toEqual(updated);
+    await act(async () => {
+      resolveDelete(1);
+      await deletePromise;
+    });
+    expect(result.current.items).toEqual([]);
+    expect(result.current.deleteItem).toBeNull();
+  });
+
+  it("keeps state and modal targets intact when mutations fail", async () => {
+    createBodySplashMock.mockRejectedValue(new Error("BODY_SPLASH_CREATE_FAILED:500"));
+    removeBodySplashMock.mockRejectedValue(new Error("BODY_SPLASH_DELETE_FAILED:500"));
+    const { result } = renderHook(() => useBodySplashFacade());
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+    act(() => result.current.setShowModal(true));
+    await act(async () => {
+      await expect(result.current.handleSave(formData)).rejects.toThrow();
+    });
+    expect(result.current.items).toEqual([original]);
+    expect(result.current.showModal).toBe(true);
+
+    act(() => result.current.setDeleteItem(original));
+    await act(async () => { await result.current.confirmDelete(); });
+    expect(result.current.items).toEqual([original]);
+    expect(result.current.deleteItem).toEqual(original);
+    expect(result.current.error).toBeTruthy();
+  });
+});
