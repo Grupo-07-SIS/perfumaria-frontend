@@ -45,4 +45,13 @@ describe("clienteMapper", () => {
       endereco,
     });
   });
+
+  it("envia o telefone somente com digitos", () => {
+    expect(toClienteRequestDto({
+      nome: "Ana Lima",
+      telefone: "(11) 99999-0000",
+      email: "ana@example.test",
+      endereco,
+    }).telefone).toBe("11999990000");
+  });
 });

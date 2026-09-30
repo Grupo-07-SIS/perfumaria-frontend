@@ -1,8 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { apiClientDeleteMock, apiClientGetMock, apiClientPostMock, apiClientPutMock } = vi.hoisted(() => ({
+const { apiClientDeleteMock, apiClientGetMock, apiClientPatchMock, apiClientPostMock, apiClientPutMock } = vi.hoisted(() => ({
   apiClientDeleteMock: vi.fn(),
   apiClientGetMock: vi.fn(),
+  apiClientPatchMock: vi.fn(),
   apiClientPostMock: vi.fn(),
   apiClientPutMock: vi.fn(),
 }));
@@ -11,6 +12,7 @@ vi.mock("../../../core/services/http-client", () => ({
   apiClient: {
     delete: apiClientDeleteMock,
     get: apiClientGetMock,
+    patch: apiClientPatchMock,
     post: apiClientPostMock,
     put: apiClientPutMock,
   },
@@ -80,11 +82,19 @@ describe("clientesRepository", () => {
     expect(apiClientDeleteMock).toHaveBeenCalledWith("/clientes/17");
   });
 
+  it("reativa o cliente pelo endpoint PATCH dedicado", async () => {
+    apiClientPatchMock.mockResolvedValue({ data: response });
+
+    await expect(clientesRepository.reactivateCliente(17)).resolves.toEqual(response);
+    expect(apiClientPatchMock).toHaveBeenCalledWith("/clientes/17/reativar");
+  });
+
   it.each([
     ["list", "PEOPLE_CLIENTS_LIST_FAILED", () => clientesRepository.listClientes(), apiClientGetMock],
     ["create", "PEOPLE_CLIENTS_CREATE_FAILED", () => clientesRepository.createCliente(payload), apiClientPostMock],
     ["update", "PEOPLE_CLIENTS_UPDATE_FAILED", () => clientesRepository.updateCliente(17, payload), apiClientPutMock],
     ["delete", "PEOPLE_CLIENTS_DELETE_FAILED", () => clientesRepository.deleteCliente(17), apiClientDeleteMock],
+    ["reactivate", "PEOPLE_CLIENTS_REACTIVATE_FAILED", () => clientesRepository.reactivateCliente(17), apiClientPatchMock],
   ])("preserva operacao e status no erro de %s", async (_operation, code, request, requestMock) => {
     requestMock.mockRejectedValueOnce(axiosError(422));
     await expect(request()).rejects.toThrow(`${code}:422`);

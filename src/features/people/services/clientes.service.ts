@@ -15,3 +15,8 @@ export async function removeCliente(cliente: Cliente) {
   await clientesRepository.deleteCliente(cliente.id);
   return cliente.id;
 }
+export async function reactivateCliente(cliente: Cliente): Promise<Cliente> {
+  const response = await clientesRepository.reactivateCliente(cliente.id);
+  // Endpoint may answer 204 without a body.
+  return response ? toClienteModel(response) : { ...cliente, ativo: true };
+}

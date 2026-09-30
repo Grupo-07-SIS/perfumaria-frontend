@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { AppProvider } from "../../core/store/AppContext";
 import { sessionService } from "../../core/auth/session.service";
 import type { Cliente, Fornecedor, Funcionario } from "./models/people.models";
-import { createCliente, fetchClientes, removeCliente, updateCliente } from "./services/clientes.service";
+import { createCliente, fetchClientes, reactivateCliente, removeCliente, updateCliente } from "./services/clientes.service";
 import { createFuncionario, fetchFuncionarios, removeFuncionario, updateFuncionario } from "./services/funcionarios.service";
 import { PeoplePage } from "./PeoplePage";
 
@@ -31,6 +31,7 @@ vi.mock("./services/clientes.service", () => ({
   createCliente: vi.fn(),
   updateCliente: vi.fn(),
   removeCliente: vi.fn(),
+  reactivateCliente: vi.fn(),
 }));
 vi.mock("./services/funcionarios.service", () => ({
   fetchFuncionarios: vi.fn(),
@@ -137,6 +138,7 @@ describe("People: caracterizacao de filtros e permissoes", () => {
     vi.mocked(createCliente).mockImplementation(async values => ({ id: 7, ...values, totalPedidos: 0, ativo: true }));
     vi.mocked(updateCliente).mockImplementation(async (cliente, values) => ({ ...cliente, ...values }));
     vi.mocked(removeCliente).mockImplementation(async cliente => cliente.id);
+    vi.mocked(reactivateCliente).mockImplementation(async cliente => ({ ...cliente, ativo: true }));
     createFornecedorMock.mockImplementation(async values => ({ id: 5, ...values, totalCompras: 0 }));
     updateFornecedorMock.mockImplementation(async (fornecedor, values) => ({ ...fornecedor, ...values }));
     removeFornecedorMock.mockImplementation(async fornecedor => fornecedor.id);
@@ -306,6 +308,56 @@ describe("People: caracterizacao de filtros e permissoes", () => {
     expect(screen.queryByText("Não definida")).not.toBeInTheDocument();
   });
 
+  it("aplica mascara no telefone do cliente e valida telefone e e-mail no campo", async () => {
+    const user = userEvent.setup();
+    await renderPeople();
+    await user.click(screen.getAllByRole("button", { name: "Novo cliente" })[0]);
+    const dialog = within(screen.getByRole("dialog", { name: "Novo Cliente" }));
+    const telefone = dialog.getByPlaceholderText("(11) 99999-9999");
+    const email = dialog.getByPlaceholderText("cliente@email.com");
+    await user.type(dialog.getByPlaceholderText("Ex: Ana Lima"), "Cliente teste");
+
+    await user.type(telefone, "11a9916");
+    await user.type(email, "cliente@perfumaria,com");
+    expect(telefone).toHaveValue("(11) 9916");
+    expect(telefone).toHaveAttribute("type", "tel");
+
+    await user.click(dialog.getByRole("button", { name: "Salvar" }));
+    expect(dialog.getByText("Informe DDD + número (10 ou 11 dígitos).")).toBeInTheDocument();
+    expect(dialog.getByText("Informe um e-mail válido.")).toBeInTheDocument();
+    expect(createCliente).not.toHaveBeenCalled();
+
+    await user.type(telefone, "43000999");
+    expect(telefone).toHaveValue("(11) 99164-3000");
+  });
+
+  it("exibe o telefone do cliente formatado no card", async () => {
+    vi.mocked(fetchClientes).mockResolvedValue([{ ...clientesRemotos[0], telefone: "11999991111" }]);
+    await renderPeople();
+
+    expect(clienteCard("Ana Lima").getByText("(11) 99999-1111")).toBeInTheDocument();
+  });
+
+  it("reativa cliente inativo com confirmacao e o devolve para os ativos", async () => {
+    const user = userEvent.setup();
+    await renderPeople();
+    await user.click(screen.getByRole("button", { name: /^Inativos/ }));
+    expect(clienteCard("Roberta Nunes").queryByRole("button", { name: "Excluir cliente" })).not.toBeInTheDocument();
+
+    await user.click(clienteCard("Roberta Nunes").getByRole("button", { name: "Reativar cliente" }));
+    await user.click(within(screen.getByRole("dialog", { name: "Reativar Cliente" })).getByRole("button", { name: "Cancelar" }));
+    expect(reactivateCliente).not.toHaveBeenCalled();
+
+    await user.click(clienteCard("Roberta Nunes").getByRole("button", { name: "Reativar cliente" }));
+    await user.click(within(screen.getByRole("dialog", { name: "Reativar Cliente" })).getByRole("button", { name: "Reativar" }));
+
+    await waitFor(() => expect(screen.queryByRole("dialog", { name: "Reativar Cliente" })).not.toBeInTheDocument());
+    expect(reactivateCliente).toHaveBeenCalledWith(expect.objectContaining({ id: 6, nome: "Roberta Nunes" }));
+    expect(screen.queryByText("Roberta Nunes")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^Ativos/ })).toHaveTextContent("6");
+    expect(screen.getByRole("button", { name: /^Inativos/ })).toHaveTextContent("0");
+  });
+
   it("exige confirmacao para excluir cliente e permite cancelar", async () => {
     const user = userEvent.setup();
     await renderPeople();
@@ -320,6 +372,11 @@ describe("People: caracterizacao de filtros e permissoes", () => {
     expect(removeCliente).toHaveBeenCalledWith(expect.objectContaining({ id: 1, nome: "Ana Lima" }));
     expect(screen.queryByRole("dialog", { name: "Confirmar exclusão" })).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: /^Ativos/ })).toHaveTextContent("4");
+    expect(screen.getByRole("button", { name: /^Inativos/ })).toHaveTextContent("2");
+
+    await user.click(screen.getByRole("button", { name: /^Inativos/ }));
+    expect(screen.getByText("Ana Lima")).toBeInTheDocument();
+    expect(clienteCard("Ana Lima").getByText("Inativo")).toBeInTheDocument();
   });
 
   it("mantem cliente e modal de edicao abertos quando a atualizacao falha", async () => {

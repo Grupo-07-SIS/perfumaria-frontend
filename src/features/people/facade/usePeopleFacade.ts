@@ -4,7 +4,7 @@ import { usePeopleRepository } from "../repository/people.repository";
 import { useEffect, useRef, useState } from "react";
 import { useDebouncedValue } from "../../../shared/hooks/useDebouncedValue";
 import type { Aba, Cliente, ClienteModalFormValues, Fornecedor, FornecedorModalFormValues, Funcionario, FuncionarioModalFormValues, StatusFiltro } from "../models/people.models";
-import { createCliente, fetchClientes, removeCliente, updateCliente } from "../services/clientes.service";
+import { createCliente, fetchClientes, reactivateCliente, removeCliente, updateCliente } from "../services/clientes.service";
 import { createFornecedor, fetchFornecedores, removeFornecedor, updateFornecedor } from "../services/fornecedores.service";
 import { createFuncionario, fetchFuncionarios, removeFuncionario, updateFuncionario } from "../services/funcionarios.service";
 
@@ -37,9 +37,9 @@ export function usePeopleFacade() {
   const [modal, setModal] = useState<ModalState>(null);
   const [deleteTarget, setDeleteTarget] = useState<{
     nome: string;
-    fn: () => void | Promise<void>;
+    fn: () => Promise<void>;
   } | null>(null);
-  const [inativarTarget, setInativarTarget] = useState<Cliente | null>(null);
+  const [reactivateTarget, setReactivateTarget] = useState<Cliente | null>(null);
   const clientesAtivos = clientes.filter(c => c.ativo !== false);
   const clientesInativos = clientes.filter(c => c.ativo === false);
   const allTabs = createPeopleTabs(clientesAtivos.length, fornecedores.length, funcionarios.length);
@@ -190,7 +190,8 @@ export function usePeopleFacade() {
       setError("");
       try {
         const deletedId = await removeCliente(target);
-        setClientes(prev => prev.filter(cliente => cliente.id !== deletedId));
+        // Backend faz soft delete: o cliente continua existindo como inativo.
+        setClientes(prev => prev.map(cliente => cliente.id === deletedId ? { ...cliente, ativo: false } : cliente));
         setDeleteTarget(null);
       } catch (requestError) {
         setError(requestError instanceof Error ? requestError.message : "Não foi possível excluir o cliente.");
@@ -212,6 +213,17 @@ export function usePeopleFacade() {
       }
     }
   });
+  const confirmClientReactivation = async () => {
+    if (!reactivateTarget) return;
+    setError("");
+    try {
+      const reativado = await reactivateCliente(reactivateTarget);
+      setClientes(prev => prev.map(cliente => cliente.id === reativado.id ? reativado : cliente));
+      setReactivateTarget(null);
+    } catch (requestError) {
+      setError(requestError instanceof Error ? requestError.message : "Não foi possível reativar o cliente.");
+    }
+  };
   return {
     clientes,
     setClientes,
@@ -234,8 +246,10 @@ export function usePeopleFacade() {
     setModal,
     deleteTarget,
     setDeleteTarget,
-    inativarTarget,
-    setInativarTarget,
+    reactivateTarget,
+    requestClientReactivation: setReactivateTarget,
+    cancelClientReactivation: () => setReactivateTarget(null),
+    confirmClientReactivation,
     clientesAtivos,
     clientesInativos,
     allTabs,

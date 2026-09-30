@@ -1,9 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { createClienteMock, deleteClienteMock, listClientesMock, updateClienteMock } = vi.hoisted(() => ({
+const { createClienteMock, deleteClienteMock, listClientesMock, reactivateClienteMock, updateClienteMock } = vi.hoisted(() => ({
   createClienteMock: vi.fn(),
   deleteClienteMock: vi.fn(),
   listClientesMock: vi.fn(),
+  reactivateClienteMock: vi.fn(),
   updateClienteMock: vi.fn(),
 }));
 
@@ -12,11 +13,12 @@ vi.mock("../repository/clientes.repository", () => ({
     createCliente: createClienteMock,
     deleteCliente: deleteClienteMock,
     listClientes: listClientesMock,
+    reactivateCliente: reactivateClienteMock,
     updateCliente: updateClienteMock,
   },
 }));
 
-import { createCliente, fetchClientes, removeCliente, updateCliente } from "./clientes.service";
+import { createCliente, fetchClientes, reactivateCliente, removeCliente, updateCliente } from "./clientes.service";
 
 const endereco = {
   logradouro: "Rua das Flores",
@@ -61,5 +63,20 @@ describe("clientesService", () => {
     deleteClienteMock.mockResolvedValue(undefined);
     await expect(removeCliente(model)).resolves.toBe(17);
     expect(deleteClienteMock).toHaveBeenCalledWith(17);
+  });
+
+  it("reativa o cliente e mapeia a resposta do backend", async () => {
+    const inativo = { ...model, ativo: false };
+    reactivateClienteMock.mockResolvedValue({ ...response, status: 1 });
+
+    await expect(reactivateCliente(inativo)).resolves.toEqual(model);
+    expect(reactivateClienteMock).toHaveBeenCalledWith(17);
+  });
+
+  it("marca como ativo quando o backend reativa sem corpo de resposta", async () => {
+    const inativo = { ...model, ativo: false };
+    reactivateClienteMock.mockResolvedValue(undefined);
+
+    await expect(reactivateCliente(inativo)).resolves.toEqual(model);
   });
 });

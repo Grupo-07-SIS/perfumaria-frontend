@@ -71,6 +71,24 @@ describe("people.service", () => {
   });
 
   describe("validateCliente", () => {
+    const valido = { nome: "Ana", telefone: "(11) 99999-0000", email: "", endereco };
+
+    it("aceita telefone com DDD e e-mail vazio porque ele e opcional", () => {
+      expect(validateCliente(valido)).toEqual({});
+      expect(validateCliente({ ...valido, telefone: "1133334444", email: "ana@perfumaria.com" })).toEqual({});
+    });
+
+    it("exige nome e telefone", () => {
+      expect(validateCliente({ ...valido, nome: " ", telefone: "" })).toEqual({ nome: "Obrigatório.", telefone: "Obrigatório." });
+    });
+
+    it.each(["(11) 9999", "119"])("rejeita telefone incompleto: %s", telefone => {
+      expect(validateCliente({ ...valido, telefone })).toEqual({ telefone: "Informe DDD + número (10 ou 11 dígitos)." });
+    });
+
+    it("rejeita e-mail informado em formato invalido", () => {
+      expect(validateCliente({ ...valido, email: "ana@perfumaria,com" })).toEqual({ email: "Informe um e-mail válido." });
+    });
     it("valida o CEP informado no endereco do cliente", () => {
       expect(validateCliente({ nome: "Ana", telefone: "11999990000", endereco: { ...endereco, cep: "0100" } }))
         .toEqual({ cep: "O CEP deve conter 8 dígitos." });

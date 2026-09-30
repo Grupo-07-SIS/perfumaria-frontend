@@ -8,6 +8,7 @@ const {
   fetchClientesMock,
   fetchFornecedoresMock,
   fetchFuncionariosMock,
+  reactivateClienteMock,
   removeClienteMock,
   removeFornecedorMock,
   removeFuncionarioMock,
@@ -21,6 +22,7 @@ const {
   fetchClientesMock: vi.fn(),
   fetchFornecedoresMock: vi.fn(),
   fetchFuncionariosMock: vi.fn(),
+  reactivateClienteMock: vi.fn(),
   removeClienteMock: vi.fn(),
   removeFornecedorMock: vi.fn(),
   removeFuncionarioMock: vi.fn(),
@@ -32,6 +34,7 @@ const {
 vi.mock("../services/clientes.service", () => ({
   createCliente: createClienteMock,
   fetchClientes: fetchClientesMock,
+  reactivateCliente: reactivateClienteMock,
   removeCliente: removeClienteMock,
   updateCliente: updateClienteMock,
 }));
@@ -228,7 +231,7 @@ describe("usePeopleFacade com pessoas remotas", () => {
     expect(result.current.modal?.type).toBe("cliente");
   });
 
-  it("atualiza e exclui cliente somente apos sucesso, removendo-o da lista", async () => {
+  it("atualiza e inativa cliente somente apos sucesso, movendo-o para os inativos", async () => {
     const revisado = { ...clienteOriginal, nome: "Ana Revisada" };
     let resolveUpdate!: (value: typeof revisado) => void;
     let resolveDelete!: (value: number) => void;
@@ -262,8 +265,54 @@ describe("usePeopleFacade com pessoas remotas", () => {
       resolveDelete(17);
       await deletePromise;
     });
-    expect(result.current.clientes).toEqual([]);
+    const inativado = { ...revisado, ativo: false };
+    expect(result.current.clientes).toEqual([inativado]);
+    expect(result.current.filtClientes).toEqual([]);
     expect(result.current.deleteTarget).toBeNull();
+
+    act(() => result.current.setStatusFiltro("inativos"));
+    expect(result.current.filtClientes).toEqual([inativado]);
+  });
+
+  it("reativa cliente somente depois do backend confirmar e o devolve aos ativos", async () => {
+    const inativo = { ...clienteOriginal, ativo: false };
+    fetchClientesMock.mockResolvedValue([inativo]);
+    let resolveReactivate!: (value: typeof clienteOriginal) => void;
+    reactivateClienteMock.mockImplementation(() => new Promise(resolve => { resolveReactivate = resolve; }));
+    const { result } = renderHook(() => usePeopleFacade());
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    expect(result.current.filtClientes).toEqual([]);
+
+    act(() => result.current.requestClientReactivation(inativo));
+    expect(result.current.reactivateTarget).toEqual(inativo);
+
+    let reactivatePromise!: Promise<void>;
+    act(() => { reactivatePromise = result.current.confirmClientReactivation(); });
+    expect(result.current.clientes).toEqual([inativo]);
+    await act(async () => {
+      resolveReactivate(clienteOriginal);
+      await reactivatePromise;
+    });
+
+    expect(reactivateClienteMock).toHaveBeenCalledWith(inativo);
+    expect(result.current.clientes).toEqual([clienteOriginal]);
+    expect(result.current.filtClientes).toEqual([clienteOriginal]);
+    expect(result.current.reactivateTarget).toBeNull();
+  });
+
+  it("mantem o cliente inativo e o alvo aberto quando a reativacao falha", async () => {
+    const inativo = { ...clienteOriginal, ativo: false };
+    fetchClientesMock.mockResolvedValue([inativo]);
+    reactivateClienteMock.mockRejectedValue(new Error("PEOPLE_CLIENTS_REACTIVATE_FAILED:500"));
+    const { result } = renderHook(() => usePeopleFacade());
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+    act(() => result.current.requestClientReactivation(inativo));
+    await act(async () => result.current.confirmClientReactivation());
+
+    expect(result.current.clientes).toEqual([inativo]);
+    expect(result.current.reactivateTarget).toEqual(inativo);
+    expect(result.current.error).toBe("PEOPLE_CLIENTS_REACTIVATE_FAILED:500");
   });
 
   it("cria, atualiza e exclui funcionario somente depois do backend confirmar", async () => {

@@ -16,6 +16,11 @@ function validateOptionalCep(cep = "") {
   return digits && digits.length !== CEP_DIGITS ? "O CEP deve conter 8 dígitos." : undefined;
 }
 
+function validateOptionalEmail(email = "") {
+  const trimmed = email.trim();
+  return trimmed && !EMAIL_PATTERN.test(trimmed) ? "Informe um e-mail válido." : undefined;
+}
+
 const CLIENTE_STATUS_PARAM: Record<StatusFiltro, number | undefined> = {
   ativos: 1,
   inativos: 0,
@@ -61,11 +66,15 @@ export function selectPeople({
 export function validateCliente({
   nome,
   telefone,
+  email,
   endereco
-}: Pick<ClienteModalFormValues, "nome" | "telefone"> & Partial<Pick<ClienteModalFormValues, "endereco">>) {
+}: Pick<ClienteModalFormValues, "nome" | "telefone"> & Partial<Pick<ClienteModalFormValues, "email" | "endereco">>) {
   const errors: Record<string, string> = {};
   if (!nome.trim()) errors.nome = "Obrigatório.";
-  if (!telefone.trim()) errors.telefone = "Obrigatório.";
+  const telefoneError = telefone.trim() ? validateOptionalTelefone(telefone) : "Obrigatório.";
+  if (telefoneError) errors.telefone = telefoneError;
+  const emailError = validateOptionalEmail(email);
+  if (emailError) errors.email = emailError;
   const cepError = validateOptionalCep(endereco?.cep);
   if (cepError) errors.cep = cepError;
   return errors;
@@ -82,7 +91,10 @@ export function validateFornecedor({
   if (!cnpj.trim()) errors.cnpj = "Obrigatório.";
   else if (onlyDigits(cnpj).length !== CNPJ_DIGITS) errors.cnpj = "O CNPJ deve conter 14 dígitos.";
   if (!email.trim()) errors.email = "Obrigatório.";
-  else if (!EMAIL_PATTERN.test(email.trim())) errors.email = "Informe um e-mail válido.";
+  else {
+    const emailError = validateOptionalEmail(email);
+    if (emailError) errors.email = emailError;
+  }
   const telefoneError = validateOptionalTelefone(telefone);
   if (telefoneError) errors.telefone = telefoneError;
   const cepError = validateOptionalCep(endereco?.cep);

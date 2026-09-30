@@ -4,15 +4,15 @@ import type { SetStateAction } from "react";
 import type { ClienteModalFormValues, ClienteModalProps } from "../models/people.models";
 import { useState } from "react";
 import { EMPTY_ENDERECO } from "../config/people.config";
+import { formatTelefone } from "../../../shared/utils/masks";
 export function useClienteModalForm({
   data,
-  onClose,
   onSave
 }: ClienteModalProps) {
   const form = useForm<ClienteModalFormValues>({
     defaultValues: {
       nome: data?.nome ?? "",
-      telefone: data?.telefone ?? "",
+      telefone: formatTelefone(data?.telefone ?? ""),
       email: data?.email ?? "",
       endereco: data?.endereco ?? {
         ...EMPTY_ENDERECO
@@ -28,7 +28,7 @@ export function useClienteModalForm({
   const setNome = (value: SetStateAction<ClienteModalFormValues["nome"]>) => form.setValue("nome", typeof value === "function" ? value(form.getValues("nome")) : value, {
     shouldDirty: true
   });
-  const setTelefone = (value: SetStateAction<ClienteModalFormValues["telefone"]>) => form.setValue("telefone", typeof value === "function" ? value(form.getValues("telefone")) : value, {
+  const setTelefone = (value: SetStateAction<ClienteModalFormValues["telefone"]>) => form.setValue("telefone", formatTelefone(typeof value === "function" ? value(form.getValues("telefone")) : value), {
     shouldDirty: true
   });
   const setEmail = (value: SetStateAction<ClienteModalFormValues["email"]>) => form.setValue("email", typeof value === "function" ? value(form.getValues("email")) : value, {
@@ -47,6 +47,7 @@ export function useClienteModalForm({
     const e = validateCliente({
       nome,
       telefone,
+      email,
       endereco
     });
     if (Object.keys(e).length > 0) {

@@ -28,4 +28,7 @@ export const clientesRepository = {
   async deleteCliente(id: number): Promise<void> {
     await requestData(apiClient.delete<void>(`/clientes/${id}`), "PEOPLE_CLIENTS_DELETE_FAILED");
   },
+  reactivateCliente(id: number): Promise<ClienteResponseDto | undefined> {
+    return requestData(apiClient.patch<ClienteResponseDto | undefined>(`/clientes/${id}/reativar`), "PEOPLE_CLIENTS_REACTIVATE_FAILED");
+  },
 };

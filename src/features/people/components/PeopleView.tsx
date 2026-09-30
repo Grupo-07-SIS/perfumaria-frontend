@@ -3,6 +3,7 @@ import { ClienteModal } from "./ClienteModal";
 import { FornecedorModal } from "./FornecedorModal";
 import { FuncionarioModal } from "./FuncionarioModal";
 import { DeleteConfirm } from "./DeleteConfirm";
+import { ReativarConfirm } from "./ReativarConfirm";
 import { PeractButtonPrimitive } from "../../../shared/components/peract-button";
 import { Plus, Search, UserCheck, UserX, Users, User, Pencil, UserMinus, Phone, Mail, MapPin, Truck, Trash2 } from "lucide-react";
 import { ACC, DARK } from "../config/people.config";
@@ -21,6 +22,10 @@ export function PeopleView({
   requestClientDeletion,
   requestSupplierDeletion,
   requestEmployeeDeletion,
+  reactivateTarget,
+  requestClientReactivation,
+  cancelClientReactivation,
+  confirmClientReactivation,
   aba,
   selectTab,
   search,
@@ -52,6 +57,7 @@ export function PeopleView({
       await deleteTarget.fn();
       setDeleteTarget(null);
     }} />}
+      {reactivateTarget && <ReativarConfirm nome={reactivateTarget.nome} onClose={cancelClientReactivation} onConfirm={confirmClientReactivation} />}
 
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
         <div>
@@ -160,13 +166,15 @@ export function PeopleView({
                 })} className="p-1.5 rounded-lg peract-font-color-muted transition-colors hover:bg-gray-100" title="Editar" variant="plain" size="plain" aria-label="Editar">
                         <Pencil size={14} />
                       </PeractButtonPrimitive>
-                      <PeractButtonPrimitive onClick={() => requestClientDeletion(c)} className="p-1.5 rounded-lg peract-font-color-muted transition-colors hover:bg-red-50 hover:text-red-600" title="Excluir cliente" variant="plain" size="plain" aria-label="Excluir cliente">
+                      {isAtivo ? <PeractButtonPrimitive onClick={() => requestClientDeletion(c)} className="p-1.5 rounded-lg peract-font-color-muted transition-colors hover:bg-red-50 hover:text-red-600" title="Excluir cliente" variant="plain" size="plain" aria-label="Excluir cliente">
                         <UserMinus size={14} />
-                      </PeractButtonPrimitive>
+                      </PeractButtonPrimitive> : <PeractButtonPrimitive onClick={() => requestClientReactivation(c)} className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs text-green-700 transition-colors hover:bg-green-50" title="Reativar cliente" variant="plain" size="plain" aria-label="Reativar cliente">
+                        <UserCheck size={14} /> Reativar
+                      </PeractButtonPrimitive>}
                     </div>
                   </div>
                   <div className="flex flex-col gap-1.5">
-                    <div className="flex items-center gap-2 text-xs peract-font-color-muted"><Phone size={12} className="shrink-0" />{c.telefone}</div>
+                    <div className="flex items-center gap-2 text-xs peract-font-color-muted"><Phone size={12} className="shrink-0" />{formatTelefone(c.telefone)}</div>
                     {c.email && <div className="flex items-center gap-2 text-xs peract-font-color-muted"><Mail size={12} className="shrink-0" /><span className="truncate">{c.email}</span></div>}
                     {(c.endereco.logradouro || c.endereco.cidade) && <div className="flex items-start gap-2 text-xs peract-font-color-muted">
                         <MapPin size={12} className="shrink-0 mt-0.5" />
