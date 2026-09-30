@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildClienteSearchParams, buildSearchParams, selectPeople, validateCliente, validateFornecedor } from "./people.service";
+import { buildSearchParams, selectPeople, validateCliente, validateFornecedor } from "./people.service";
 
 const endereco = { logradouro: "", numero: "", cep: "", bairro: "", cidade: "", uf: "" };
 
@@ -7,15 +7,6 @@ describe("people.service", () => {
   it("monta params de busca omitindo texto vazio", () => {
     expect(buildSearchParams("Frascos")).toEqual({ busca: "Frascos" });
     expect(buildSearchParams("")).toEqual({});
-  });
-
-  it.each([
-    ["ativos", "Ana", { busca: "Ana", status: 1 }],
-    ["inativos", "Ana", { busca: "Ana", status: 0 }],
-    ["todos", "Ana", { busca: "Ana" }],
-    ["todos", "", {}],
-  ] as const)("converte o filtro %s de clientes para o contrato remoto", (status, busca, expected) => {
-    expect(buildClienteSearchParams(busca, status)).toEqual(expected);
   });
 
   it("filtra clientes por status sem refiltrar localmente os resultados remotos", () => {

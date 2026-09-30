@@ -160,7 +160,7 @@ describe("People: caracterizacao de filtros e permissoes", () => {
     vi.mocked(fetchClientes).mockResolvedValueOnce([]);
     await user.type(search, "{Enter}");
 
-    await waitFor(() => expect(fetchClientes).toHaveBeenCalledWith({ busca: "inexistente", status: 1 }));
+    await waitFor(() => expect(fetchClientes).toHaveBeenCalledWith({ busca: "inexistente" }));
     expect(await screen.findByText("Nenhum cliente encontrado.")).toBeInTheDocument();
   });
 
@@ -356,6 +356,22 @@ describe("People: caracterizacao de filtros e permissoes", () => {
     expect(screen.queryByText("Roberta Nunes")).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: /^Ativos/ })).toHaveTextContent("6");
     expect(screen.getByRole("button", { name: /^Inativos/ })).toHaveTextContent("0");
+  });
+
+  it("mostra no contador de inativos o cliente inativo encontrado pela busca", async () => {
+    const user = userEvent.setup();
+    await renderPeople();
+    vi.mocked(fetchClientes).mockImplementation(async (params = {}) => clientesRemotos
+      .filter(cliente => cliente.nome.toLowerCase().includes((params.busca ?? "").toLowerCase()))
+      .map(cliente => ({ ...cliente, endereco: { ...cliente.endereco } })));
+
+    await user.type(screen.getByPlaceholderText("Buscar cliente..."), "Roberta");
+
+    await waitFor(() => expect(screen.getByRole("button", { name: /^Ativos/ })).toHaveTextContent("0"));
+    expect(screen.getByRole("button", { name: /^Inativos/ })).toHaveTextContent("1");
+    expect(screen.getByRole("button", { name: /^Todos/ })).toHaveTextContent("1");
+    await user.click(screen.getByRole("button", { name: /^Inativos/ }));
+    expect(screen.getByText("Roberta Nunes")).toBeInTheDocument();
   });
 
   it("exige confirmacao para excluir cliente e permite cancelar", async () => {

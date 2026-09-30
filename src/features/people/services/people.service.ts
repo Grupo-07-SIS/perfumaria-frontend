@@ -21,19 +21,8 @@ function validateOptionalEmail(email = "") {
   return trimmed && !EMAIL_PATTERN.test(trimmed) ? "Informe um e-mail válido." : undefined;
 }
 
-const CLIENTE_STATUS_PARAM: Record<StatusFiltro, number | undefined> = {
-  ativos: 1,
-  inativos: 0,
-  todos: undefined,
-};
-
 export function buildSearchParams(busca: string): PeopleListParams {
   return busca ? { busca } : {};
-}
-
-export function buildClienteSearchParams(busca: string, statusFiltro: StatusFiltro): PeopleListParams {
-  const status = CLIENTE_STATUS_PARAM[statusFiltro];
-  return status === undefined ? buildSearchParams(busca) : { ...buildSearchParams(busca), status };
 }
 
 export function formatEndereco(e: Endereco) {

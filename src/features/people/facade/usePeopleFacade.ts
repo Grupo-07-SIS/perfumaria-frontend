@@ -1,5 +1,5 @@
 import { createPeopleTabs } from "../config/people.presentation";
-import { buildClienteSearchParams, buildSearchParams, selectPeople } from "../services/people.service";
+import { buildSearchParams, selectPeople } from "../services/people.service";
 import { usePeopleRepository } from "../repository/people.repository";
 import { useEffect, useRef, useState } from "react";
 import { useDebouncedValue } from "../../../shared/hooks/useDebouncedValue";
@@ -23,7 +23,7 @@ export function usePeopleFacade() {
   const [submittedSearch, setSubmittedSearch] = useState("");
   const debouncedSearch = useDebouncedValue(search.trim());
   const listRequestIds = useRef<Record<Aba, number>>({ clientes: 0, fornecedores: 0, funcionarios: 0 });
-  const [statusFiltro, setStatusFiltroState] = useState<StatusFiltro>("ativos");
+  const [statusFiltro, setStatusFiltro] = useState<StatusFiltro>("ativos");
   type ModalState = {
     type: "cliente";
     data?: Cliente;
@@ -63,12 +63,13 @@ export function usePeopleFacade() {
       .finally(() => setIsLoading(false));
   }, []);
 
-  const loadTab = async (tab: Aba, busca: string, status: StatusFiltro) => {
+  const loadTab = async (tab: Aba, busca: string) => {
     const requestId = startListRequest(tab);
     setError("");
     try {
       if (tab === "clientes") {
-        const loaded = await fetchClientes(buildClienteSearchParams(busca, status));
+        // Status is filtered locally so the Ativos/Inativos/Todos counters reflect the whole search.
+        const loaded = await fetchClientes(buildSearchParams(busca));
         if (isLatestListRequest(tab, requestId)) setClientes(loaded);
       } else if (tab === "fornecedores") {
         const loaded = await fetchFornecedores(buildSearchParams(busca));
@@ -84,7 +85,7 @@ export function usePeopleFacade() {
 
   const searchActiveTab = (busca: string) => {
     setSubmittedSearch(busca);
-    return loadTab(aba, busca, statusFiltro);
+    return loadTab(aba, busca);
   };
 
   const submitSearch = () => searchActiveTab(search.trim());
@@ -94,17 +95,12 @@ export function usePeopleFacade() {
     void searchActiveTab(debouncedSearch);
   }, [debouncedSearch]);
 
-  const setStatusFiltro = (status: StatusFiltro) => {
-    setStatusFiltroState(status);
-    if (aba === "clientes" && submittedSearch) void loadTab("clientes", submittedSearch, status);
-  };
-
   const selectTab = (nextAba: Aba) => {
-    if (submittedSearch) void loadTab(aba, "", "todos");
+    if (submittedSearch) void loadTab(aba, "");
     setAba(nextAba);
     setSearch("");
     setSubmittedSearch("");
-    setStatusFiltroState("ativos");
+    setStatusFiltro("ativos");
   };
 
   const saveCliente = async (values: ClienteModalFormValues) => {

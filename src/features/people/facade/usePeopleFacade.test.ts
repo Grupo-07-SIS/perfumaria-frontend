@@ -142,7 +142,7 @@ describe("usePeopleFacade com pessoas remotas", () => {
     expect(fetchFuncionariosMock).not.toHaveBeenCalled();
   });
 
-  it("submete busca somente para a aba ativa e deriva o status de clientes", async () => {
+  it("submete busca somente para a aba ativa e busca clientes de todos os status", async () => {
     const { result } = renderHook(() => usePeopleFacade());
     await waitFor(() => expect(result.current.isLoading).toBe(false));
     vi.clearAllMocks();
@@ -152,12 +152,13 @@ describe("usePeopleFacade com pessoas remotas", () => {
       result.current.setStatusFiltro("inativos");
     });
     await act(async () => result.current.submitSearch());
-    expect(fetchClientesMock).toHaveBeenLastCalledWith({ busca: "Ana", status: 0 });
+    expect(fetchClientesMock).toHaveBeenLastCalledWith({ busca: "Ana" });
     expect(fetchFornecedoresMock).not.toHaveBeenCalled();
     expect(fetchFuncionariosMock).not.toHaveBeenCalled();
 
     vi.clearAllMocks();
     act(() => result.current.setStatusFiltro("todos"));
+    expect(fetchClientesMock).not.toHaveBeenCalled();
     await act(async () => result.current.submitSearch());
     expect(fetchClientesMock).toHaveBeenLastCalledWith({ busca: "Ana" });
 
@@ -501,17 +502,23 @@ describe("usePeopleFacade com pessoas remotas", () => {
     expect(fetchFuncionariosMock).not.toHaveBeenCalled();
   });
 
-  it("refaz a busca de clientes com o novo status quando ha busca ativa", async () => {
+  it("conta ativos e inativos da busca e troca o status sem nova requisicao", async () => {
+    const inativo = { ...clienteOriginal, id: 30, nome: "Ana Inativa", ativo: false };
     const { result } = renderHook(() => usePeopleFacade());
     await waitFor(() => expect(result.current.isLoading).toBe(false));
+    fetchClientesMock.mockResolvedValue([clienteOriginal, inativo]);
     act(() => result.current.setSearch("Ana"));
     await act(async () => result.current.submitSearch());
     vi.clearAllMocks();
-    fetchClientesMock.mockResolvedValue([clienteOriginal]);
 
-    await act(async () => result.current.setStatusFiltro("inativos"));
+    expect(result.current.clientesAtivos).toEqual([clienteOriginal]);
+    expect(result.current.clientesInativos).toEqual([inativo]);
+    expect(result.current.filtClientes).toEqual([clienteOriginal]);
 
-    expect(fetchClientesMock).toHaveBeenCalledWith({ busca: "Ana", status: 0 });
+    act(() => result.current.setStatusFiltro("inativos"));
+
+    expect(fetchClientesMock).not.toHaveBeenCalled();
+    expect(result.current.filtClientes).toEqual([inativo]);
   });
 
   it("filtra status de clientes localmente quando nao ha busca ativa", async () => {
