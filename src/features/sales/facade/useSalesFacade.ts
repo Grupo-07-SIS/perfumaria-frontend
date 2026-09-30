@@ -1,32 +1,32 @@
-import { calculateSaleTotals } from "../services/sales.service";
+import { calculateSaleTotals, createSaleCustomer, fetchSalesData, registerSale, salesErrorMessage, validateSale } from "../services/sales.service";
 import { useForm } from "react-hook-form";
-import type { SetStateAction } from "react";
-import type { SalesFormValues, CatalogItem, CartItem } from "../models/sales.models";
-import { useSalesRepository, decants, triggerBotpressPresencialFlow } from "../repository/sales.repository";
-import { useState } from "react";
+import type { SalesFormValues, CatalogItem, CartItem, SaleCustomer, NovoClienteModalFormValues } from "../models/sales.models";
+import { useEffect, useRef, useState } from "react";
 export function useSalesFacade() {
-  const {
-    clientes,
-    products,
-    reduceStock,
-    addVenda,
-    setClientes
-  } = useSalesRepository();
-  const catalogProdutos: CatalogItem[] = products.map(p => ({
-    id: p.id,
-    nome: p.name,
-    preco: p.preco,
-    tipo: "produto" as const,
-    productContextId: p.id
-  }));
-  const catalogo = [...catalogProdutos, ...decants];
+  const [products, setProducts] = useState<CatalogItem[]>([]);
+  const [clientes, setClientes] = useState<SaleCustomer[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
+  const [reloadKey, setReloadKey] = useState(0);
+  const [saving, setSaving] = useState(false);
+  const submitting = useRef(false);
+  useEffect(() => {
+    let active = true;
+    setLoading(true);
+    setLoadError("");
+    fetchSalesData().then(data => {
+      if (!active) return;
+      setProducts(data.products);
+      setClientes(data.customers);
+    }).catch(error => {
+      if (active) setLoadError(salesErrorMessage(error, "Não foi possível carregar os produtos e clientes."));
+    }).finally(() => {
+      if (active) setLoading(false);
+    });
+    return () => { active = false; };
+  }, [reloadKey]);
   const [clienteSearch, setClienteSearch] = useState("");
-  const [clienteSelected, setClienteSelected] = useState<{
-    id: number;
-    nome: string;
-    telefone: string;
-    email: string;
-  } | null>(null);
+  const [clienteSelected, setClienteSelected] = useState<SaleCustomer | null>(null);
   const [clienteOpen, setClienteOpen] = useState(false);
   const [itemSearch, setItemSearch] = useState("");
   const [itemOpen, setItemOpen] = useState(false);
@@ -49,34 +49,22 @@ export function useSalesFacade() {
     tipoDesconto,
     desconto
   } = form.watch();
-  const setPagamento = (value: SetStateAction<SalesFormValues["pagamento"]>) => form.setValue("pagamento", typeof value === "function" ? value(form.getValues("pagamento")) : value, {
-    shouldDirty: true
-  });
-  const setIsOnline = (value: SetStateAction<SalesFormValues["isOnline"]>) => form.setValue("isOnline", typeof value === "function" ? value(form.getValues("isOnline")) : value, {
-    shouldDirty: true
-  });
-  const setCanalOnline = (value: SetStateAction<SalesFormValues["canalOnline"]>) => form.setValue("canalOnline", typeof value === "function" ? value(form.getValues("canalOnline")) : value, {
-    shouldDirty: true
-  });
-  const setFrete = (value: SetStateAction<SalesFormValues["frete"]>) => form.setValue("frete", typeof value === "function" ? value(form.getValues("frete")) : value, {
-    shouldDirty: true
-  });
-  const setTipoDesconto = (value: SetStateAction<SalesFormValues["tipoDesconto"]>) => form.setValue("tipoDesconto", typeof value === "function" ? value(form.getValues("tipoDesconto")) : value, {
-    shouldDirty: true
-  });
-  const setDesconto = (value: SetStateAction<SalesFormValues["desconto"]>) => form.setValue("desconto", typeof value === "function" ? value(form.getValues("desconto")) : value, {
-    shouldDirty: true
-  });
+  const setPagamento = (value: string) => form.setValue("pagamento", value, { shouldDirty: true });
+  const setIsOnline = (value: boolean) => form.setValue("isOnline", value, { shouldDirty: true });
+  const setCanalOnline = (value: SalesFormValues["canalOnline"]) => form.setValue("canalOnline", value, { shouldDirty: true });
+  const setTipoDesconto = (value: SalesFormValues["tipoDesconto"]) => form.setValue("tipoDesconto", value, { shouldDirty: true });
+  const setDesconto = (value: string) => form.setValue("desconto", value, { shouldDirty: true });
+  const setFrete = (value: string) => form.setValue("frete", value, { shouldDirty: true });
   const [success, setSuccess] = useState(false);
   const [errors, setErrors] = useState<string[]>([]);
   const [showNovoCliente, setShowNovoCliente] = useState(false);
   const clientesFiltrados = clientes.filter(c => {
-    if (c.ativo === false) return false;
     const query = clienteSearch.toLowerCase();
     return c.nome.toLowerCase().includes(query) || c.telefone.includes(query) || c.email.toLowerCase().includes(query);
   });
-  const catalogoFiltrado = catalogo.filter(p => p.nome.toLowerCase().includes(itemSearch.toLowerCase()));
+  const catalogoFiltrado = products.filter(product => product.nome.toLowerCase().includes(itemSearch.toLowerCase()));
   const addToCart = (item: CatalogItem) => {
+    setSuccess(false);
     setCart(prev => {
       const existing = prev.find(i => i.catalogItem.id === item.id);
       if (existing) return prev.map(i => i.catalogItem.id === item.id ? {
@@ -92,10 +80,6 @@ export function useSalesFacade() {
     setItemOpen(false);
   };
   const updateQty = (id: number, qty: number) => {
-    if (qty <= 0) {
-      removeItem(id);
-      return;
-    }
     setCart(prev => prev.map(i => i.catalogItem.id === id ? {
       ...i,
       quantidade: qty
@@ -116,123 +100,51 @@ export function useSalesFacade() {
     tipoDesconto,
     desconto
   });
-  const handleFinalizar = async () => {
-    const errs: string[] = [];
-    if (cart.length === 0) errs.push("Adicione pelo menos um item ao carrinho.");
-    if (!clienteSelected) errs.push("Selecione um cliente. O vínculo com cliente é obrigatório.");
-    if (!pagamento) errs.push("Selecione o tipo de pagamento.");
-    if (isOnline && !canalOnline) errs.push("Selecione o canal da venda online (WhatsApp ou Site).");
-    if (isOnline && (!frete || parseFloat(frete) < 0)) errs.push("Informe o valor do frete para venda online.");
+  const handleRegistrar = async () => {
+    if (submitting.current || loading || loadError) return;
+    setSuccess(false);
+    const values = form.getValues();
+    const errs = validateSale(cart, clienteSelected, values);
     if (errs.length > 0) {
       setErrors(errs);
       return;
     }
     setErrors([]);
-    const stockReductions = cart.filter(i => i.catalogItem.productContextId !== undefined).map(i => ({
-      productId: i.catalogItem.productContextId!,
-      qty: i.quantidade
-    }));
-    if (stockReductions.length > 0) reduceStock(stockReductions);
-    const freteValFinal = isOnline && frete ? parseFloat(frete) : undefined;
-    const now = new Date();
-    const dataFormatada = `${String(now.getDate()).padStart(2, "0")}/${String(now.getMonth() + 1).padStart(2, "0")}/${now.getFullYear()} ${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
-    const vendaItens = cart.map(i => ({
-      nome: i.catalogItem.nome,
-      volume: i.catalogItem.volume,
-      quantidade: i.quantidade,
-      valorUnitario: i.catalogItem.preco
-    }));
-    const vendaId = addVenda({
-      data: dataFormatada,
-      cliente: clienteSelected?.nome ?? "",
-      emailCliente: clienteSelected?.email || undefined,
-      pagamento,
-      tipoVenda: isOnline ? "online" : "presencial",
-      canalOnline: isOnline ? canalOnline ?? undefined : undefined,
-      frete: freteValFinal,
-      desconto: descontoAplicado > 0 ? descontoAplicado : undefined,
-      total,
-      itens: vendaItens,
-      enviado: false
-    });
-
-    // Dispara fluxo Botpress para vendas presenciais
-    if (!isOnline && clienteSelected) {
-      try {
-        const subtotalVenda = subtotal;
-        const freteVenda = 0;
-        await triggerBotpressPresencialFlow({
-          codigoVenda: vendaId,
-          nomeCliente: clienteSelected.nome,
-          emailCliente: clienteSelected.email || undefined,
-          dadosPedido: vendaItens.map(item => ({
-            ...item,
-            totalItem: item.valorUnitario * item.quantidade
-          })),
-          frete: freteVenda,
-          desconto: descontoAplicado > 0 ? descontoAplicado : undefined,
-          subtotal: subtotalVenda,
-          totalVenda: total,
-          formaPagamento: pagamento,
-          dataHoraPedido: dataFormatada,
-          canalVenda: "presencial",
-          codigoRastreio: undefined
-        });
-      } catch (error) {
-        console.error("Erro ao acionar fluxo do Botpress", error);
-      }
+    submitting.current = true;
+    setSaving(true);
+    try {
+      await registerSale(cart, clienteSelected, values);
+      setSuccess(true);
+      setCart([]);
+      setClienteSelected(null);
+      setClienteSearch("");
+      setItemSearch("");
+      setItemOpen(false);
+      setClienteOpen(false);
+      form.reset();
+    } catch (error) {
+      setErrors([salesErrorMessage(error, "Não foi possível confirmar o registro. Verifique as vendas antes de tentar novamente.")]);
+    } finally {
+      submitting.current = false;
+      setSaving(false);
     }
-    setSuccess(true);
-    setCart([]);
-    setClienteSelected(null);
-    setClienteSearch("");
-    setPagamento("");
-    setIsOnline(false);
-    setCanalOnline(null);
-    setFrete("");
-    setDesconto("");
-    setTimeout(() => setSuccess(false), 3500);
   };
   const displayLabel = (c: {
     nome: string;
     telefone: string;
   }) => `${c.nome} – ${c.telefone}`;
-  const createCustomer = (nome: string, telefone: string) => {
-    const newId = Math.max(...clientes.map(c => c.id), 0) + 1;
-    const novoCliente = {
-      id: newId,
-      nome,
-      email: "",
-      telefone,
-      endereco: {
-        cep: "",
-        logradouro: "",
-        numero: "",
-        bairro: "",
-        cidade: "",
-        uf: ""
-      },
-      totalPedidos: 0,
-      ativo: true
-    };
+  const createCustomer = async (values: NovoClienteModalFormValues) => {
+    const novoCliente = await createSaleCustomer(values);
     setClientes(prev => [...prev, novoCliente]);
-    setClienteSelected({
-      id: newId,
-      nome,
-      telefone,
-      email: ""
-    });
+    setClienteSelected(novoCliente);
     setClienteSearch("");
     setClienteOpen(false);
   };
   return {
-    clientes,
-    products,
-    reduceStock,
-    addVenda,
-    setClientes,
-    catalogProdutos,
-    catalogo,
+    loading,
+    loadError,
+    saving,
+    reload: () => setReloadKey(previous => previous + 1),
     clienteSearch,
     setClienteSearch,
     clienteSelected,
@@ -274,7 +186,7 @@ export function useSalesFacade() {
     descontoValor,
     descontoAplicado,
     total,
-    handleFinalizar,
+    handleRegistrar,
     displayLabel,
     createCustomer
   };

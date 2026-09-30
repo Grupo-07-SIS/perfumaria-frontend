@@ -2,9 +2,8 @@ export interface CatalogItem {
   id: number;
   nome: string;
   preco: number;
-  tipo: "produto" | "decant";
-  volume?: string;
-  productContextId?: number;
+  tipo: "produto";
+  estoqueAtual: number;
 }
 export interface CartItem {
   catalogItem: CatalogItem;
@@ -13,6 +12,10 @@ export interface CartItem {
 export interface NovoClienteModalFormValues {
   nome: string;
   telefone: string;
+  email: string;
+}
+export interface SaleCustomer extends NovoClienteModalFormValues {
+  id: number;
 }
 export interface SalesFormValues {
   pagamento: string;

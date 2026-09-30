@@ -1,24 +1,26 @@
-import { validateNovoCliente } from "../services/sales.service";
+import { salesErrorMessage, validateNovoCliente } from "../services/sales.service";
 import { useForm } from "react-hook-form";
 import type { SetStateAction } from "react";
 import type { NovoClienteModalFormValues } from "../models/sales.models";
-import { useState } from "react";
+import { useRef, useState } from "react";
 export function useNovoClienteModalForm({
   onClose,
   onSave
 }: {
   onClose: () => void;
-  onSave: (nome: string, telefone: string) => void;
+  onSave: (values: NovoClienteModalFormValues) => Promise<void>;
 }) {
   const form = useForm<NovoClienteModalFormValues>({
     defaultValues: {
       nome: "",
-      telefone: ""
+      telefone: "",
+      email: ""
     }
   });
   const {
     nome,
-    telefone
+    telefone,
+    email
   } = form.watch();
   const setNome = (value: SetStateAction<NovoClienteModalFormValues["nome"]>) => form.setValue("nome", typeof value === "function" ? value(form.getValues("nome")) : value, {
     shouldDirty: true
@@ -27,22 +29,31 @@ export function useNovoClienteModalForm({
     shouldDirty: true
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [success, setSuccess] = useState(false);
+  const setEmail = (value: string) => form.setValue("email", value, { shouldDirty: true });
+  const [saving, setSaving] = useState(false);
+  const [submitError, setSubmitError] = useState("");
+  const submitting = useRef(false);
   const ACC = "#c29958";
-  const handleSave = () => {
-    const e = validateNovoCliente({
-      nome,
-      telefone
-    });
-    if (Object.keys(e).length > 0) {
-      setErrors(e);
+  const handleSave = async () => {
+    if (submitting.current) return;
+    const values = form.getValues();
+    const validationErrors = validateNovoCliente(values);
+    setErrors(validationErrors);
+    setSubmitError("");
+    if (Object.keys(validationErrors).length > 0) {
       return;
     }
-    setSuccess(true);
-    setTimeout(() => {
-      onSave(nome.trim(), telefone.trim());
+    submitting.current = true;
+    setSaving(true);
+    try {
+      await onSave(values);
       onClose();
-    }, 900);
+    } catch (error) {
+      setSubmitError(salesErrorMessage(error, "Não foi possível cadastrar o cliente."));
+    } finally {
+      submitting.current = false;
+      setSaving(false);
+    }
   };
   return {
     nome,
@@ -51,7 +62,10 @@ export function useNovoClienteModalForm({
     setTelefone,
     errors,
     setErrors,
-    success,
+    email,
+    setEmail,
+    saving,
+    submitError,
     ACC,
     handleSave
   };

@@ -1,5 +1,5 @@
 import type { useSalesFacade } from "../facade/useSalesFacade";
-import { CheckCircle, Store, Globe, MessageCircle, UserPlus, User, Search, X, ShoppingCart, Trash2, Tag, ChevronDown } from "lucide-react";
+import { CheckCircle, Store, Globe, MessageCircle, UserPlus, User, Search, X, ShoppingCart, Trash2, Tag, ChevronDown, RefreshCw } from "lucide-react";
 import { PeractCard } from "../../../shared/components/peract-card";
 import { PeractButtonPrimitive } from "../../../shared/components/peract-button";
 import { PeractInputControl } from "../../../shared/components/peract-input";
@@ -11,7 +11,10 @@ import { pagamentos } from "../config/sales.config";
 import { NovoClienteModal } from "./NovoClienteModal";
 export function SalesView({
   createCustomer,
-  products,
+  loading,
+  loadError,
+  saving,
+  reload,
   clienteSearch,
   setClienteSearch,
   clienteSelected,
@@ -48,7 +51,7 @@ export function SalesView({
   freteVal,
   descontoAplicado,
   total,
-  handleFinalizar,
+  handleRegistrar,
   displayLabel
 }: ReturnType<typeof useSalesFacade>) {
   return <div className="p-4 lg:p-6 max-w-[1200px] mx-auto">
@@ -63,10 +66,7 @@ export function SalesView({
       {success && <div className="flex items-center gap-3 px-4 py-3 mb-4 bg-green-50 border border-green-200 rounded-xl text-green-700 text-sm" role="status">
           <CheckCircle size={18} />
           <div>
-            <p className="font-medium">Venda finalizada com sucesso!</p>
-            <p className="text-xs text-green-600">
-              O estoque foi atualizado automaticamente.
-            </p>
+            <p className="font-medium">Venda registrada como pendente.</p>
           </div>
         </div>}
 
@@ -76,7 +76,12 @@ export function SalesView({
           </ul>
         </div>}
 
-      {/* Canal da venda */}
+      {loading && <p className="text-sm peract-font-color-muted mb-4">Carregando produtos e clientes...</p>}
+      {loadError && <div className="mb-4">
+        <p role="alert" className="text-sm text-red-600 mb-2">{loadError}</p>
+        <PeractButtonPrimitive onClick={reload} variant="plain" size="plain" className="flex items-center gap-2"><RefreshCw size={16} /> Atualizar dados</PeractButtonPrimitive>
+      </div>}
+      <fieldset disabled={loading || saving || !!loadError} aria-busy={loading || saving} className="min-w-0">
       <PeractCard className="peract-bg-card rounded-xl border peract-border-color shadow-sm p-4 mb-4">
         <p className="peract-font-color-default text-sm mb-3">Canal da venda</p>
         <div className="flex gap-3 mb-3">
@@ -130,19 +135,22 @@ export function SalesView({
                 <UserPlus size={13} /> Novo cliente
               </PeractButtonPrimitive>
             </div>
-            <div className="relative">
-              <div className="flex items-center gap-2 border peract-border-color rounded-lg px-3 py-2 cursor-pointer" onClick={() => setClienteOpen(true)}>
+            <div className="relative" onBlur={event => {
+              if (!event.currentTarget.contains(event.relatedTarget)) setClienteOpen(false);
+            }}>
+              <div className="flex items-center gap-2 border peract-border-color rounded-lg px-3 py-2">
                 {clienteSelected ? <User size={15} className="peract-font-color-muted shrink-0" /> : <Search size={15} className="peract-font-color-muted shrink-0" />}
                 <PeractInputControl type="text" placeholder="Buscar por nome ou telefone..." value={clienteSelected ? displayLabel(clienteSelected) : clienteSearch} onChange={e => {
                 setClienteSearch(e.target.value);
                 setClienteSelected(null);
                 setClienteOpen(true);
-              }} onFocus={() => setClienteOpen(true)} className="flex-1 text-sm outline-none peract-font-color-default placeholder:text-gray-400 bg-transparent" />
+              }} onFocus={() => setClienteOpen(!clienteSelected)} className="flex-1 min-w-0 text-sm outline-none peract-font-color-default placeholder:text-gray-400 bg-transparent" />
                 {clienteSelected && <PeractButtonPrimitive onClick={e => {
                 e.stopPropagation();
                 setClienteSelected(null);
                 setClienteSearch("");
-              }} className="peract-font-color-muted hover:text-gray-600" variant="plain" size="plain" aria-label="Fechar">
+                setClienteOpen(false);
+              }} className="shrink-0 peract-font-color-muted hover:text-gray-600" variant="plain" size="plain" aria-label="Remover cliente" title="Remover cliente">
                     <X size={14} />
                   </PeractButtonPrimitive>}
               </div>
@@ -177,7 +185,6 @@ export function SalesView({
                       </PeractButtonPrimitive>)}
                 </PeractCard>}
             </div>
-            {clienteOpen && <div className="fixed inset-0 z-10" onClick={() => setClienteOpen(false)} />}
           </PeractCard>
 
           {/* Adicionar item */}
@@ -188,21 +195,17 @@ export function SalesView({
             <div className="relative">
               <div className="flex items-center gap-2 border peract-border-color rounded-lg px-3 py-2">
                 <Search size={15} className="peract-font-color-muted shrink-0" />
-                <PeractInputControl type="text" placeholder="Buscar produto ou decant..." value={itemSearch} onChange={e => {
+                <PeractInputControl type="text" placeholder="Buscar produto..." value={itemSearch} onChange={e => {
                 setItemSearch(e.target.value);
                 setItemOpen(true);
               }} onFocus={() => setItemOpen(true)} className="flex-1 text-sm outline-none peract-font-color-default placeholder:text-gray-400" />
               </div>
               {itemOpen && itemSearch && catalogoFiltrado.length > 0 && <PeractCard className="absolute top-full left-0 right-0 mt-1 peract-bg-card border peract-border-color rounded-xl shadow-lg z-20 overflow-hidden max-h-52 overflow-y-auto">
                   {catalogoFiltrado.map(p => {
-                const product = products.find(x => x.id === p.productContextId);
-                const estoqueAtual = product?.currentStock;
-                return <PeractButtonPrimitive key={p.id} className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-amber-50 transition-colors border-b border-gray-50 last:border-0 flex items-center justify-between gap-3" onClick={() => addToCart(p)} variant="plain" size="plain">
+                const estoqueAtual = p.estoqueAtual;
+                return <PeractButtonPrimitive key={p.id} disabled={estoqueAtual <= 0} className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-amber-50 transition-colors border-b border-gray-50 last:border-0 flex items-center justify-between gap-3" onClick={() => addToCart(p)} variant="plain" size="plain">
                         <div className="flex items-center gap-2 min-w-0">
                           <span className="truncate">{p.nome}</span>
-                          {p.volume && <span className="text-xs peract-font-color-muted bg-gray-100 px-1.5 py-0.5 rounded shrink-0">
-                              {p.volume}
-                            </span>}
                         </div>
                         <div className="flex items-center gap-2 shrink-0">
                           {estoqueAtual !== undefined && <span className={`text-xs ${estoqueAtual === 0 ? "text-red-500" : "peract-font-color-muted"}`}>
@@ -217,6 +220,7 @@ export function SalesView({
                       </PeractButtonPrimitive>;
               })}
                 </PeractCard>}
+              {itemOpen && itemSearch && catalogoFiltrado.length === 0 && <p className="text-sm peract-font-color-muted mt-2">Nenhum produto encontrado.</p>}
               {itemOpen && <div className="fixed inset-0 z-10" onClick={() => setItemOpen(false)} />}
             </div>
           </PeractCard>
@@ -260,16 +264,13 @@ export function SalesView({
                           {item.catalogItem.nome}
                         </p>
                         <div className="flex items-center gap-1 mt-0.5">
-                          {item.catalogItem.volume && <span className="text-xs peract-font-color-muted bg-gray-100 px-1.5 py-0.5 rounded">
-                              {item.catalogItem.volume}
-                            </span>}
-                          <span className={`text-xs px-1.5 py-0.5 rounded ${item.catalogItem.tipo === "decant" ? "bg-blue-100 text-blue-600" : "bg-stone-100 text-stone-600"}`}>
-                            {item.catalogItem.tipo === "decant" ? "Decant" : "Produto"}
+                          <span className="text-xs px-1.5 py-0.5 rounded bg-stone-100 text-stone-600">
+                            Produto
                           </span>
                         </div>
                       </div>
                       <div className="col-span-4 sm:col-span-2 flex items-center justify-center">
-                        <PeractInputControl type="number" min={1} value={item.quantidade} onChange={e => updateQty(item.catalogItem.id, parseInt(e.target.value) || 0)} className="w-16 border peract-border-color rounded-lg px-2 py-1 text-sm text-center focus:outline-none focus:border-[#A67449]" />
+                        <PeractInputControl aria-label={`Quantidade de ${item.catalogItem.nome}`} type="number" min={1} max={item.catalogItem.estoqueAtual} step={1} value={item.quantidade} onChange={e => updateQty(item.catalogItem.id, Number(e.target.value))} className="w-16 border peract-border-color rounded-lg px-2 py-1 text-sm text-center focus:outline-none focus:border-[#A67449]" />
                       </div>
                       <div className="col-span-3 sm:col-span-2 text-sm text-gray-600 text-right">
                         R$ {item.catalogItem.preco.toFixed(2)}
@@ -335,28 +336,20 @@ export function SalesView({
                   </span>
                   <span>- R$ {descontoAplicado.toFixed(2)}</span>
                 </div>}
-              {isOnline && freteVal > 0 && <div className="flex justify-between text-sm peract-font-color-muted">
-                  <span>Frete</span>
-                  <span>R$ {freteVal.toFixed(2)}</span>
-                </div>}
+              {isOnline && <div className="flex justify-between text-sm peract-font-color-muted">
+                <span>Frete</span>
+                <span>R$ {freteVal.toFixed(2)}</span>
+              </div>}
               <div className="flex justify-between font-medium pt-1 border-t peract-border-color peract-font-color-default">
                 <span className="text-sm">Total</span>
                 <span className="text-base">R$ {total.toFixed(2)}</span>
               </div>
             </div>
 
-            {/* Frete (online only) */}
             {isOnline && <PeractField className="mb-4">
-                <PeractLabel className="text-xs peract-font-color-muted block mb-1.5">
-                  Valor do frete (R$) *
-                </PeractLabel>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 peract-font-color-muted text-sm">
-                    R$
-                  </span>
-                  <PeractInputControl type="number" min={0} step={0.01} value={frete} onChange={e => setFrete(e.target.value)} placeholder="0,00" className="w-full border peract-border-color rounded-lg pl-9 pr-3 py-2 text-sm text-gray-700 focus:outline-none focus:border-[#A67449]" />
-                </div>
-              </PeractField>}
+              <PeractLabel htmlFor="sale-freight" className="text-xs peract-font-color-muted block mb-1.5">Valor do frete (R$)</PeractLabel>
+              <PeractInputControl id="sale-freight" type="number" min={0} step={0.01} value={frete} onChange={event => setFrete(event.target.value)} placeholder="0,00" className="w-full border peract-border-color rounded-lg px-3 py-2 text-sm peract-font-color-default" />
+            </PeractField>}
 
             {/* Desconto */}
             <PeractField className="mb-4">
@@ -403,19 +396,16 @@ export function SalesView({
               </div>
             </PeractField>
 
-            <PeractButtonPrimitive onClick={handleFinalizar} className="w-full py-3 rounded-xl text-white text-sm font-medium flex items-center justify-center gap-2 hover:opacity-90 transition-opacity" style={{
+            <PeractButtonPrimitive onClick={handleRegistrar} className="w-full py-3 rounded-xl text-white text-sm font-medium flex items-center justify-center gap-2 hover:opacity-90 transition-opacity" style={{
             background: "#A67449"
           }} variant="plain" size="plain">
-              <CheckCircle size={16} /> Finalizar Venda
+              <CheckCircle size={16} /> {saving ? "Registrando..." : "Registrar venda"}
             </PeractButtonPrimitive>
-            <p className="text-xs peract-font-color-muted text-center mt-2">
-              O estoque será atualizado automaticamente.
-            </p>
           </PeractCard>
         </div>
       </div>
 
-      {/* ─── Quick New Client Modal ─── */}
+      </fieldset>
       {showNovoCliente && <NovoClienteModal onClose={() => setShowNovoCliente(false)} onSave={createCustomer} />}
     </div>;
 }
