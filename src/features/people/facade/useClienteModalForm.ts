@@ -46,7 +46,8 @@ export function useClienteModalForm({
   const handleSave = async () => {
     const e = validateCliente({
       nome,
-      telefone
+      telefone,
+      endereco
     });
     if (Object.keys(e).length > 0) {
       setErrors(e);

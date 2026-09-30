@@ -199,12 +199,111 @@ describe("People: caracterizacao de filtros e permissoes", () => {
     expect(screen.getByPlaceholderText("Buscar funcionário...")).toHaveValue("");
     vi.clearAllMocks();
     await user.type(screen.getByPlaceholderText("Buscar funcionário..."), "ADMINISTRADOR");
-    expect(screen.getByText("Beatriz Oliveira")).toBeInTheDocument();
+    expect(screen.getAllByText("Beatriz Oliveira").length).toBeGreaterThan(0);
     expect(fetchFuncionarios).not.toHaveBeenCalled();
     await user.type(screen.getByPlaceholderText("Buscar funcionário..."), "{Enter}");
     await waitFor(() => expect(fetchFuncionarios).toHaveBeenCalledWith({ busca: "ADMINISTRADOR" }));
     expect(fetchClientes).not.toHaveBeenCalled();
     expect(fetchFornecedoresMock).not.toHaveBeenCalled();
+  });
+
+  it("bloqueia fornecedor com CNPJ incompleto ou e-mail invalido antes de chamar o backend", async () => {
+    const user = userEvent.setup();
+    await renderPeople();
+    await user.click(screen.getByRole("button", { name: /^Fornecedores/ }));
+    await user.click(screen.getAllByRole("button", { name: "Novo fornecedor" })[0]);
+    const dialog = within(screen.getByRole("dialog", { name: "Novo Fornecedor" }));
+    await user.type(dialog.getByPlaceholderText("Ex: Empresa Ltda"), "Teste");
+    await user.type(dialog.getByPlaceholderText("00.000.000/0001-00"), "31873921378");
+    await user.type(dialog.getByPlaceholderText("contato@empresa.com.br"), "teste@perfumaria,com");
+
+    await user.click(dialog.getByRole("button", { name: "Salvar" }));
+
+    expect(dialog.getByText("O CNPJ deve conter 14 dígitos.")).toBeInTheDocument();
+    expect(dialog.getByText("Informe um e-mail válido.")).toBeInTheDocument();
+    expect(createFornecedorMock).not.toHaveBeenCalled();
+  });
+
+  it("aplica mascara e limite de digitos nos campos do fornecedor", async () => {
+    const user = userEvent.setup();
+    await renderPeople();
+    await user.click(screen.getByRole("button", { name: /^Fornecedores/ }));
+    await user.click(screen.getAllByRole("button", { name: "Novo fornecedor" })[0]);
+    const dialog = within(screen.getByRole("dialog", { name: "Novo Fornecedor" }));
+    const cnpj = dialog.getByPlaceholderText("00.000.000/0001-00");
+    const telefone = dialog.getByPlaceholderText("(11) 3333-4444");
+    const cep = dialog.getByPlaceholderText("00000-000");
+    const numero = dialog.getByPlaceholderText("Ex: 100");
+
+    await user.type(cnpj, "12a345678000190999");
+    await user.type(telefone, "11991643000123");
+    await user.type(cep, "01001000999");
+    await user.type(numero, "12b3");
+
+    expect(cnpj).toHaveValue("12.345.678/0001-90");
+    expect(telefone).toHaveValue("(11) 99164-3000");
+    expect(cep).toHaveValue("01001-000");
+    expect(numero).toHaveValue("123");
+    expect(cnpj).toHaveAttribute("inputmode", "numeric");
+    expect(telefone).toHaveAttribute("type", "tel");
+    expect(cep).toHaveAttribute("inputmode", "numeric");
+  });
+
+  it("mostra no campo quando telefone ou CEP estao incompletos", async () => {
+    const user = userEvent.setup();
+    await renderPeople();
+    await user.click(screen.getByRole("button", { name: /^Fornecedores/ }));
+    await user.click(screen.getAllByRole("button", { name: "Novo fornecedor" })[0]);
+    const dialog = within(screen.getByRole("dialog", { name: "Novo Fornecedor" }));
+    await user.type(dialog.getByPlaceholderText("Ex: Empresa Ltda"), "Teste");
+    await user.type(dialog.getByPlaceholderText("00.000.000/0001-00"), "12345678000190");
+    await user.type(dialog.getByPlaceholderText("contato@empresa.com.br"), "teste@perfumaria.com");
+    await user.type(dialog.getByPlaceholderText("(11) 3333-4444"), "119916");
+    await user.type(dialog.getByPlaceholderText("00000-000"), "0100");
+
+    await user.click(dialog.getByRole("button", { name: "Salvar" }));
+
+    expect(dialog.getByText("Informe DDD + número (10 ou 11 dígitos).")).toBeInTheDocument();
+    expect(dialog.getByText("O CEP deve conter 8 dígitos.")).toBeInTheDocument();
+    expect(createFornecedorMock).not.toHaveBeenCalled();
+  });
+
+  it("admin cadastra fornecedor no backend e mantem o modal aberto quando a criacao falha", async () => {
+    const user = userEvent.setup();
+    await renderPeople();
+    await user.click(screen.getByRole("button", { name: /^Fornecedores/ }));
+    await user.click(screen.getAllByRole("button", { name: "Novo fornecedor" })[0]);
+    const dialog = within(screen.getByRole("dialog", { name: "Novo Fornecedor" }));
+    await user.type(dialog.getByPlaceholderText("Ex: Empresa Ltda"), "Essencias Ltda");
+    await user.type(dialog.getByPlaceholderText("00.000.000/0001-00"), "12.345.678/0001-99");
+    await user.type(dialog.getByPlaceholderText("contato@empresa.com.br"), "contato@essencias.test");
+
+    createFornecedorMock.mockRejectedValueOnce(new Error("PEOPLE_SUPPLIERS_CREATE_FAILED:500"));
+    await user.click(dialog.getByRole("button", { name: "Salvar" }));
+    expect(await screen.findByText("PEOPLE_SUPPLIERS_CREATE_FAILED:500")).toBeInTheDocument();
+    expect(screen.getByRole("dialog", { name: "Novo Fornecedor" })).toBeInTheDocument();
+    expect(screen.queryByText("Essencias Ltda")).not.toBeInTheDocument();
+
+    await user.click(dialog.getByRole("button", { name: "Salvar" }));
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+    expect(screen.getByText("Essencias Ltda")).toBeInTheDocument();
+    expect(createFornecedorMock).toHaveBeenLastCalledWith(expect.objectContaining({
+      razaoSocial: "Essencias Ltda",
+      cnpj: "12.345.678/0001-99",
+      email: "contato@essencias.test",
+    }));
+  });
+
+  it("exibe a senha do funcionario sempre mascarada, pois o backend nao a retorna", async () => {
+    const user = userEvent.setup();
+    vi.mocked(fetchFuncionarios).mockResolvedValue(funcionariosRemotos.map(({ senha: _senha, ...funcionario }) => funcionario));
+    await renderPeople();
+    await user.click(screen.getByRole("button", { name: /^Funcionários/ }));
+
+    const table = within(screen.getByRole("table"));
+    expect(table.getAllByLabelText("Senha protegida")).toHaveLength(funcionariosRemotos.length);
+    expect(table.getAllByText("••••••")).toHaveLength(funcionariosRemotos.length);
+    expect(screen.queryByText("Não definida")).not.toBeInTheDocument();
   });
 
   it("exige confirmacao para excluir cliente e permite cancelar", async () => {

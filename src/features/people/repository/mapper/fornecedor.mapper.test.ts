@@ -50,4 +50,17 @@ describe("fornecedorMapper", () => {
     });
     expect(request).not.toHaveProperty("fkOrganizacao");
   });
+
+  it("envia CNPJ e telefone somente com digitos como exige o backend", () => {
+    const request = toFornecedorRequestDto({
+      razaoSocial: "Essencias Brasil Ltda",
+      cnpj: "12.345.678/0001-90",
+      telefone: "(11) 3333-4444",
+      email: "contato@essencias.test",
+      endereco,
+    });
+
+    expect(request.cnpj).toBe("12345678000190");
+    expect(request.telefone).toBe("1133334444");
+  });
 });

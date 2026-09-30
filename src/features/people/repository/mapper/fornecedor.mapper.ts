@@ -1,4 +1,5 @@
 import type { Fornecedor, FornecedorModalFormValues } from "../../models/people.models";
+import { onlyDigits } from "../../../../shared/utils/digits";
 import type { FornecedorRequestDto, FornecedorResponseDto } from "../dto/fornecedor.dto";
 
 export function toFornecedorModel(dto: FornecedorResponseDto): Fornecedor {
@@ -16,8 +17,8 @@ export function toFornecedorModel(dto: FornecedorResponseDto): Fornecedor {
 export function toFornecedorRequestDto(values: FornecedorModalFormValues): FornecedorRequestDto {
   return {
     nome: values.razaoSocial,
-    cnpj: values.cnpj,
-    telefone: values.telefone,
+    cnpj: onlyDigits(values.cnpj),
+    telefone: onlyDigits(values.telefone),
     email: values.email,
     endereco: values.endereco,
   };

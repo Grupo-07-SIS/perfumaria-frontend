@@ -1,11 +1,11 @@
-import type { Funcionario, FuncionarioModalFormValues } from "../models/people.models";
+import type { Funcionario, FuncionarioModalFormValues, PeopleListParams } from "../models/people.models";
 import { funcionariosRepository } from "../repository/funcionarios.repository";
 import { toFuncionarioModel, toFuncionarioRequestDto } from "../repository/mapper/funcionario.mapper";
 
 type FuncionarioValues = Omit<FuncionarioModalFormValues, "confirmSenha">;
 
-export async function fetchFuncionarios() {
-  return (await funcionariosRepository.listFuncionarios()).map(toFuncionarioModel);
+export async function fetchFuncionarios(params?: PeopleListParams) {
+  return (await funcionariosRepository.listFuncionarios(params)).map(toFuncionarioModel);
 }
 export async function createFuncionario(values: FuncionarioValues) {
   return toFuncionarioModel(await funcionariosRepository.createFuncionario(toFuncionarioRequestDto(values)));

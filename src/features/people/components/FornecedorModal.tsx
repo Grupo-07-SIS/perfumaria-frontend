@@ -47,38 +47,43 @@ export function FornecedorModal({
           val: razaoSocial,
           set: setRazaoSocial,
           ph: "Ex: Empresa Ltda",
-          req: true
+          req: true,
+          inputProps: { type: "text", autoComplete: "organization" }
         }, {
           label: "CNPJ",
           key: "cnpj",
           val: cnpj,
           set: setCnpj,
           ph: "00.000.000/0001-00",
-          req: true
+          req: true,
+          inputProps: { type: "text", inputMode: "numeric", maxLength: 18 }
         }, {
           label: "Telefone",
           key: "telefone",
           val: telefone,
           set: setTelefone,
           ph: "(11) 3333-4444",
-          req: false
+          req: false,
+          inputProps: { type: "tel", inputMode: "tel", autoComplete: "tel", maxLength: 15 }
         }, {
           label: "E-mail",
           key: "email",
           val: email,
           set: setEmail,
           ph: "contato@empresa.com.br",
-          req: true
+          req: true,
+          inputProps: { type: "email", inputMode: "email", autoComplete: "email", maxLength: 254 }
         }].map(({
           label,
           key,
           val,
           set,
           ph,
-          req
+          req,
+          inputProps
         }) => <PeractField key={key}>
                 <PeractLabel className="text-sm text-gray-700 block mb-1.5">{label}{req && <span className="text-red-500 ml-0.5">*</span>}</PeractLabel>
-                <PeractInputControl type={key === "email" ? "email" : "text"} value={val} onChange={e => {
+                <PeractInputControl {...inputProps} value={val} aria-invalid={!!errors[key]} onChange={e => {
             set(e.target.value);
             clearError(key);
           }} placeholder={ph} className={`w-full border rounded-lg px-3 py-2 text-sm focus:outline-none transition-colors ${errors[key] ? "border-red-400" : "peract-border-color"}`} onFocus={e => e.target.style.borderColor = ACC} onBlur={e => e.target.style.borderColor = errors[key] ? "#f87171" : ""} />

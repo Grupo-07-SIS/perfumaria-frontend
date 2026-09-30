@@ -1,9 +1,9 @@
-import type { Cliente, ClienteModalFormValues } from "../models/people.models";
+import type { Cliente, ClienteModalFormValues, PeopleListParams } from "../models/people.models";
 import { clientesRepository } from "../repository/clientes.repository";
 import { toClienteModel, toClienteRequestDto } from "../repository/mapper/cliente.mapper";
 
-export async function fetchClientes() {
-  return (await clientesRepository.listClientes()).map(toClienteModel);
+export async function fetchClientes(params?: PeopleListParams) {
+  return (await clientesRepository.listClientes(params)).map(toClienteModel);
 }
 export async function createCliente(values: ClienteModalFormValues) {
   return toClienteModel(await clientesRepository.createCliente(toClienteRequestDto(values)));

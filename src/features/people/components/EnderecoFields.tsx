@@ -6,9 +6,15 @@ import { PeractLabel } from "../../../shared/components/peract-label";
 import { PeractInputControl } from "../../../shared/components/peract-input";
 import { PeractNativeSelect } from "../../../shared/components/peract-select";
 import { UF_LIST } from "../config/people.config";
+import { formatCep, onlyDigitsMax } from "../../../shared/utils/masks";
+
+const NUMERO_MAX_DIGITS = 6;
+
 export function EnderecoFields({
   endereco,
-  onChange
+  onChange,
+  errors,
+  onClearError
 }: EnderecoFieldsProps) {
   const set = (key: keyof Endereco, val: string) => onChange({
     ...endereco,
@@ -25,7 +31,11 @@ export function EnderecoFields({
       <div className="p-3 grid grid-cols-1 sm:grid-cols-6 gap-3">
         <PeractField className="sm:col-span-2">
           <PeractLabel className="text-xs text-gray-600 block mb-1">CEP</PeractLabel>
-          <PeractInputControl type="text" value={endereco.cep} onChange={e => set("cep", e.target.value)} placeholder="00000-000" maxLength={9} className="w-full border peract-border-color rounded-lg px-2.5 py-1.5 text-sm peract-font-color-default focus:outline-none focus:border-[#c29958]" />
+          <PeractInputControl type="text" inputMode="numeric" autoComplete="postal-code" value={formatCep(endereco.cep)} onChange={e => {
+          set("cep", formatCep(e.target.value));
+          onClearError("cep");
+        }} placeholder="00000-000" maxLength={9} aria-invalid={!!errors.cep} className={`w-full border rounded-lg px-2.5 py-1.5 text-sm peract-font-color-default focus:outline-none focus:border-[#c29958] ${errors.cep ? "border-red-400" : "peract-border-color"}`} />
+          {errors.cep && <p className="text-xs text-red-600 mt-1">{errors.cep}</p>}
         </PeractField>
         <PeractField className="sm:col-span-4">
           <PeractLabel className="text-xs text-gray-600 block mb-1">Logradouro</PeractLabel>
@@ -33,7 +43,7 @@ export function EnderecoFields({
         </PeractField>
         <PeractField className="sm:col-span-2">
           <PeractLabel className="text-xs text-gray-600 block mb-1">Número</PeractLabel>
-          <PeractInputControl type="text" value={endereco.numero} onChange={e => set("numero", e.target.value)} placeholder="Ex: 100" className="w-full border peract-border-color rounded-lg px-2.5 py-1.5 text-sm peract-font-color-default focus:outline-none focus:border-[#c29958]" />
+          <PeractInputControl type="text" inputMode="numeric" value={endereco.numero} onChange={e => set("numero", onlyDigitsMax(e.target.value, NUMERO_MAX_DIGITS))} placeholder="Ex: 100" maxLength={NUMERO_MAX_DIGITS} className="w-full border peract-border-color rounded-lg px-2.5 py-1.5 text-sm peract-font-color-default focus:outline-none focus:border-[#c29958]" />
         </PeractField>
         <PeractField className="sm:col-span-4">
           <PeractLabel className="text-xs text-gray-600 block mb-1">Complemento</PeractLabel>

@@ -1,6 +1,36 @@
-import type { FuncionarioModalFormValues, FornecedorModalFormValues, ClienteModalFormValues, StatusFiltro } from "../models/people.models";
-import type { Cliente, Fornecedor, Funcionario } from "../../../core/store/AppContext";
-import { Endereco } from "../../../core/store/AppContext";
+import type { Cliente, ClienteModalFormValues, Endereco, Fornecedor, FornecedorModalFormValues, Funcionario, FuncionarioModalFormValues, PeopleListParams, StatusFiltro } from "../models/people.models";
+import { onlyDigits } from "../../../shared/utils/digits";
+
+const CNPJ_DIGITS = 14;
+const CEP_DIGITS = 8;
+const TELEFONE_DIGITS = [10, 11];
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+function validateOptionalTelefone(telefone: string) {
+  const digits = onlyDigits(telefone);
+  return digits && !TELEFONE_DIGITS.includes(digits.length) ? "Informe DDD + número (10 ou 11 dígitos)." : undefined;
+}
+
+function validateOptionalCep(cep = "") {
+  const digits = onlyDigits(cep);
+  return digits && digits.length !== CEP_DIGITS ? "O CEP deve conter 8 dígitos." : undefined;
+}
+
+const CLIENTE_STATUS_PARAM: Record<StatusFiltro, number | undefined> = {
+  ativos: 1,
+  inativos: 0,
+  todos: undefined,
+};
+
+export function buildSearchParams(busca: string): PeopleListParams {
+  return busca ? { busca } : {};
+}
+
+export function buildClienteSearchParams(busca: string, statusFiltro: StatusFiltro): PeopleListParams {
+  const status = CLIENTE_STATUS_PARAM[statusFiltro];
+  return status === undefined ? buildSearchParams(busca) : { ...buildSearchParams(busca), status };
+}
+
 export function formatEndereco(e: Endereco) {
   const parts = [e.logradouro, e.numero ? `nº ${e.numero}` : "", e.complemento, e.bairro, e.cidade && e.uf ? `${e.cidade}/${e.uf}` : e.cidade || e.uf, e.cep ? `CEP ${e.cep}` : ""].filter(Boolean);
   return parts.join(", ") || "—";
@@ -9,48 +39,54 @@ export function selectPeople({
   clientes,
   fornecedores,
   funcionarios,
-  statusFiltro,
-  search
+  statusFiltro
 }: {
   clientes: Cliente[];
   fornecedores: Fornecedor[];
   funcionarios: Funcionario[];
   statusFiltro: StatusFiltro;
-  search: string;
 }) {
   const clientesByStatus = clientes.filter(c => {
     if (statusFiltro === "ativos") return c.ativo !== false;
     if (statusFiltro === "inativos") return c.ativo === false;
     return true;
   });
-  const filtClientes = clientesByStatus.filter(c => c.nome.toLowerCase().includes(search.toLowerCase()) || c.telefone.includes(search));
-  const filtFornecedores = fornecedores.filter(f => f.razaoSocial.toLowerCase().includes(search.toLowerCase()) || f.email.toLowerCase().includes(search.toLowerCase()));
-  const filtFuncionarios = funcionarios.filter(f => f.nome.toLowerCase().includes(search.toLowerCase()) || f.cargo.toLowerCase().includes(search.toLowerCase()));
   return {
     clientesByStatus,
-    filtClientes,
-    filtFornecedores,
-    filtFuncionarios
+    filtClientes: clientesByStatus,
+    filtFornecedores: fornecedores,
+    filtFuncionarios: funcionarios
   };
 }
 export function validateCliente({
   nome,
-  telefone
-}: Pick<ClienteModalFormValues, "nome" | "telefone">) {
+  telefone,
+  endereco
+}: Pick<ClienteModalFormValues, "nome" | "telefone"> & Partial<Pick<ClienteModalFormValues, "endereco">>) {
   const errors: Record<string, string> = {};
   if (!nome.trim()) errors.nome = "Obrigatório.";
   if (!telefone.trim()) errors.telefone = "Obrigatório.";
+  const cepError = validateOptionalCep(endereco?.cep);
+  if (cepError) errors.cep = cepError;
   return errors;
 }
 export function validateFornecedor({
   razaoSocial,
   cnpj,
-  email
-}: Pick<FornecedorModalFormValues, "razaoSocial" | "cnpj" | "email">) {
+  email,
+  telefone = "",
+  endereco
+}: Pick<FornecedorModalFormValues, "razaoSocial" | "cnpj" | "email"> & Partial<Pick<FornecedorModalFormValues, "telefone" | "endereco">>) {
   const errors: Record<string, string> = {};
   if (!razaoSocial.trim()) errors.razaoSocial = "Obrigatório.";
   if (!cnpj.trim()) errors.cnpj = "Obrigatório.";
+  else if (onlyDigits(cnpj).length !== CNPJ_DIGITS) errors.cnpj = "O CNPJ deve conter 14 dígitos.";
   if (!email.trim()) errors.email = "Obrigatório.";
+  else if (!EMAIL_PATTERN.test(email.trim())) errors.email = "Informe um e-mail válido.";
+  const telefoneError = validateOptionalTelefone(telefone);
+  if (telefoneError) errors.telefone = telefoneError;
+  const cepError = validateOptionalCep(endereco?.cep);
+  if (cepError) errors.cep = cepError;
   return errors;
 }
 export function validateFuncionario({

@@ -389,4 +389,90 @@ describe("usePeopleFacade com pessoas remotas", () => {
     expect(result.current.fornecedores).toEqual([fornecedorRemoto]);
     expect(result.current.deleteTarget?.nome).toBe(fornecedorRemoto.razaoSocial);
   });
+
+  it("busca fornecedores dinamicamente enquanto o usuario digita", async () => {
+    const encontrado = { ...fornecedorRemoto, id: 9, razaoSocial: "Essencias Ltda" };
+    const { result } = renderHook(() => usePeopleFacade());
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    act(() => result.current.selectTab("fornecedores"));
+    vi.clearAllMocks();
+    fetchFornecedoresMock.mockResolvedValue([encontrado]);
+
+    act(() => result.current.setSearch(" Essen "));
+
+    await waitFor(() => expect(result.current.filtFornecedores).toEqual([encontrado]));
+    expect(fetchFornecedoresMock).toHaveBeenCalledTimes(1);
+    expect(fetchFornecedoresMock).toHaveBeenCalledWith({ busca: "Essen" });
+    expect(fetchClientesMock).not.toHaveBeenCalled();
+  });
+
+  it("ignora resposta antiga de fornecedores quando uma busca mais nova ja respondeu", async () => {
+    const antigo = { ...fornecedorRemoto, id: 10, razaoSocial: "Antigo Ltda" };
+    const novo = { ...fornecedorRemoto, id: 11, razaoSocial: "Novo Ltda" };
+    const { result } = renderHook(() => usePeopleFacade());
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    act(() => result.current.selectTab("fornecedores"));
+
+    let resolveAntigo!: (value: typeof antigo[]) => void;
+    fetchFornecedoresMock
+      .mockImplementationOnce(() => new Promise(resolve => { resolveAntigo = resolve; }))
+      .mockResolvedValueOnce([novo]);
+
+    act(() => result.current.setSearch("Ant"));
+    let antigaPromise!: Promise<void>;
+    act(() => { antigaPromise = result.current.submitSearch(); });
+    act(() => result.current.setSearch("Novo"));
+    await act(async () => result.current.submitSearch());
+    await act(async () => {
+      resolveAntigo([antigo]);
+      await antigaPromise;
+    });
+
+    expect(result.current.fornecedores).toEqual([novo]);
+  });
+
+  it("ao trocar de aba limpa a busca e restaura a lista completa da aba filtrada", async () => {
+    const { result } = renderHook(() => usePeopleFacade());
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    act(() => result.current.selectTab("fornecedores"));
+    fetchFornecedoresMock.mockResolvedValueOnce([]);
+    act(() => result.current.setSearch("inexistente"));
+    await act(async () => result.current.submitSearch());
+    expect(result.current.fornecedores).toEqual([]);
+
+    vi.clearAllMocks();
+    fetchFornecedoresMock.mockResolvedValue([fornecedorRemoto]);
+    await act(async () => result.current.selectTab("funcionarios"));
+
+    expect(result.current.aba).toBe("funcionarios");
+    expect(result.current.search).toBe("");
+    expect(result.current.statusFiltro).toBe("ativos");
+    expect(fetchFornecedoresMock).toHaveBeenCalledWith({});
+    await waitFor(() => expect(result.current.fornecedores).toEqual([fornecedorRemoto]));
+    expect(fetchFuncionariosMock).not.toHaveBeenCalled();
+  });
+
+  it("refaz a busca de clientes com o novo status quando ha busca ativa", async () => {
+    const { result } = renderHook(() => usePeopleFacade());
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    act(() => result.current.setSearch("Ana"));
+    await act(async () => result.current.submitSearch());
+    vi.clearAllMocks();
+    fetchClientesMock.mockResolvedValue([clienteOriginal]);
+
+    await act(async () => result.current.setStatusFiltro("inativos"));
+
+    expect(fetchClientesMock).toHaveBeenCalledWith({ busca: "Ana", status: 0 });
+  });
+
+  it("filtra status de clientes localmente quando nao ha busca ativa", async () => {
+    const { result } = renderHook(() => usePeopleFacade());
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    vi.clearAllMocks();
+
+    act(() => result.current.setStatusFiltro("inativos"));
+
+    expect(fetchClientesMock).not.toHaveBeenCalled();
+    expect(result.current.filtClientes).toEqual([]);
+  });
 });

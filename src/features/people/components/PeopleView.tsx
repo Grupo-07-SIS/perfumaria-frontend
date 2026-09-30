@@ -11,6 +11,7 @@ import { PeractInputControl } from "../../../shared/components/peract-input";
 import type { StatusFiltro } from "../models/people.models";
 import { StatusBadge } from "./StatusBadge";
 import { formatEndereco } from "../services/people.service";
+import { formatCnpj, formatTelefone } from "../../../shared/utils/masks";
 import { CardActions } from "./CardActions";
 import { PeractTableRoot, PeractTableHeader, PeractTableRow, PeractTableHead, PeractTableBody, PeractTableCell } from "../../../shared/components/peract-table";
 export function PeopleView({
@@ -21,9 +22,10 @@ export function PeopleView({
   requestSupplierDeletion,
   requestEmployeeDeletion,
   aba,
-  setAba,
+  selectTab,
   search,
   setSearch,
+  submitSearch,
   statusFiltro,
   setStatusFiltro,
   modal,
@@ -66,11 +68,7 @@ export function PeopleView({
 
       {/* Tabs */}
       <div className="flex overflow-x-auto border-b peract-border-color mb-4">
-        {tabs.map(t => <PeractButtonPrimitive key={t.key} onClick={() => {
-        setAba(t.key);
-        setSearch("");
-        setStatusFiltro("ativos");
-      }} className={`flex items-center gap-1.5 px-4 py-2.5 text-sm border-b-2 transition-all ${aba === t.key ? "font-medium" : "border-transparent peract-font-color-muted hover:text-gray-700"}`} style={aba === t.key ? {
+        {tabs.map(t => <PeractButtonPrimitive key={t.key} onClick={() => selectTab(t.key)} className={`flex items-center gap-1.5 px-4 py-2.5 text-sm border-b-2 transition-all ${aba === t.key ? "font-medium" : "border-transparent peract-font-color-muted hover:text-gray-700"}`} style={aba === t.key ? {
         borderColor: ACC,
         color: ACC
       } : {}} variant="plain" size="plain">
@@ -87,7 +85,9 @@ export function PeopleView({
       <PeractCard className="peract-bg-card rounded-xl border peract-border-color p-3 mb-4 flex flex-col sm:flex-row gap-3 shadow-sm">
         <div className="flex items-center gap-2 flex-1 border peract-border-color rounded-lg px-3 py-2">
           <Search size={15} className="peract-font-color-muted shrink-0" />
-          <PeractInputControl type="text" placeholder={`Buscar ${aba === "clientes" ? "cliente" : aba === "fornecedores" ? "fornecedor" : "funcionário"}...`} value={search} onChange={e => setSearch(e.target.value)} className="text-sm outline-none flex-1 peract-font-color-default placeholder:text-gray-400" />
+          <PeractInputControl type="text" placeholder={`Buscar ${aba === "clientes" ? "cliente" : aba === "fornecedores" ? "fornecedor" : "funcionário"}...`} value={search} onChange={e => setSearch(e.target.value)} onKeyDown={event => {
+          if (event.key === "Enter") void submitSearch();
+        }} className="text-sm outline-none flex-1 peract-font-color-default placeholder:text-gray-400" />
         </div>
 
         {/* Status filter — só para a aba de clientes */}
@@ -187,7 +187,7 @@ export function PeopleView({
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium peract-font-color-default truncate">{f.razaoSocial}</p>
-                  <p className="text-xs peract-font-color-muted font-mono">{f.cnpj}</p>
+                  <p className="text-xs peract-font-color-muted font-mono">{formatCnpj(f.cnpj)}</p>
                 </div>
                 <CardActions onEdit={() => setModal({
             type: "fornecedor",
@@ -195,7 +195,7 @@ export function PeopleView({
           })} onDelete={() => requestSupplierDeletion(f)} />
               </div>
               <div className="flex flex-col gap-1.5">
-                <div className="flex items-center gap-2 text-xs peract-font-color-muted"><Phone size={12} className="shrink-0" />{f.telefone || "—"}</div>
+                <div className="flex items-center gap-2 text-xs peract-font-color-muted"><Phone size={12} className="shrink-0" />{f.telefone ? formatTelefone(f.telefone) : "—"}</div>
                 <div className="flex items-center gap-2 text-xs peract-font-color-muted"><Mail size={12} className="shrink-0" /><span className="truncate">{f.email}</span></div>
                 {(f.endereco.logradouro || f.endereco.cidade) && <div className="flex items-start gap-2 text-xs peract-font-color-muted">
                     <MapPin size={12} className="shrink-0 mt-0.5" />
@@ -235,7 +235,7 @@ export function PeopleView({
                       </PeractTableCell>
                       <PeractTableCell className="px-4 py-3 text-sm text-gray-600">{f.email}</PeractTableCell>
                       <PeractTableCell className="px-4 py-3">
-                        {f.senha ? <span className="text-xs peract-font-color-muted font-mono bg-gray-50 px-2 py-0.5 rounded">{"•".repeat(Math.min(f.senha.length, 8))}</span> : <span className="text-xs text-red-400 italic">Não definida</span>}
+                        <span aria-label="Senha protegida" className="text-xs peract-font-color-muted font-mono bg-gray-50 px-2 py-0.5 rounded">••••••</span>
                       </PeractTableCell>
                       <PeractTableCell className="px-4 py-3">
                         <div className="flex items-center gap-2">

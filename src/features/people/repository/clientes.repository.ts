@@ -1,5 +1,6 @@
 import axios, { type AxiosResponse } from "axios";
 import { apiClient } from "../../../core/services/http-client";
+import type { PeopleListParams } from "../models/people.models";
 import type { ClientePageDto, ClienteRequestDto, ClienteResponseDto } from "./dto/cliente.dto";
 
 async function requestData<T>(request: Promise<AxiosResponse<T>>, errorCode: string): Promise<T> {
@@ -12,9 +13,9 @@ async function requestData<T>(request: Promise<AxiosResponse<T>>, errorCode: str
 }
 
 export const clientesRepository = {
-  async listClientes(): Promise<ClienteResponseDto[]> {
+  async listClientes(params: PeopleListParams = {}): Promise<ClienteResponseDto[]> {
     const page = await requestData(apiClient.get<ClientePageDto>("/clientes", {
-      params: { page: 0, size: 100 },
+      params: { page: 0, size: 100, ...params },
     }), "PEOPLE_CLIENTS_LIST_FAILED");
     return page.content;
   },

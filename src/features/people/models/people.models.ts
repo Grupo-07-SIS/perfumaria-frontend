@@ -19,6 +19,10 @@ export interface Funcionario {
 }
 export type Aba = "clientes" | "fornecedores" | "funcionarios";
 export type StatusFiltro = "todos" | "ativos" | "inativos";
+export interface PeopleListParams {
+  busca?: string;
+  status?: number;
+}
 export interface EnderecoFieldsProps {
   endereco: Endereco;
   onChange: (e: Endereco) => void;
