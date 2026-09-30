@@ -4,6 +4,7 @@ export interface AuthenticatedUser {
   cargo: AuthUserRole;
   email: string;
   id: string;
+  idOrganizacao?: number | null;
   nome: string;
 }
 

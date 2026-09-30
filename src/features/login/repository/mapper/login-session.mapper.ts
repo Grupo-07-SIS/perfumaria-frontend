@@ -16,6 +16,7 @@ export function toAuthenticatedUser(loginResponse: LoginResponseDto): Authentica
     cargo: mapRole(loginResponse.usuario.tipoUsuario),
     email: loginResponse.usuario.email,
     id: loginResponse.usuario.id,
+    idOrganizacao: loginResponse.usuario.idOrganizacao,
     nome: loginResponse.usuario.nome,
   };
 }

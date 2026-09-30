@@ -6,6 +6,12 @@ import { PeractInputControl } from "../../../shared/components/peract-input";
 import { PeractField } from "../../../shared/components/peract-field";
 import { PeractLabel } from "../../../shared/components/peract-label";
 export function SettingsView({
+  stockError,
+  isStockLoading,
+  isStockSaving,
+  stockDisabled,
+  canRetryStock,
+  retryStock,
   stockThresholds,
   activeSection,
   setActiveSection,
@@ -64,6 +70,10 @@ export function SettingsView({
               <h2 className="peract-font-color-default mb-1">Configurações de estoque</h2>
               <p className="text-xs peract-font-color-muted mb-5">Defina os limites numéricos para cada status de estoque</p>
 
+              {isStockLoading && <p className="mb-4 text-sm peract-font-color-muted" role="status">Carregando limite de estoque...</p>}
+              {stockError && <p className="mb-4 text-sm text-red-600" role="alert">{stockError}</p>}
+              {canRetryStock && <PeractButtonPrimitive onClick={retryStock} className="mb-4">Tentar novamente</PeractButtonPrimitive>}
+
               <div className="border peract-border-color rounded-xl overflow-hidden mb-6">
                 <div className="flex items-center gap-2 px-4 py-3 border-b peract-border-color" style={{
               background: "#F9F5F1"
@@ -91,7 +101,7 @@ export function SettingsView({
                     </div>
                     <div className="flex items-center gap-1.5 shrink-0">
                       <span className="text-xs peract-font-color-muted">≤</span>
-                      <PeractInputControl type="number" min={1} value={criticoLimit} onChange={e => setCriticoLimit(e.target.value)} className="w-16 border peract-border-color rounded-lg px-2 py-1.5 text-sm peract-font-color-default focus:outline-none focus:border-[#A67449] text-center" />
+                      <PeractInputControl aria-label="Limite crítico de estoque" disabled={stockDisabled} type="number" min={1} max={2147483647} step={1} value={criticoLimit} onChange={e => setCriticoLimit(e.target.value)} className="w-24 border peract-border-color rounded-lg px-2 py-1.5 text-sm peract-font-color-default focus:outline-none focus:border-[#A67449] text-center" />
                       <span className="text-xs peract-font-color-muted">un.</span>
                     </div>
                   </div>
@@ -110,10 +120,10 @@ export function SettingsView({
               </div>
 
               <div className="flex justify-end">
-                <PeractButtonPrimitive onClick={handleSaveEstoque} className="flex items-center gap-2 px-5 py-2 rounded-lg text-white text-sm hover:opacity-90 transition-opacity" style={{
+                <PeractButtonPrimitive onClick={() => void handleSaveEstoque()} disabled={stockDisabled} className="flex items-center gap-2 px-5 py-2 rounded-lg text-white text-sm hover:opacity-90 transition-opacity" style={{
               background: "#A67449"
             }} variant="plain" size="plain">
-                  <Save size={15} /> Salvar configurações
+                  <Save size={15} /> {isStockSaving ? "Salvando..." : "Salvar configurações"}
                 </PeractButtonPrimitive>
               </div>
             </PeractCard>}

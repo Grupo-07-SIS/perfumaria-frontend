@@ -11,6 +11,7 @@ describe("toAuthenticatedUser", () => {
         usuario: {
           email: "admin@canalperfumado.com.br",
           id: "uuid-1",
+          idOrganizacao: 7,
           nome: "Admin",
           tipoUsuario: "ADMIN",
         },
@@ -19,6 +20,7 @@ describe("toAuthenticatedUser", () => {
       cargo: "Administrador",
       email: "admin@canalperfumado.com.br",
       id: "uuid-1",
+      idOrganizacao: 7,
       nome: "Admin",
     });
   });

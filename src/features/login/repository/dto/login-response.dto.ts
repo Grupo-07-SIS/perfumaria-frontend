@@ -5,6 +5,7 @@ export interface LoginResponseDto {
   usuario: {
     email: string;
     id: string;
+    idOrganizacao?: number | null;
     nome: string;
     tipoUsuario: string;
   };
