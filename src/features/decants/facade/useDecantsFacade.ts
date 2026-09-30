@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useDebouncedValue } from "../../../shared/hooks/useDebouncedValue";
 import type { Decant, DecantModalFormValues, PerfumeOption } from "../models/decants.models";
 import { createDecant, fetchDecants, fetchPerfumeOptions, removeDecant, updateDecant } from "../services/decants.service";
 
@@ -17,44 +18,59 @@ export function useDecantsFacade() {
   const [currentPage, setCurrentPageState] = useState(1);
   const [totalElements, setTotalElements] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
+  const requestId = useRef(0);
+  const debouncedSearch = useDebouncedValue(search.trim());
 
   useEffect(() => {
+    const currentRequestId = ++requestId.current;
     Promise.all([
       fetchDecants({ busca: "", page: 0, size: PAGE_SIZE }),
       fetchPerfumeOptions(),
     ])
       .then(([page, options]) => {
+        setPerfumeOptions(options);
+        if (currentRequestId !== requestId.current) return;
         setDecants(page.content);
         setCurrentPageState(1);
         setTotalElements(page.totalElements);
         setTotalPages(page.totalPages);
-        setPerfumeOptions(options);
       })
       .catch(() => setError("Não foi possível carregar os decants."))
-      .finally(() => setIsLoading(false));
+      .finally(() => {
+        if (currentRequestId === requestId.current) setIsLoading(false);
+      });
   }, []);
 
   const loadPage = async (page: number, busca: string) => {
+    const currentRequestId = ++requestId.current;
     setIsLoading(true);
     setError("");
     try {
       const response = await fetchDecants({ busca, page: page - 1, size: PAGE_SIZE });
+      if (currentRequestId !== requestId.current) return;
       setDecants(response.content);
       setCurrentPageState(page);
       setTotalElements(response.totalElements);
       setTotalPages(response.totalPages);
     } catch {
+      if (currentRequestId !== requestId.current) return;
       setError("Não foi possível carregar os decants.");
     } finally {
-      setIsLoading(false);
+      if (currentRequestId === requestId.current) setIsLoading(false);
     }
   };
 
-  const submitSearch = async () => {
-    const normalizedSearch = search.trim();
-    setSubmittedSearch(normalizedSearch);
-    await loadPage(1, normalizedSearch);
+  const searchBy = async (busca: string) => {
+    setSubmittedSearch(busca);
+    await loadPage(1, busca);
   };
+
+  const submitSearch = () => searchBy(search.trim());
+
+  useEffect(() => {
+    if (debouncedSearch === submittedSearch) return;
+    void searchBy(debouncedSearch);
+  }, [debouncedSearch]);
 
   const setCurrentPage = async (page: number) => {
     await loadPage(page, submittedSearch);

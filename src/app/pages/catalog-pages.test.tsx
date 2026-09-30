@@ -1,4 +1,4 @@
-import { render, screen, within } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -74,12 +74,18 @@ const bodySplashItems = [{
 describe("Catalog workflows", () => {
   beforeEach(() => {
     vi.resetAllMocks();
-    fetchDecantsMock.mockResolvedValue({ content: [chanelDecant], number: 0, totalElements: 1, totalPages: 1 });
+    fetchDecantsMock.mockImplementation(async ({ busca = "" }: { busca?: string } = {}) => {
+      const content = [chanelDecant].filter(decant => decant.perfume.toLowerCase().includes(busca.toLowerCase()));
+      return { content, number: 0, totalElements: content.length, totalPages: 1 };
+    });
     fetchPerfumeOptionsMock.mockResolvedValue([{ id: 7, nome: "Chanel N°5" }]);
     createDecantMock.mockResolvedValue({ ...chanelDecant, id: 2, preco2ml: 10, preco3ml: 10, preco5ml: 10, preco10ml: 10 });
-    fetchBodySplashCatalogMock.mockResolvedValue({
-      page: { content: bodySplashItems, number: 0, totalElements: bodySplashItems.length, totalPages: 1 },
-      productOptions: bodySplashItems.map(item => ({ id: item.produtoId, nome: item.produto })),
+    fetchBodySplashCatalogMock.mockImplementation(async ({ busca = "" }: { busca?: string } = {}) => {
+      const content = bodySplashItems.filter(item => item.produto.toLowerCase().includes(busca.toLowerCase()));
+      return {
+        page: { content, number: 0, totalElements: content.length, totalPages: 1 },
+        productOptions: bodySplashItems.map(item => ({ id: item.produtoId, nome: item.produto })),
+      };
     });
   });
 
@@ -88,7 +94,7 @@ describe("Catalog workflows", () => {
     render(<Decants />);
     await screen.findByRole("cell", { name: "Chanel N°5" });
     await user.type(screen.getByPlaceholderText("Buscar por perfume..."), "inexistente");
-    expect(screen.queryByRole("cell", { name: "Chanel N°5" })).not.toBeInTheDocument();
+    await waitFor(() => expect(screen.queryByRole("cell", { name: "Chanel N°5" })).not.toBeInTheDocument());
     expect(screen.getAllByText(/Nenhum decant/i).length).toBeGreaterThan(0);
   });
 
@@ -122,8 +128,8 @@ describe("Catalog workflows", () => {
     await screen.findByRole("cell", { name: "Lavanda & Ylang" });
     const search = screen.getByPlaceholderText("Buscar por nome do body splash...");
     await user.type(search, "inexistente");
-    expect(screen.getAllByText(/Nenhum body splash/i).length).toBeGreaterThan(0);
+    expect((await screen.findAllByText(/Nenhum body splash/i)).length).toBeGreaterThan(0);
     await user.clear(search);
-    expect(screen.getByRole("table").querySelectorAll("tbody tr").length).toBeGreaterThan(1);
+    await waitFor(() => expect(screen.getByRole("table").querySelectorAll("tbody tr").length).toBeGreaterThan(1));
   });
 });

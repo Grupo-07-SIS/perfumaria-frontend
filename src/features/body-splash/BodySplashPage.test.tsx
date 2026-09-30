@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -102,19 +102,23 @@ describe("BodySplash: caracterizacao do catalogo", () => {
   });
 
   it("busca sem diferenciar maiusculas e recupera os produtos apos resultado vazio", async () => {
+    fetchBodySplashCatalogMock.mockImplementation(async ({ busca = "" }: { busca?: string } = {}) => {
+      const content = initialItems.filter(item => item.produto.toLowerCase().includes(busca.toLowerCase()));
+      return { page: { content, number: 0, totalElements: content.length, totalPages: 1 }, productOptions };
+    });
     const user = userEvent.setup();
     await renderLoadedPage();
     const search = screen.getByPlaceholderText("Buscar por nome do body splash...");
     await user.type(search, "LAVANDA");
+    await waitFor(() => expect(screen.queryByRole("cell", { name: "Rosa & Baunilha" })).not.toBeInTheDocument());
     expect(productRow("Lavanda & Ylang")).toBeInTheDocument();
-    expect(screen.queryByRole("cell", { name: "Rosa & Baunilha" })).not.toBeInTheDocument();
     await user.clear(search);
     await user.type(search, "inexistente");
-    expect(within(screen.getByRole("table")).getByText("Nenhum body splash cadastrado.")).toBeInTheDocument();
+    expect(await within(screen.getByRole("table")).findByText("Nenhum body splash cadastrado.")).toBeInTheDocument();
     await user.clear(search);
+    await waitFor(() => expect(productRow("Flor de Laranjeira")).toBeInTheDocument());
     expect(productRow("Lavanda & Ylang")).toBeInTheDocument();
     expect(productRow("Rosa & Baunilha")).toBeInTheDocument();
-    expect(productRow("Flor de Laranjeira")).toBeInTheDocument();
   });
 
   it("exige produto e cinco precos positivos antes de cadastrar com valores por volume", async () => {

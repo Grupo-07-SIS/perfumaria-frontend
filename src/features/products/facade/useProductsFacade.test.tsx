@@ -102,6 +102,30 @@ describe("useProductsFacade", () => {
     expect(fetchProductsMock).toHaveBeenNthCalledWith(3, expect.objectContaining({ nome: "dior", ordenacao: "marca,asc", page: 0 }));
   });
 
+  it("searches remotely while typing and resets to page one without requiring submit", async () => {
+    const products = Array.from({ length: 11 }, (_, index) => ({
+      ativo: 1, categoriaId: 1, categoriaNome: "Perfumes", estoqueAtual: 9,
+      id: index + 1, marca: "Peract", nome: `Produto ${index + 1}`, precoVenda: 100,
+    }));
+    fetchProductsMock.mockImplementation(async ({ nome = "", page = 0 }) => {
+      const matches = products.filter(product => product.nome.toLowerCase().includes(nome.toLowerCase()));
+      return productPage(matches.slice(page * 10, page * 10 + 10), page, matches.length);
+    });
+    fetchProductCategoriesMock.mockResolvedValue([]);
+
+    const { result } = renderHook(() => useProductsFacade());
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    await act(async () => { result.current.setCurrentPage(2); });
+    await waitFor(() => expect(result.current.paginatedProducts[0].id).toBe(11));
+
+    act(() => result.current.setSearch(" produto 1 "));
+
+    await waitFor(() => expect(fetchProductsMock).toHaveBeenLastCalledWith(expect.objectContaining({ nome: "produto 1", page: 0 })));
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    expect(result.current.currentPage).toBe(1);
+    expect(result.current.paginatedProducts.map(product => product.id)).toEqual([1, 10, 11]);
+  });
+
   it("creates, updates and deletes products through the facade", async () => {
     fetchProductsMock.mockResolvedValue(productPage([{ ativo: 1, categoriaId: 1, categoriaNome: "Perfumes", estoqueAtual: 9, id: 1, marca: "Chanel", nome: "Chance", precoVenda: 180 }]));
     fetchProductCategoriesMock.mockResolvedValue([{ id: 1, nome: "Perfumes" }]);

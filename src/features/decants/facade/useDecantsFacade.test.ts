@@ -80,6 +80,45 @@ describe("useDecantsFacade", () => {
     expect(result.current.currentPage).toBe(1);
   });
 
+  it("searches remotely while typing without requiring submit", async () => {
+    fetchDecantsMock
+      .mockResolvedValueOnce({ content: [original], number: 0, totalElements: 1, totalPages: 1 })
+      .mockResolvedValueOnce({ content: [created], number: 0, totalElements: 1, totalPages: 1 });
+
+    const { result } = renderHook(() => useDecantsFacade());
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+    act(() => result.current.setSearch(" Lib "));
+
+    await waitFor(() => expect(result.current.filtered).toEqual([created]));
+    expect(fetchDecantsMock).toHaveBeenCalledTimes(2);
+    expect(fetchDecantsMock).toHaveBeenLastCalledWith({ busca: "Lib", page: 0, size: 10 });
+    expect(result.current.currentPage).toBe(1);
+  });
+
+  it("ignores stale list responses that resolve after a newer search", async () => {
+    const { result } = renderHook(() => useDecantsFacade());
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+    let resolveOldPage!: (value: unknown) => void;
+    fetchDecantsMock
+      .mockImplementationOnce(() => new Promise((resolve) => { resolveOldPage = resolve; }))
+      .mockResolvedValueOnce({ content: [created], number: 0, totalElements: 1, totalPages: 1 });
+
+    let oldPagePromise!: Promise<void>;
+    act(() => { oldPagePromise = result.current.setCurrentPage(2); });
+    act(() => result.current.setSearch("Libre"));
+    await act(async () => result.current.submitSearch());
+    await act(async () => {
+      resolveOldPage({ content: [original], number: 1, totalElements: 11, totalPages: 2 });
+      await oldPagePromise;
+    });
+
+    expect(result.current.filtered).toEqual([created]);
+    expect(result.current.currentPage).toBe(1);
+    expect(result.current.isLoading).toBe(false);
+  });
+
   it("converts the one-based UI page to the zero-based API page", async () => {
     fetchDecantsMock.mockImplementation(async ({ page = 0 } = {}) => ({
       content: page === 2 ? [created] : [original],

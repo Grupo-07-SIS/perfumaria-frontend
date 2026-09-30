@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useApp } from "../../../core/store/AppContext";
+import { useDebouncedValue } from "../../../shared/hooks/useDebouncedValue";
 import {
   DEFAULT_CRITICAL_STOCK_THRESHOLD,
 } from "../config/products.config";
@@ -83,6 +84,7 @@ export function useProductsFacade() {
   const [totalProducts, setTotalProducts] = useState(0);
   const [reloadVersion, setReloadVersion] = useState(0);
   const requestId = useRef(0);
+  const debouncedSearch = useDebouncedValue(search.trim());
 
   const loadProducts = async () => {
     const currentRequestId = ++requestId.current;
@@ -120,6 +122,12 @@ export function useProductsFacade() {
     void loadProducts();
     return () => { requestId.current += 1; };
   }, [currentPage, submittedSearch, selectedCategory, statusFilter, sortAscending, sortField, criticalThreshold, reloadVersion]);
+
+  useEffect(() => {
+    if (debouncedSearch === submittedSearch) return;
+    setSubmittedSearch(debouncedSearch);
+    setCurrentPage(1);
+  }, [debouncedSearch]);
 
   useEffect(() => {
     let isMounted = true;

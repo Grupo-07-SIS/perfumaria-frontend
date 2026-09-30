@@ -109,6 +109,55 @@ describe("useBodySplashFacade", () => {
     expect(result.current.productOptions).toEqual(productOptions);
   });
 
+  it("searches remotely while typing without requiring submit", async () => {
+    fetchBodySplashCatalogMock
+      .mockResolvedValueOnce({
+        page: { content: [original], number: 0, totalElements: 1, totalPages: 1 },
+        productOptions,
+      })
+      .mockResolvedValueOnce({
+        page: { content: [created], number: 0, totalElements: 1, totalPages: 1 },
+        productOptions,
+      });
+    const { result } = renderHook(() => useBodySplashFacade());
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+    act(() => result.current.setSearch(" Ro "));
+
+    await waitFor(() => expect(result.current.filtered).toEqual([created]));
+    expect(fetchBodySplashCatalogMock).toHaveBeenCalledTimes(2);
+    expect(fetchBodySplashCatalogMock).toHaveBeenLastCalledWith({ busca: "Ro", page: 0, size: 10 });
+  });
+
+  it("ignores stale search responses that resolve after a newer search", async () => {
+    const { result } = renderHook(() => useBodySplashFacade());
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+    let resolveOldSearch!: (value: unknown) => void;
+    fetchBodySplashCatalogMock
+      .mockImplementationOnce(() => new Promise((resolve) => { resolveOldSearch = resolve; }))
+      .mockResolvedValueOnce({
+        page: { content: [created], number: 0, totalElements: 1, totalPages: 1 },
+        productOptions,
+      });
+
+    act(() => result.current.setSearch("La"));
+    let oldSearchPromise!: Promise<void>;
+    act(() => { oldSearchPromise = result.current.submitSearch(); });
+    act(() => result.current.setSearch("Rosa"));
+    await act(async () => result.current.submitSearch());
+    await act(async () => {
+      resolveOldSearch({
+        page: { content: [original], number: 0, totalElements: 1, totalPages: 1 },
+        productOptions,
+      });
+      await oldSearchPromise;
+    });
+
+    expect(result.current.filtered).toEqual([created]);
+    expect(result.current.isLoading).toBe(false);
+  });
+
   it("surfaces list failures without keeping stale loading state", async () => {
     fetchBodySplashCatalogMock.mockRejectedValue(new Error("BODY_SPLASH_LIST_FAILED:503"));
     const { result } = renderHook(() => useBodySplashFacade());

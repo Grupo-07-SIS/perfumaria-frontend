@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useDebouncedValue } from "../../../shared/hooks/useDebouncedValue";
 import type { BodySplashItem, BodySplashModalFormValues, BodySplashProductOption } from "../models/body-splash.models";
 import { createBodySplash, fetchBodySplashCatalog, removeBodySplash, updateBodySplash } from "../services/body-splash.service";
 
@@ -11,30 +12,48 @@ export function useBodySplashFacade() {
   const [editItem, setEditItem] = useState<BodySplashItem | null>(null);
   const [deleteItem, setDeleteItem] = useState<BodySplashItem | null>(null);
   const [search, setSearch] = useState("");
+  const [submittedSearch, setSubmittedSearch] = useState("");
+  const requestId = useRef(0);
+  const debouncedSearch = useDebouncedValue(search.trim());
 
   useEffect(() => {
+    const currentRequestId = ++requestId.current;
     fetchBodySplashCatalog()
       .then(catalog => {
+        if (currentRequestId !== requestId.current) return;
         setItems(catalog.page.content);
         setProductOptions(catalog.productOptions);
       })
       .catch(() => setError("Não foi possível carregar os preços de Body Splash."))
-      .finally(() => setIsLoading(false));
+      .finally(() => {
+        if (currentRequestId === requestId.current) setIsLoading(false);
+      });
   }, []);
 
-  const submitSearch = async () => {
+  const searchBy = async (busca: string) => {
+    const currentRequestId = ++requestId.current;
+    setSubmittedSearch(busca);
     setIsLoading(true);
     setError("");
     try {
-      const catalog = await fetchBodySplashCatalog({ busca: search.trim(), page: 0, size: 10 });
+      const catalog = await fetchBodySplashCatalog({ busca, page: 0, size: 10 });
+      if (currentRequestId !== requestId.current) return;
       setItems(catalog.page.content);
       setProductOptions(catalog.productOptions);
     } catch {
+      if (currentRequestId !== requestId.current) return;
       setError("Não foi possível carregar os preços de Body Splash.");
     } finally {
-      setIsLoading(false);
+      if (currentRequestId === requestId.current) setIsLoading(false);
     }
   };
+
+  const submitSearch = () => searchBy(search.trim());
+
+  useEffect(() => {
+    if (debouncedSearch === submittedSearch) return;
+    void searchBy(debouncedSearch);
+  }, [debouncedSearch]);
 
   const filtered = items;
 
