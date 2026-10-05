@@ -27,6 +27,7 @@ export function BodySplashModal({
     setPrecos,
     error,
     success,
+    saving,
     handleSave
   } = useBodySplashModalForm({
     onClose,
@@ -47,14 +48,15 @@ export function BodySplashModal({
           {/* Produto */}
           <PeractField>
             <PeractLabel htmlFor="body-splash-product" className="text-sm text-gray-700 block mb-1.5">Body Splash vinculado *</PeractLabel>
-            <PeractNativeSelect id="body-splash-product" value={produtoId} onChange={e => setProdutoId(e.target.value)} className="w-full border peract-border-color rounded-lg px-3 py-2 text-sm text-gray-700 focus:outline-none" style={{
+            <PeractNativeSelect id="body-splash-product" value={produtoId} disabled={!!edit} onChange={e => setProdutoId(e.target.value)} className="w-full border peract-border-color rounded-lg px-3 py-2 text-sm text-gray-700 focus:outline-none" style={{
           outline: "none"
         }} onFocus={e => e.target.style.borderColor = ACC} onBlur={e => e.target.style.borderColor = ""}>
-              <option value="">Selecionar Body Splash...</option>
-              {!edit?.produtoId && edit?.produto && <option value="" disabled>{edit.produto}</option>}
-              {productOptions.map(option => <option key={option.id} value={option.id}>{option.nome}</option>)}
+              {edit ? <option value={produtoId}>{edit.produto}</option> : <>
+                <option value="">Selecionar Body Splash...</option>
+                {productOptions.map(option => <option key={option.id} value={option.id}>{option.nome}</option>)}
+              </>}
             </PeractNativeSelect>
-            <p className="text-xs peract-font-color-muted mt-1">Selecione o produto base vinculado aos frascos.</p>
+            {!edit && <p className="text-xs peract-font-color-muted mt-1">Selecione o produto base vinculado aos frascos.</p>}
           </PeractField>
 
           {/* Preços */}
@@ -79,8 +81,8 @@ export function BodySplashModal({
         </div>
         <div className="flex gap-2 p-4 border-t peract-border-color sticky bottom-0 peract-bg-card">
           <PeractButtonPrimitive onClick={onClose} className="flex-1 px-4 py-2 border peract-border-color rounded-lg text-sm text-gray-600 hover:bg-gray-50" variant="plain" size="plain">Cancelar</PeractButtonPrimitive>
-          <PeractButtonPrimitive onClick={handleSave} className="flex-1 px-4 py-2 rounded-lg text-sm text-white hover:opacity-90 peract-bg-accent" variant="plain" size="plain">
-            {edit ? "Salvar alterações" : "Cadastrar Body Splash"}
+          <PeractButtonPrimitive onClick={handleSave} disabled={saving} className="flex-1 px-4 py-2 rounded-lg text-sm text-white hover:opacity-90 peract-bg-accent" variant="plain" size="plain">
+            {saving ? "Salvando..." : edit ? "Salvar alterações" : "Cadastrar Body Splash"}
           </PeractButtonPrimitive>
         </div>
       </PeractModal>;

@@ -26,6 +26,7 @@ vi.mock("../repository/body-splash.repository", () => ({
 
 import {
   createBodySplash,
+  BODY_SPLASH_ALREADY_LINKED,
   fetchBodySplashCatalog,
   removeBodySplash,
   updateBodySplash,
@@ -71,7 +72,10 @@ const model = {
 };
 
 describe("bodySplashService", () => {
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => {
+    vi.resetAllMocks();
+    listBodySplashesMock.mockResolvedValue({ content: [], number: 0, totalElements: 0, totalPages: 0 });
+  });
 
   it("reconciles response names with product options ignoring trim and case", async () => {
     listBodySplashesMock.mockResolvedValue({ content: [response], number: 0, totalElements: 1, totalPages: 1 });
@@ -147,6 +151,24 @@ describe("bodySplashService", () => {
     })).resolves.toEqual({ ...model, produto: "Lavanda & Ylang", preco10ml: 9 });
     expect(createBodySplashMock).toHaveBeenCalledWith(request);
     expect(updateBodySplashMock).toHaveBeenCalledWith(11, { ...request, preco10ml: 9 });
+  });
+
+  it("blocks an existing product link using a server-side ID filter before posting", async () => {
+    listBodySplashesMock.mockResolvedValue({ content: [response], totalElements: 1 });
+    await expect(createBodySplash(formData)).rejects.toThrow(BODY_SPLASH_ALREADY_LINKED);
+    expect(listBodySplashesMock).toHaveBeenCalledWith({ produtoId: 7, page: 0, size: 1 });
+    expect(createBodySplashMock).not.toHaveBeenCalled();
+  });
+
+  it("does not post when checking the existing link fails", async () => {
+    listBodySplashesMock.mockRejectedValueOnce(new Error("BODY_SPLASH_LIST_FAILED:503"));
+    await expect(createBodySplash(formData)).rejects.toThrow("BODY_SPLASH_LIST_FAILED:503");
+    expect(createBodySplashMock).not.toHaveBeenCalled();
+  });
+
+  it("reports a conflict if another request created the link after checking", async () => {
+    createBodySplashMock.mockRejectedValueOnce(new Error("BODY_SPLASH_CREATE_FAILED:409"));
+    await expect(createBodySplash(formData)).rejects.toThrow(BODY_SPLASH_ALREADY_LINKED);
   });
 
   it("deletes a Body Splash and returns its id", async () => {

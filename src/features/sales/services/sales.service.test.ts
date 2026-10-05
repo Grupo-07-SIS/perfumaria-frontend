@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { salesRepository } from "../repository/sales.repository";
-import { calculateSaleTotals, fetchSalesData, registerSale, createSaleCustomer, searchSaleItems, validateNovoCliente } from "./sales.service";
+import { calculateSaleTotals, fetchSalesData, groupSaleItems, registerSale, createSaleCustomer, searchSaleItems, validateNovoCliente } from "./sales.service";
 
 vi.mock("../repository/sales.repository", () => ({ salesRepository: { listProducts: vi.fn(), searchSaleItems: vi.fn(), listCustomers: vi.fn(), createSale: vi.fn(), createCustomer: vi.fn() } }));
 
@@ -42,6 +42,27 @@ describe("sales service", () => {
     expect(items[2].estoqueAtual).toBe(4);
     await registerSale([{ catalogItem: items[0], quantidade: 1 }], customer, form);
     expect(salesRepository.createSale).toHaveBeenCalledWith(expect.objectContaining({ itens: [{ produtoId: 1002, quantidade: 1 }] }));
+  });
+
+  it("groups volume bottles by a unique base name and category, keeping IDs and prices", () => {
+    const perfume = { ...product, nome: "Sauvage", categoriaNome: "Perfume" };
+    const bodySplash = { ...product, id: 43, nome: "Sauvage", categoriaNome: "Body Splash" };
+    const decant = { ...product, id: 1002, nome: "Decant Sauvage 2ml", nomeExibicao: "Decant Sauvage", volumetria: "2ml", tipo: "decant" as const, preco: 49.9 };
+    const bottle = { ...product, id: 4010, nome: "Body Splash Sauvage 10ml", nomeExibicao: "Body Splash Sauvage", volumetria: "10ml", tipo: "body-splash-fracionado" as const, preco: 69.9 };
+
+    const groups = groupSaleItems([bottle, decant, perfume, bodySplash], [perfume, bodySplash]);
+
+    expect(groups).toHaveLength(2);
+    expect(groups.find(group => group.categoria === "Perfume")?.items).toEqual([perfume, decant]);
+    expect(groups.find(group => group.categoria === "Body Splash")?.items).toEqual([bodySplash, bottle]);
+  });
+
+  it("does not link ambiguous same-category products or a different category", () => {
+    const perfume = { ...product, nome: "Sauvage", categoriaNome: "Perfume" };
+    const duplicate = { ...perfume, id: 43 };
+    const decant = { ...product, id: 1002, nome: "Decant Sauvage 2ml", nomeExibicao: "Decant Sauvage", volumetria: "2ml", tipo: "decant" as const };
+    expect(groupSaleItems([perfume, duplicate, decant], [perfume, duplicate])).toHaveLength(3);
+    expect(groupSaleItems([decant], [{ ...perfume, categoriaNome: "Body Splash" }])[0].items).toEqual([decant]);
   });
 
   it("posts only supported fields with backend IDs and percentage discount", async () => {

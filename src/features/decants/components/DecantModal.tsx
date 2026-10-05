@@ -27,6 +27,7 @@ export function DecantModal({
     setPreco10ml,
     error,
     success,
+    saving,
     handleSave
   } = useDecantModalForm({
     onClose,
@@ -46,9 +47,11 @@ export function DecantModal({
 
           <PeractField>
             <PeractLabel htmlFor="decant-perfume" className="text-sm text-gray-700 block mb-1.5">Perfume vinculado *</PeractLabel>
-            <PeractNativeSelect id="decant-perfume" value={perfumeId} onChange={e => setPerfumeId(e.target.value)} className="w-full border peract-border-color rounded-lg px-3 py-2 text-sm text-gray-700 focus:outline-none" onFocus={e => e.target.style.borderColor = ACC} onBlur={e => e.target.style.borderColor = ""}>
-              <option value="">Selecionar perfume em estoque...</option>
-              {perfumeOptions.map(option => <option key={option.id} value={option.id}>{option.nome}</option>)}
+            <PeractNativeSelect id="decant-perfume" value={perfumeId} disabled={!!edit} onChange={e => setPerfumeId(e.target.value)} className="w-full border peract-border-color rounded-lg px-3 py-2 text-sm text-gray-700 focus:outline-none" onFocus={e => e.target.style.borderColor = ACC} onBlur={e => e.target.style.borderColor = ""}>
+              {edit ? <option value={perfumeId}>{edit.perfume}</option> : <>
+                <option value="">Selecionar perfume em estoque...</option>
+                {perfumeOptions.map(option => <option key={option.id} value={option.id}>{option.nome}</option>)}
+              </>}
             </PeractNativeSelect>
             <p className="text-xs peract-font-color-muted mt-1">Apenas perfumes cadastrados são exibidos.</p>
           </PeractField>
@@ -88,8 +91,8 @@ export function DecantModal({
         </div>
         <div className="flex gap-2 p-4 border-t peract-border-color sticky bottom-0 peract-bg-card">
           <PeractButtonPrimitive onClick={onClose} className="flex-1 px-4 py-2 border peract-border-color rounded-lg text-sm text-gray-600 hover:bg-gray-50" variant="plain" size="plain">Cancelar</PeractButtonPrimitive>
-          <PeractButtonPrimitive onClick={handleSave} className="flex-1 px-4 py-2 rounded-lg text-sm text-white hover:opacity-90 peract-bg-accent" variant="plain" size="plain">
-            Salvar decant
+          <PeractButtonPrimitive onClick={handleSave} disabled={saving} className="flex-1 px-4 py-2 rounded-lg text-sm text-white hover:opacity-90 peract-bg-accent" variant="plain" size="plain">
+            {saving ? "Salvando..." : "Salvar decant"}
           </PeractButtonPrimitive>
         </div>
       </PeractModal>;

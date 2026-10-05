@@ -26,6 +26,7 @@ vi.mock("../repository/decants.repository", () => ({
 
 import {
   createDecant,
+  DECANT_ALREADY_LINKED,
   fetchDecants,
   fetchPerfumeOptions,
   removeDecant,
@@ -38,7 +39,10 @@ const response = { id: 11, perfumeNome: "Chanel N°5", ...request };
 const model = { id: 11, perfumeId: 7, perfume: "Chanel N°5", preco2ml: 12, preco3ml: 17, preco5ml: 25, preco10ml: 45 };
 
 describe("decantsService", () => {
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => {
+    vi.resetAllMocks();
+    listDecantsMock.mockResolvedValue({ content: [], number: 0, totalElements: 0, totalPages: 0 });
+  });
 
   it("maps the decants page and product content into feature models", async () => {
     listDecantsMock.mockResolvedValue({ content: [response], number: 0, totalElements: 1, totalPages: 1 });
@@ -62,6 +66,24 @@ describe("decantsService", () => {
     await expect(updateDecant(model, { ...formData, preco2ml: "14" })).resolves.toEqual({ ...model, preco2ml: 14 });
     expect(createDecantMock).toHaveBeenCalledWith(request);
     expect(updateDecantMock).toHaveBeenCalledWith(11, { ...request, preco2ml: 14 });
+  });
+
+  it("blocks an existing perfume link using a server-side ID filter before posting", async () => {
+    listDecantsMock.mockResolvedValue({ content: [response], totalElements: 1 });
+    await expect(createDecant(formData)).rejects.toThrow(DECANT_ALREADY_LINKED);
+    expect(listDecantsMock).toHaveBeenCalledWith({ perfumeId: 7, page: 0, size: 1 });
+    expect(createDecantMock).not.toHaveBeenCalled();
+  });
+
+  it("does not post when checking the existing link fails", async () => {
+    listDecantsMock.mockRejectedValueOnce(new Error("DECANTS_LIST_FAILED:503"));
+    await expect(createDecant(formData)).rejects.toThrow("DECANTS_LIST_FAILED:503");
+    expect(createDecantMock).not.toHaveBeenCalled();
+  });
+
+  it("reports a conflict if another request created the link after checking", async () => {
+    createDecantMock.mockRejectedValueOnce(new Error("DECANTS_CREATE_FAILED:409"));
+    await expect(createDecant(formData)).rejects.toThrow(DECANT_ALREADY_LINKED);
   });
 
   it("deletes a decant and returns its id", async () => {

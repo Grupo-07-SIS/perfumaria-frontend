@@ -1,5 +1,5 @@
 import axios from "axios";
-import type { NovoClienteModalFormValues, CartItem, CatalogItem, SalesFormValues, SaleCustomer } from "../models/sales.models";
+import type { NovoClienteModalFormValues, CartItem, CatalogItem, SaleItemGroup, SalesFormValues, SaleCustomer } from "../models/sales.models";
 import { pagamentos } from "../config/sales.config";
 import { salesRepository } from "../repository/sales.repository";
 import { toSaleCustomer, toSaleProduct, toSaleRequest } from "../repository/mapper/sales.mapper";
@@ -63,6 +63,34 @@ export async function searchSaleItems(nome: string, products: CatalogItem[] = []
   const items = await salesRepository.searchSaleItems(nome);
   return items.filter(item => item.status == null || item.status === 1)
     .map(dto => toSaleProduct(dto, products.find(product => product.id === dto.id)));
+}
+
+export function groupSaleItems(items: CatalogItem[], products: CatalogItem[]): SaleItemGroup[] {
+  const groups = new Map<string, SaleItemGroup>();
+  const normalize = (value: string) => value.trim().toLocaleLowerCase("pt-BR");
+  for (const item of items) {
+    const categoria = item.tipo === "decant" ? "Perfume"
+      : item.tipo === "body-splash-fracionado" ? "Body Splash"
+      : item.categoriaNome ?? "Produto";
+    const nome = item.tipo === "produto" ? item.nomeExibicao ?? item.nome
+      : (item.nomeExibicao ?? item.nome).replace(/^(?:decant|body\s+splash)\s+/i, "");
+    const matches = item.tipo === "produto" ? [item] : products.filter(product =>
+      normalize(product.nomeExibicao ?? product.nome) === normalize(nome)
+      && normalize(product.categoriaNome ?? "") === normalize(categoria));
+    const baseProduct = matches.length === 1 ? matches[0] : undefined;
+    const key = baseProduct ? `produto:${baseProduct.id}` : `item:${item.id}`;
+    let group = groups.get(key);
+    if (!group) {
+      group = { key, nome, categoria, items: baseProduct ? [baseProduct] : [] };
+      groups.set(key, group);
+    }
+    if (!group.items.some(variant => variant.id === item.id)) group.items.push(item);
+  }
+  for (const group of groups.values()) {
+    group.items.sort((left, right) => Number(left.tipo !== "produto") - Number(right.tipo !== "produto")
+      || parseFloat(left.volumetria ?? "0") - parseFloat(right.volumetria ?? "0"));
+  }
+  return [...groups.values()];
 }
 
 export function validateSale(cart: CartItem[], customer: SaleCustomer | null, form: SalesFormValues): string[] {

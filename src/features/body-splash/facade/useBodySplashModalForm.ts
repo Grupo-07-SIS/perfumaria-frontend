@@ -1,8 +1,8 @@
 import { useForm } from "react-hook-form";
 import type { SetStateAction } from "react";
 import type { BodySplashModalFormValues, ModalProps } from "../models/body-splash.models";
-import { useState } from "react";
-import { validateBodySplash } from "../services/body-splash.service";
+import { useRef, useState } from "react";
+import { BODY_SPLASH_ALREADY_LINKED, validateBodySplash } from "../services/body-splash.service";
 export function useBodySplashModalForm({
   onClose,
   onSave,
@@ -24,26 +24,38 @@ export function useBodySplashModalForm({
     produtoId,
     precos
   } = form.watch();
-  const setProdutoId = (value: SetStateAction<BodySplashModalFormValues["produtoId"]>) => form.setValue("produtoId", typeof value === "function" ? value(form.getValues("produtoId")) : value, {
-    shouldDirty: true
-  });
+  const setProdutoId = (value: SetStateAction<BodySplashModalFormValues["produtoId"]>) => {
+    if (edit) return;
+    form.setValue("produtoId", typeof value === "function" ? value(form.getValues("produtoId")) : value, {
+      shouldDirty: true
+    });
+  };
   const setPrecos = (value: SetStateAction<BodySplashModalFormValues["precos"]>) => form.setValue("precos", typeof value === "function" ? value(form.getValues("precos")) : value, {
     shouldDirty: true
   });
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const submitting = useRef(false);
   const handleSave = async () => {
+    if (submitting.current) return;
     const validationError = validateBodySplash(form.getValues());
     if (validationError) {
       setError(validationError);
       return;
     }
     setError("");
+    submitting.current = true;
+    setSaving(true);
     try {
       await onSave({ produtoId, precos });
       setSuccess(true);
-    } catch {
-      setError("Não foi possível salvar o Body Splash.");
+    } catch (requestError) {
+      setError(requestError instanceof Error && requestError.message === BODY_SPLASH_ALREADY_LINKED
+        ? BODY_SPLASH_ALREADY_LINKED : "Não foi possível salvar o Body Splash.");
+    } finally {
+      submitting.current = false;
+      setSaving(false);
     }
   };
   return {
@@ -53,6 +65,7 @@ export function useBodySplashModalForm({
     setPrecos,
     error,
     success,
+    saving,
     handleSave
   };
 }

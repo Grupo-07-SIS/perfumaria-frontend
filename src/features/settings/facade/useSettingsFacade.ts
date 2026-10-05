@@ -23,6 +23,10 @@ export function useSettingsFacade() {
   const [activeSection, setActiveSection] = useState<Section>("estoque");
   const [saved, setSaved] = useState(false);
   const [savedMsg, setSavedMsg] = useState("");
+  const successTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => {
+    if (successTimer.current !== null) clearTimeout(successTimer.current);
+  }, []);
   const [showSenha, setShowSenha] = useState(false);
   const [errosSenha, setErrosSenha] = useState<Record<string, string>>({});
   const form = useForm<SettingsFormValues>({
@@ -97,10 +101,15 @@ export function useSettingsFacade() {
     shouldDirty: true
   });
   const [errosEmail, setErrosEmail] = useState<Record<string, string>>({});
+  const [accountError, setAccountError] = useState("");
   const showSuccess = (msg: string) => {
+    if (successTimer.current !== null) clearTimeout(successTimer.current);
     setSavedMsg(msg);
     setSaved(true);
-    setTimeout(() => setSaved(false), 3000);
+    successTimer.current = setTimeout(() => {
+      successTimer.current = null;
+      setSaved(false);
+    }, 3000);
   };
   const handleSaveEstoque = async () => {
     if (!stockLoaded || savingRef.current || !hasOrganization(organizationId)) return;
@@ -129,6 +138,8 @@ export function useSettingsFacade() {
     }
   };
   const handleSaveSenha = () => {
+    setSaved(false);
+    setAccountError("");
     const e = validatePasswordChange({
       senhaAtual,
       novaSenha,
@@ -139,12 +150,11 @@ export function useSettingsFacade() {
       return;
     }
     setErrosSenha({});
-    setSenhaAtual("");
-    setNovaSenha("");
-    setConfirmSenha("");
-    showSuccess("Senha alterada com sucesso!");
+    setAccountError("Não foi possível alterar a senha: essa operação ainda não está disponível no servidor.");
   };
   const handleSaveEmail = () => {
+    setSaved(false);
+    setAccountError("");
     const e = validateEmailChange({
       novoEmail,
       confirmEmail,
@@ -155,13 +165,11 @@ export function useSettingsFacade() {
       return;
     }
     setErrosEmail({});
-    setNovoEmail("");
-    setConfirmEmail("");
-    setSenhaConfEmail("");
-    showSuccess("E-mail de acesso alterado com sucesso!");
+    setAccountError("Não foi possível alterar o e-mail: essa operação ainda não está disponível no servidor.");
   };
   const sections = settingsSections;
   return {
+    accountError,
     stockError,
     isStockLoading,
     isStockSaving,

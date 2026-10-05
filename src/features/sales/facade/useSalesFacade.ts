@@ -1,6 +1,6 @@
-import { calculateSaleTotals, createSaleCustomer, fetchSalesData, registerSale, salesErrorMessage, searchSaleItems, validateSale } from "../services/sales.service";
+import { calculateSaleTotals, createSaleCustomer, fetchSalesData, groupSaleItems, registerSale, salesErrorMessage, searchSaleItems, validateSale } from "../services/sales.service";
 import { useForm } from "react-hook-form";
-import type { SalesFormValues, CatalogItem, CartItem, SaleCustomer, NovoClienteModalFormValues } from "../models/sales.models";
+import type { SalesFormValues, CatalogItem, CartItem, SaleItemGroup, SaleCustomer, SaleReview, NovoClienteModalFormValues } from "../models/sales.models";
 import { useEffect, useRef, useState } from "react";
 import { useDebouncedValue } from "../../../shared/hooks/useDebouncedValue";
 export function useSalesFacade() {
@@ -10,6 +10,8 @@ export function useSalesFacade() {
   const [loadError, setLoadError] = useState("");
   const [reloadKey, setReloadKey] = useState(0);
   const [saving, setSaving] = useState(false);
+  const [saleReview, setSaleReview] = useState<SaleReview | null>(null);
+  const [confirmationError, setConfirmationError] = useState("");
   const submitting = useRef(false);
   useEffect(() => {
     let active = true;
@@ -31,6 +33,11 @@ export function useSalesFacade() {
   const [clienteOpen, setClienteOpen] = useState(false);
   const [itemSearch, setItemSearch] = useState("");
   const [itemOpen, setItemOpen] = useState(false);
+  const [selectedBase, setSelectedBase] = useState<SaleItemGroup | null>(null);
+  const itemForm = useForm<{ apresentacao: "completo" | "fracionado"; itemId: string }>({
+    defaultValues: { apresentacao: "completo", itemId: "" },
+  });
+  const { apresentacao: itemPresentation, itemId: selectedVariantId } = itemForm.watch();
   const [itemResults, setItemResults] = useState<{ query: string; items: CatalogItem[] } | null>(null);
   const [itemSearchLoading, setItemSearchLoading] = useState(false);
   const [itemSearchError, setItemSearchError] = useState("");
@@ -88,6 +95,32 @@ export function useSalesFacade() {
   const catalogoFiltrado = itemResults?.query === itemSearch.trim()
     ? itemResults.items
     : products.filter(product => product.nome.toLowerCase().includes(itemSearch.toLowerCase()));
+  const itemGroups = groupSaleItems(catalogoFiltrado, products);
+  const selectedGroup = selectedBase ? itemGroups.find(group => group.key === selectedBase.key) ?? selectedBase : null;
+  const selectedItem = itemPresentation === "completo"
+    ? selectedGroup?.items.find(item => item.tipo === "produto")
+    : selectedGroup?.items.find(item => item.tipo !== "produto" && String(item.id) === selectedVariantId);
+  const selectItemGroup = (group: SaleItemGroup) => {
+    setSelectedBase(group);
+    setItemSearch(group.nome);
+    setItemOpen(false);
+    itemForm.reset({ apresentacao: group.items.some(item => item.tipo === "produto") ? "completo" : "fracionado", itemId: "" });
+  };
+  const setItemPresentation = (value: "completo" | "fracionado") => {
+    itemForm.setValue("apresentacao", value);
+    itemForm.setValue("itemId", "");
+  };
+  const cancelItemSelection = () => {
+    setSelectedBase(null);
+    setItemSearch("");
+    setItemOpen(false);
+    itemForm.reset();
+  };
+  const changeItemSearch = (value: string) => {
+    setSelectedBase(null);
+    itemForm.reset();
+    setItemSearch(value);
+  };
   const addToCart = (item: CatalogItem) => {
     setSuccess(false);
     setCart(prev => {
@@ -103,6 +136,12 @@ export function useSalesFacade() {
     });
     setItemSearch("");
     setItemOpen(false);
+    setSelectedBase(null);
+    itemForm.reset();
+  };
+  const confirmItemSelection = () => {
+    if (!selectedItem || (selectedItem.estoqueAtual !== undefined && selectedItem.estoqueAtual <= 0)) return;
+    addToCart(selectedItem);
   };
   const updateQty = (id: number, qty: number) => {
     setCart(prev => prev.map(i => i.catalogItem.id === id ? {
@@ -125,7 +164,7 @@ export function useSalesFacade() {
     tipoDesconto,
     desconto
   });
-  const handleRegistrar = async () => {
+  const handleRegistrar = () => {
     if (submitting.current || loading || loadError) return;
     setSuccess(false);
     const values = form.getValues();
@@ -135,20 +174,39 @@ export function useSalesFacade() {
       return;
     }
     setErrors([]);
+    if (!clienteSelected) return;
+    setConfirmationError("");
+    setSaleReview({
+      cart: cart.map(item => ({ ...item, catalogItem: { ...item.catalogItem } })),
+      customer: { ...clienteSelected },
+      form: { ...values },
+    });
+  };
+  const closeSaleReview = () => {
+    if (submitting.current) return;
+    setSaleReview(null);
+    setConfirmationError("");
+  };
+  const confirmSale = async () => {
+    if (submitting.current || !saleReview) return;
     submitting.current = true;
     setSaving(true);
+    setConfirmationError("");
     try {
-      await registerSale(cart, clienteSelected, values);
+      await registerSale(saleReview.cart, saleReview.customer, saleReview.form);
+      setSaleReview(null);
       setSuccess(true);
       setCart([]);
       setClienteSelected(null);
       setClienteSearch("");
       setItemSearch("");
       setItemOpen(false);
+      setSelectedBase(null);
+      itemForm.reset();
       setClienteOpen(false);
       form.reset();
     } catch (error) {
-      setErrors([salesErrorMessage(error, "Não foi possível confirmar o registro. Verifique as vendas antes de tentar novamente.")]);
+      setConfirmationError(salesErrorMessage(error, "Não foi possível confirmar o registro. Verifique as vendas antes de tentar novamente."));
     } finally {
       submitting.current = false;
       setSaving(false);
@@ -169,6 +227,11 @@ export function useSalesFacade() {
     loading,
     loadError,
     saving,
+    saleReview,
+    reviewTotals: saleReview ? calculateSaleTotals({ cart: saleReview.cart, ...saleReview.form }) : null,
+    confirmationError,
+    closeSaleReview,
+    confirmSale,
     reload: () => setReloadKey(previous => previous + 1),
     clienteSearch,
     setClienteSearch,
@@ -177,7 +240,17 @@ export function useSalesFacade() {
     clienteOpen,
     setClienteOpen,
     itemSearch,
-    setItemSearch,
+    setItemSearch: changeItemSearch,
+    itemGroups,
+    selectedGroup,
+    selectedItem,
+    selectItemGroup,
+    itemPresentation,
+    setItemPresentation,
+    selectedVariantId,
+    setSelectedVariantId: (value: string) => itemForm.setValue("itemId", value),
+    cancelItemSelection,
+    confirmItemSelection,
     itemSearchLoading: itemSearchLoading || (!!itemSearch.trim() && itemSearch.trim() !== debouncedItemSearch),
     itemSearchError,
     itemOpen,

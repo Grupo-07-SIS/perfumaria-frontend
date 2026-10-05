@@ -13,6 +13,12 @@ export interface CartItem {
   catalogItem: CatalogItem;
   quantidade: number;
 }
+export interface SaleItemGroup {
+  key: string;
+  nome: string;
+  categoria: string;
+  items: CatalogItem[];
+}
 export interface NovoClienteModalFormValues {
   nome: string;
   telefone: string;
@@ -28,4 +34,9 @@ export interface SalesFormValues {
   frete: string;
   tipoDesconto: "percentual" | "valor";
   desconto: string;
+}
+export interface SaleReview {
+  cart: CartItem[];
+  customer: SaleCustomer;
+  form: SalesFormValues;
 }

@@ -1,5 +1,5 @@
 import type { useSalesFacade } from "../facade/useSalesFacade";
-import { CheckCircle, Store, Globe, MessageCircle, UserPlus, User, Search, X, ShoppingCart, Trash2, Tag, ChevronDown, RefreshCw } from "lucide-react";
+import { CheckCircle, Store, Globe, MessageCircle, UserPlus, User, Search, X, ShoppingCart, Trash2, Tag, ChevronDown, RefreshCw, Plus } from "lucide-react";
 import { PeractCard } from "../../../shared/components/peract-card";
 import { PeractButtonPrimitive } from "../../../shared/components/peract-button";
 import { PeractInputControl } from "../../../shared/components/peract-input";
@@ -7,14 +7,20 @@ import { PeractTag } from "../../../shared/components/peract-tag";
 import { PeractBadge } from "../../../shared/components/peract-badge";
 import { PeractField } from "../../../shared/components/peract-field";
 import { PeractLabel } from "../../../shared/components/peract-label";
-import { PeractNativeSelect } from "../../../shared/components/peract-select";
+import { PeractNativeSelect, PeractSelectRoot, PeractSelectTrigger, PeractSelectValue, PeractSelectContent, PeractSelectItem } from "../../../shared/components/peract-select";
 import { pagamentos } from "../config/sales.config";
 import { NovoClienteModal } from "./NovoClienteModal";
+import { SaleConfirmationModal } from "./SaleConfirmationModal";
 export function SalesView({
   createCustomer,
   loading,
   loadError,
   saving,
+  saleReview,
+  reviewTotals,
+  confirmationError,
+  closeSaleReview,
+  confirmSale,
   reload,
   clienteSearch,
   setClienteSearch,
@@ -26,6 +32,16 @@ export function SalesView({
   setItemSearch,
   itemSearchLoading,
   itemSearchError,
+  itemGroups,
+  selectedGroup,
+  selectedItem,
+  selectItemGroup,
+  itemPresentation,
+  setItemPresentation,
+  selectedVariantId,
+  setSelectedVariantId,
+  cancelItemSelection,
+  confirmItemSelection,
   itemOpen,
   setItemOpen,
   cart,
@@ -84,7 +100,7 @@ export function SalesView({
         <p role="alert" className="text-sm text-red-600 mb-2">{loadError}</p>
         <PeractButtonPrimitive onClick={reload} variant="plain" size="plain" className="flex items-center gap-2"><RefreshCw size={16} /> Atualizar dados</PeractButtonPrimitive>
       </div>}
-      <fieldset disabled={loading || saving || !!loadError} aria-busy={loading || saving} className="min-w-0">
+      <fieldset disabled={loading || saving || !!loadError || !!saleReview} aria-busy={loading || saving} className="min-w-0">
       <PeractCard className="peract-bg-card rounded-xl border peract-border-color shadow-sm p-4 mb-4">
         <p className="peract-font-color-default text-sm mb-3">Canal da venda</p>
         <div className="flex gap-3 mb-3">
@@ -201,35 +217,62 @@ export function SalesView({
                 <PeractInputControl type="text" placeholder="Buscar produto..." value={itemSearch} onChange={e => {
                 setItemSearch(e.target.value);
                 setItemOpen(true);
-              }} onFocus={() => setItemOpen(true)} className="flex-1 text-sm outline-none peract-font-color-default placeholder:text-gray-400" />
+              }} onFocus={() => { if (!selectedGroup) setItemOpen(true); }} className="flex-1 min-w-0 text-sm outline-none peract-font-color-default placeholder:text-gray-400 bg-transparent" />
               </div>
-              {itemOpen && itemSearch && catalogoFiltrado.length > 0 && <PeractCard className="absolute top-full left-0 right-0 mt-1 peract-bg-card border peract-border-color rounded-xl shadow-lg z-20 overflow-hidden max-h-52 overflow-y-auto">
-                  {catalogoFiltrado.map(p => {
-                const estoqueAtual = p.estoqueAtual;
-                return <PeractButtonPrimitive key={p.id} disabled={estoqueAtual !== undefined && estoqueAtual <= 0} className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-amber-50 transition-colors border-b border-gray-50 last:border-0 flex items-center justify-between gap-3" onClick={() => addToCart(p)} variant="plain" size="plain">
+              {itemOpen && itemSearch && itemGroups.length > 0 && <PeractCard className="absolute top-full left-0 right-0 mt-1 peract-bg-card border peract-border-color rounded-xl shadow-lg z-20 overflow-hidden max-h-52 overflow-y-auto">
+                  {itemGroups.map(group => {
+                return <PeractButtonPrimitive key={group.key} className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-amber-50 transition-colors border-b border-gray-50 last:border-0 flex items-center justify-between gap-3" onClick={() => selectItemGroup(group)} variant="plain" size="plain">
                         <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5 min-w-0">
-                          <span className="max-w-full break-words">{p.nomeExibicao ?? p.nome}</span>
-                          <span className="max-w-full break-words text-xs peract-font-color-muted">{p.apresentacao ?? p.categoriaNome ?? "Produto completo"}</span>
-                        </div>
-                        <div className="flex items-center gap-2 shrink-0">
-                          {estoqueAtual !== undefined && <span className={`text-xs ${estoqueAtual === 0 ? "text-red-500" : "peract-font-color-muted"}`}>
-                              {estoqueAtual === 0 ? "Esgotado" : `${estoqueAtual} em est.`}
-                            </span>}
-                          {p.volumetria && <PeractBadge variant="secondary" className="peract-font-color-muted">{p.volumetria}</PeractBadge>}
-                          <span className="text-xs font-medium" style={{
-                      color: "#A67449"
-                    }}>
-                            R$ {p.preco.toFixed(2)}
-                          </span>
+                          <span className="max-w-full break-words">{group.nome}</span>
+                          <span className="max-w-full break-words text-xs peract-font-color-muted">{group.categoria}</span>
                         </div>
                       </PeractButtonPrimitive>;
               })}
                 </PeractCard>}
-              {itemOpen && itemSearch && itemSearchLoading && <p role="status" className="text-sm peract-font-color-muted mt-2">Buscando itens...</p>}
-              {itemOpen && itemSearch && itemSearchError && <p role="alert" className="text-sm text-red-600 mt-2">{itemSearchError}</p>}
+              {(itemOpen || selectedGroup) && itemSearch && itemSearchLoading && <p role="status" className="text-sm peract-font-color-muted mt-2">Buscando itens...</p>}
+              {(itemOpen || selectedGroup) && itemSearch && itemSearchError && <p role="alert" className="text-sm text-red-600 mt-2">{itemSearchError}</p>}
               {itemOpen && itemSearch && !itemSearchLoading && !itemSearchError && catalogoFiltrado.length === 0 && <p className="text-sm peract-font-color-muted mt-2">Nenhum produto encontrado.</p>}
               {itemOpen && <div className="fixed inset-0 z-10" onClick={() => setItemOpen(false)} />}
             </div>
+            {selectedGroup && <div className="mt-3 border-t peract-border-color pt-3 flex flex-col gap-3">
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <p className="text-sm font-medium peract-font-color-default break-words">{selectedGroup.nome}</p>
+                  <p className="text-xs peract-font-color-muted">{selectedGroup.categoria}</p>
+                </div>
+                <PeractButtonPrimitive onClick={cancelItemSelection} variant="plain" size="plain" aria-label="Cancelar seleção do produto" title="Cancelar seleção" className="p-1 peract-font-color-muted"><X size={16} /></PeractButtonPrimitive>
+              </div>
+              <div role="group" aria-label="Apresentação" className="grid grid-cols-2 gap-1 rounded-lg border peract-border-color p-1">
+                {(["completo", "fracionado"] as const).map(mode => <PeractButtonPrimitive key={mode} onClick={() => setItemPresentation(mode)} aria-pressed={itemPresentation === mode} disabled={!selectedGroup.items.some(item => mode === "completo" ? item.tipo === "produto" : item.tipo !== "produto")} variant="plain" size="plain" className={`min-h-9 px-3 py-2 rounded-md text-sm disabled:opacity-40 ${itemPresentation === mode ? "peract-bg-accent text-white" : "peract-font-color-muted hover:bg-gray-50"}`}>
+                  {mode === "completo" ? "Completo" : "Fracionado"}
+                </PeractButtonPrimitive>)}
+              </div>
+              {itemPresentation === "completo" && selectedItem?.estoqueAtual !== undefined && <p className={`text-sm ${selectedItem.estoqueAtual <= 0 ? "text-red-600" : "peract-font-color-muted"}`}>
+                {selectedItem.estoqueAtual <= 0 ? "Produto completo esgotado." : `${selectedItem.estoqueAtual} em estoque`}
+              </p>}
+              {itemPresentation === "fracionado" && <PeractField>
+                <PeractLabel htmlFor="sale-item-volume" className="block text-sm mb-1.5">Volume <span className="text-red-500">*</span></PeractLabel>
+                <PeractSelectRoot value={selectedVariantId} onValueChange={setSelectedVariantId} disabled={saving}>
+                  <PeractSelectTrigger id="sale-item-volume" aria-required="true" className="min-h-11 peract-border-color peract-radius-lg">
+                    <PeractSelectValue placeholder="Selecionar volume...">
+                      {selectedItem && <span className="flex items-center gap-3 min-w-0"><PeractBadge variant="secondary">{selectedItem.volumetria ?? selectedItem.nome}</PeractBadge><span className="peract-font-color-muted">R$ {selectedItem.preco.toFixed(2)}</span></span>}
+                    </PeractSelectValue>
+                  </PeractSelectTrigger>
+                  <PeractSelectContent position="popper" sideOffset={4} className="peract-bg-card peract-border-color peract-radius-lg shadow-lg w-[var(--radix-select-trigger-width)]">
+                    {selectedGroup.items.filter(item => item.tipo !== "produto").map(item => <PeractSelectItem key={item.id} value={String(item.id)} disabled={item.estoqueAtual !== undefined && item.estoqueAtual <= 0} className="min-h-11 py-3 pl-3 pr-9 border-b last:border-b-0 peract-border-color focus:bg-amber-50 data-[state=checked]:bg-amber-50 [&>span:last-child]:w-full">
+                      <span className="flex w-full min-w-0 items-center justify-between gap-3">
+                        <span className="text-sm font-medium peract-font-color-default">{item.volumetria ?? item.nome}</span>
+                        <span className="shrink-0 text-sm font-medium peract-font-color-accent">R$ {item.preco.toFixed(2)}</span>
+                      </span>
+                    </PeractSelectItem>)}
+                  </PeractSelectContent>
+                </PeractSelectRoot>
+              </PeractField>}
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <p className="text-sm font-medium peract-font-color-default">{selectedItem ? `R$ ${selectedItem.preco.toFixed(2)}` : ""}</p>
+                <PeractButtonPrimitive onClick={confirmItemSelection} disabled={!selectedItem || (selectedItem.estoqueAtual !== undefined && selectedItem.estoqueAtual <= 0)} variant="plain" size="plain" className="flex items-center justify-center gap-2 min-h-10 px-3 py-2 rounded-lg peract-bg-accent text-white text-sm disabled:opacity-40"><Plus size={16} /> Adicionar ao carrinho</PeractButtonPrimitive>
+              </div>
+            </div>}
           </PeractCard>
 
           {/* Cart */}
@@ -267,10 +310,11 @@ export function SalesView({
                 <div className="divide-y divide-gray-50">
                   {cart.map(item => <div key={item.catalogItem.id} className="grid grid-cols-12 gap-2 px-4 py-3 items-center">
                       <div className="col-span-12 sm:col-span-5">
-                        <p className="text-sm font-medium peract-font-color-default truncate">
-                          {item.catalogItem.nome}
-                          <span className="block text-xs peract-font-color-muted">{item.catalogItem.apresentacao ?? item.catalogItem.categoriaNome ?? "Produto completo"}</span>
-                        </p>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <p className="min-w-0 text-sm font-medium peract-font-color-default break-words">{item.catalogItem.nomeExibicao ?? item.catalogItem.nome}</p>
+                          {item.catalogItem.volumetria && <PeractBadge variant="secondary">{item.catalogItem.volumetria}</PeractBadge>}
+                        </div>
+                        <p className="text-xs peract-font-color-muted">{item.catalogItem.apresentacao ?? item.catalogItem.categoriaNome ?? "Produto completo"}</p>
                       </div>
                       <div className="col-span-4 sm:col-span-2 flex items-center justify-center">
                         <PeractInputControl aria-label={`Quantidade de ${item.catalogItem.nome}`} type="number" min={1} max={item.catalogItem.estoqueAtual} step={1} value={item.quantidade} onChange={e => updateQty(item.catalogItem.id, Number(e.target.value))} className="w-16 border peract-border-color rounded-lg px-2 py-1 text-sm text-center focus:outline-none focus:border-[#A67449]" />
@@ -410,5 +454,6 @@ export function SalesView({
 
       </fieldset>
       {showNovoCliente && <NovoClienteModal onClose={() => setShowNovoCliente(false)} onSave={createCustomer} />}
+      {saleReview && reviewTotals && <SaleConfirmationModal review={saleReview} totals={reviewTotals} saving={saving} error={confirmationError} onClose={closeSaleReview} onConfirm={confirmSale} />}
     </div>;
 }

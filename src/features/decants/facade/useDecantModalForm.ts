@@ -1,8 +1,8 @@
 import { useForm } from "react-hook-form";
-import { validateDecant } from "../services/decants.service";
+import { DECANT_ALREADY_LINKED, validateDecant } from "../services/decants.service";
 import type { SetStateAction } from "react";
 import type { DecantModalFormValues, DecantModalProps } from "../models/decants.models";
-import { useState } from "react";
+import { useRef, useState } from "react";
 export function useDecantModalForm({
   onClose,
   onSave,
@@ -24,9 +24,12 @@ export function useDecantModalForm({
     preco5ml,
     preco10ml
   } = form.watch();
-  const setPerfumeId = (value: SetStateAction<DecantModalFormValues["perfumeId"]>) => form.setValue("perfumeId", typeof value === "function" ? value(form.getValues("perfumeId")) : value, {
-    shouldDirty: true
-  });
+  const setPerfumeId = (value: SetStateAction<DecantModalFormValues["perfumeId"]>) => {
+    if (edit) return;
+    form.setValue("perfumeId", typeof value === "function" ? value(form.getValues("perfumeId")) : value, {
+      shouldDirty: true
+    });
+  };
   const setPreco2ml = (value: SetStateAction<DecantModalFormValues["preco2ml"]>) => form.setValue("preco2ml", typeof value === "function" ? value(form.getValues("preco2ml")) : value, {
     shouldDirty: true
   });
@@ -41,18 +44,27 @@ export function useDecantModalForm({
   });
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const submitting = useRef(false);
   const handleSave = async () => {
+    if (submitting.current) return;
     const validationError = validateDecant(form.getValues());
     if (validationError) {
       setError(validationError);
       return;
     }
     setError("");
+    submitting.current = true;
+    setSaving(true);
     try {
       await onSave({ perfumeId, preco2ml, preco3ml, preco5ml, preco10ml });
       setSuccess(true);
-    } catch {
-      setError("Não foi possível salvar o decant.");
+    } catch (requestError) {
+      setError(requestError instanceof Error && requestError.message === DECANT_ALREADY_LINKED
+        ? DECANT_ALREADY_LINKED : "Não foi possível salvar o decant.");
+    } finally {
+      submitting.current = false;
+      setSaving(false);
     }
   };
   return {
@@ -68,6 +80,7 @@ export function useDecantModalForm({
     setPreco10ml,
     error,
     success,
+    saving,
     handleSave
   };
 }

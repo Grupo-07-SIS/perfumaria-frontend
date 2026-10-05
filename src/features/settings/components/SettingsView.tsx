@@ -6,6 +6,7 @@ import { PeractInputControl } from "../../../shared/components/peract-input";
 import { PeractField } from "../../../shared/components/peract-field";
 import { PeractLabel } from "../../../shared/components/peract-label";
 export function SettingsView({
+  accountError,
   stockError,
   isStockLoading,
   isStockSaving,
@@ -61,6 +62,7 @@ export function SettingsView({
 
         {/* Content */}
         <div className="flex-1 flex flex-col gap-4">
+          {activeSection === "seguranca" && accountError && <p role="alert" className="text-sm text-red-600">{accountError}</p>}
           {saved && <div className="flex items-center gap-2 px-4 py-3 rounded-xl text-sm text-green-700 bg-green-50 border border-green-200" role="status" aria-live="polite">
               <CheckCircle size={16} /> {savedMsg}
             </div>}

@@ -2,6 +2,9 @@ import type { BodySplashModalFormValues, BodySplashItem } from "../models/body-s
 import { VOLUMES } from "../config/body-splash.config";
 import { bodySplashRepository } from "../repository/body-splash.repository";
 import { toBodySplashModel, toBodySplashProductOption, toBodySplashRequestDto } from "../repository/mapper/body-splash.mapper";
+import { serializeCsv } from "../../../shared/utils/csv";
+
+export const BODY_SPLASH_ALREADY_LINKED = "Este Body Splash já possui um vínculo de frascos. Edite o registro existente.";
 
 export function validateBodySplash({
   produtoId,
@@ -47,7 +50,14 @@ export async function fetchBodySplashCatalog(params: { page?: number; size?: num
 
 export async function createBodySplash(values: BodySplashModalFormValues) {
   const request = toBodySplashRequestDto(values);
-  return toBodySplashModel(await bodySplashRepository.createBodySplash(request), request.produtoId);
+  const existing = await bodySplashRepository.listBodySplashes({ produtoId: request.produtoId, page: 0, size: 1 });
+  if (existing.totalElements > 0 || existing.content.length > 0) throw new Error(BODY_SPLASH_ALREADY_LINKED);
+  try {
+    return toBodySplashModel(await bodySplashRepository.createBodySplash(request), request.produtoId);
+  } catch (error) {
+    if (error instanceof Error && error.message === "BODY_SPLASH_CREATE_FAILED:409") throw new Error(BODY_SPLASH_ALREADY_LINKED);
+    throw error;
+  }
 }
 
 export async function updateBodySplash(item: BodySplashItem, values: BodySplashModalFormValues) {
@@ -62,7 +72,7 @@ export async function removeBodySplash(item: BodySplashItem) {
 export function exportCSV(items: BodySplashItem[]) {
   const headers = ["ID", "Body Splash", "10ml", "15ml", "20ml", "25ml", "30ml"];
   const rows = items.map(d => [d.id, d.produto, d.preco10ml.toFixed(2), d.preco15ml.toFixed(2), d.preco20ml.toFixed(2), d.preco25ml.toFixed(2), d.preco30ml.toFixed(2)]);
-  const csv = [headers, ...rows].map(r => r.join(";")).join("\n");
+  const csv = serializeCsv([headers, ...rows]);
   const blob = new Blob([csv], {
     type: "text/csv;charset=utf-8;"
   });

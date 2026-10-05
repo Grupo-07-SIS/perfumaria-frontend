@@ -1,10 +1,11 @@
-import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, renderHook, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { AppProvider, useApp } from "../../core/store/AppContext";
 import { sessionService } from "../../core/auth/session.service";
 import { apiClient } from "../../core/services/http-client";
 import { SettingsPage } from "./SettingsPage";
+import { useSettingsFacade } from "./facade/useSettingsFacade";
 
 vi.mock("../../core/auth/session.service", () => ({
   sessionService: { restore: vi.fn(() => null) },
@@ -26,6 +27,21 @@ beforeEach(() => {
 });
 
 describe("Settings: caracterizacao das validacoes", () => {
+  it("cancels success timers on unmount and replaces an earlier notification timer", async () => {
+    const { result, unmount } = renderHook(() => useSettingsFacade(), { wrapper: AppProvider });
+    await waitFor(() => expect(result.current.stockDisabled).toBe(false));
+    vi.useFakeTimers();
+    try {
+      act(() => result.current.showSuccess("Primeiro aviso"));
+      act(() => result.current.showSuccess("Segundo aviso"));
+      expect(vi.getTimerCount()).toBe(1);
+      unmount();
+      expect(vi.getTimerCount()).toBe(0);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it("salva limite valido e conserva o valor ao reabrir a tela", async () => {
     const user = userEvent.setup();
     const view = render(<AppProvider><SettingsPage /></AppProvider>);
@@ -104,7 +120,7 @@ describe("Settings: caracterizacao das validacoes", () => {
     expect(screen.getByRole("button", { name: "Salvar configurações" })).toBeDisabled();
   });
 
-  it("exige senha atual, minimo de seis caracteres e confirmacao antes de limpar campos", async () => {
+  it("validates password fields but never claims success without a backend operation", async () => {
     const user = userEvent.setup();
     render(<AppProvider><SettingsPage /></AppProvider>);
     await user.click(screen.getByRole("button", { name: "Segurança" }));
@@ -122,13 +138,13 @@ describe("Settings: caracterizacao das validacoes", () => {
     await user.clear(screen.getByLabelText("Confirmar nova senha"));
     await user.type(screen.getByLabelText("Confirmar nova senha"), "123456");
     await user.click(screen.getByRole("button", { name: "Alterar senha", exact: true }));
-    expect(screen.getByRole("status")).toHaveTextContent("Senha alterada com sucesso!");
-    expect(screen.getByLabelText("Senha atual", { exact: true })).toHaveValue("");
-    expect(screen.getByLabelText("Nova senha", { exact: true })).toHaveValue("");
-    expect(screen.getByLabelText("Confirmar nova senha")).toHaveValue("");
+    expect(screen.getByRole("alert")).toHaveTextContent("essa operação ainda não está disponível no servidor");
+    expect(screen.queryByRole("status")).not.toBeInTheDocument();
+    expect(screen.getByLabelText("Nova senha", { exact: true })).toHaveValue("123456");
+    expect(apiClient.patch).not.toHaveBeenCalled();
   });
 
-  it("exige email valido, confirmacao igual e senha antes de informar sucesso local", async () => {
+  it("validates email fields but never claims success without a backend operation", async () => {
     const user = userEvent.setup();
     render(<AppProvider><SettingsPage /></AppProvider>);
     await user.click(screen.getByRole("button", { name: "Segurança" }));
@@ -146,9 +162,9 @@ describe("Settings: caracterizacao das validacoes", () => {
     await user.type(screen.getByPlaceholderText("novo@canalperfumado.com.br"), "outro@example.test");
     await user.type(screen.getByLabelText(/Senha atual \(confirmação\)/), "senha-teste");
     await user.click(save);
-    expect(screen.getByRole("status")).toHaveTextContent("E-mail de acesso alterado com sucesso!");
-    expect(screen.getByPlaceholderText("novo@canalperfumado.com.br")).toHaveValue("");
-    expect(screen.getByPlaceholderText("Repita o novo e-mail")).toHaveValue("");
-    expect(screen.getByLabelText(/Senha atual \(confirmação\)/)).toHaveValue("");
+    expect(screen.getByRole("alert")).toHaveTextContent("essa operação ainda não está disponível no servidor");
+    expect(screen.queryByRole("status")).not.toBeInTheDocument();
+    expect(screen.getByPlaceholderText("novo@canalperfumado.com.br")).toHaveValue("outro@example.test");
+    expect(apiClient.patch).not.toHaveBeenCalled();
   });
 });

@@ -1,6 +1,6 @@
 import { PeractButtonPrimitive } from "../../shared/components/peract-button";
 import { useState, useRef, useEffect } from "react";
-import { Outlet, NavLink, useLocation } from "react-router";
+import { Navigate, Outlet, NavLink, useLocation } from "react-router";
 import logoImg from "figma:asset/19603bc35fe7f283ff1a83c590f928c9d0bfe9cf.png";
 import { LayoutDashboard, Package, ChevronDown, ChevronRight, Menu, X, User, ChevronLeft, Droplets, ShoppingBag, Users, Settings, Bell, LogOut, ShieldCheck, UserCheck, Sparkles } from "lucide-react";
 import { useApp } from "../store/AppContext";
@@ -202,6 +202,9 @@ export function AppLayout() {
   const location = useLocation();
   const isAdmin = currentUser?.cargo === "Administrador";
   const navItems = ALL_NAV_ITEMS.filter(item => isAdmin || !item.adminOnly);
+  const isAdminRoute = ALL_NAV_ITEMS.some(item => item.adminOnly &&
+    [item.path, ...(item.children?.map(child => child.path) ?? [])].some(path =>
+      path && (location.pathname === path || location.pathname.startsWith(`${path}/`))));
   const unread = notifications.filter(notification => !notification.read).length;
   const getPageTitle = () => {
     const path = location.pathname;
@@ -217,6 +220,14 @@ export function AppLayout() {
     if (path === "/configuracoes") return "Configurações";
     return "Canal Perfumado Decants";
   };
+  if (!currentUser) return null;
+  if (currentUser.cargo !== "Administrador" && currentUser.cargo !== "Funcionário") {
+    return <div className="p-6" role="alert">
+      <p className="text-sm text-red-600">Não foi possível verificar suas permissões. Entre novamente.</p>
+      <PeractButtonPrimitive onClick={logout} variant="plain" size="plain" className="mt-3 px-3 py-2 border peract-border-color rounded-lg">Sair</PeractButtonPrimitive>
+    </div>;
+  }
+  if (!isAdmin && isAdminRoute) return <Navigate to="/" replace />;
   return <div className="peract-bg-page flex h-screen overflow-hidden">
       {mobileMenuOpen ? <div className="fixed inset-0 z-40 bg-black/40 lg:hidden" onClick={() => setMobileMenuOpen(false)} /> : null}
 
