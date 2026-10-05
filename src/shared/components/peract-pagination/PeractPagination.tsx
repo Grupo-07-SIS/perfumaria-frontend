@@ -28,6 +28,7 @@ export function PeractPagination({ currentPage, onPageChange, targetSelection, t
           <PeractButton
             action={() => handlePageChange(Math.max(1, currentPage - 1))}
             disabled={currentPage === 1}
+            className="h-9 min-h-9 px-3 py-1"
             size="sm"
             theme="secondary"
           >
@@ -38,7 +39,7 @@ export function PeractPagination({ currentPage, onPageChange, targetSelection, t
           <PaginationItem key={page}>
             <PeractButton
               action={() => handlePageChange(page)}
-              className={currentPage === page ? "border-[color:var(--brand-accent)] bg-[color:var(--brand-accent)] text-white" : "text-gray-600"}
+              className={`h-9 min-h-9 min-w-9 px-2 py-1 ${currentPage === page ? "border-[color:var(--brand-accent)] bg-[color:var(--brand-accent)] text-white" : "text-gray-600"}`}
               size="sm"
               theme={currentPage === page ? "primary" : "secondary"}
             >
@@ -50,6 +51,7 @@ export function PeractPagination({ currentPage, onPageChange, targetSelection, t
           <PeractButton
             action={() => handlePageChange(Math.min(totalPages, currentPage + 1))}
             disabled={currentPage === totalPages}
+            className="h-9 min-h-9 px-3 py-1"
             size="sm"
             theme="secondary"
           >

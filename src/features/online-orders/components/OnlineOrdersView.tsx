@@ -85,7 +85,7 @@ export function OnlineOrdersView({
       </div>
 
       {/* Filters */}
-      <PeractCard className="peract-bg-card rounded-xl border peract-border-color p-3 mb-4 flex flex-col sm:flex-row gap-3 shadow-sm">
+      <PeractCard className="peract-bg-card rounded-xl border peract-border-color p-3 mb-4 flex flex-col sm:flex-row sm:items-center gap-3 shadow-sm">
         <div className="flex items-center gap-2 flex-1 border peract-border-color rounded-lg px-3 py-2">
           <Search size={15} className="peract-font-color-muted shrink-0" />
           <PeractInputControl type="text" placeholder="Buscar pedido ou cliente..." value={search} onChange={e => setSearch(e.target.value)} className="text-sm outline-none flex-1 peract-font-color-default placeholder:text-gray-400" />

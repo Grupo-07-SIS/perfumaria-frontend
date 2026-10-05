@@ -13,8 +13,17 @@ import { getVendaStatus } from "../services/sales-history.service";
 import { CanalBadge } from "./CanalBadge";
 import { PeractTag } from "../../../shared/components/peract-tag";
 import { StatusBadge } from "./StatusBadge";
+import { PeractPagination } from "../../../shared/components/peract-pagination";
 export function SalesHistoryView({
   isAdmin,
+  isLoading,
+  error,
+  currentPage,
+  setCurrentPage,
+  totalPages,
+  paginatedSales,
+  firstSaleOnPage,
+  lastSaleOnPage,
   search,
   setSearch,
   pagamentoFilter,
@@ -34,7 +43,7 @@ export function SalesHistoryView({
   filtered,
   handleSaveEdit
 }: ReturnType<typeof useSalesHistoryFacade>) {
-  return <div className="p-4 lg:p-6 max-w-[1400px] mx-auto">
+  return <div className="p-4 lg:p-6 max-w-[1400px] mx-auto" id="sales-history-section">
       {viewVenda && <ReciboModal venda={viewVenda} onClose={() => setViewVenda(null)} />}
       {editVenda && <EditModal venda={editVenda} onClose={() => setEditVenda(null)} onSave={handleSaveEdit} />}
 
@@ -42,6 +51,9 @@ export function SalesHistoryView({
         <h1 className="peract-font-color-default">Histórico de Vendas</h1>
         <nav className="text-xs peract-font-color-muted mt-0.5">Vendas &rsaquo; <span className="peract-font-color-accent">Histórico</span></nav>
       </div>
+
+      {error ? <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700" role="alert">{error}</div> : null}
+      {isLoading ? <p className="mb-4 text-sm peract-font-color-muted">Carregando histórico de vendas...</p> : null}
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
         <PeractCard className="peract-bg-card rounded-xl border peract-border-color p-3 shadow-sm">
@@ -65,17 +77,17 @@ export function SalesHistoryView({
       </div>
 
       {/* Filters */}
-      <PeractCard className="peract-bg-card rounded-xl border peract-border-color p-3 mb-4 flex flex-col sm:flex-row gap-3 shadow-sm flex-wrap">
-        <div className="flex items-center gap-2 flex-1 min-w-[180px] border peract-border-color rounded-lg px-3 py-2">
+      <PeractCard className="peract-bg-card rounded-xl border peract-border-color p-3 mb-4 flex flex-col sm:flex-row sm:items-center gap-3 shadow-sm flex-wrap">
+        <div className="flex h-12 items-center gap-2 flex-1 min-w-[180px] border peract-border-color rounded-lg px-3 py-1">
           <Search size={15} className="peract-font-color-muted shrink-0" />
           <PeractInputControl type="text" placeholder="Buscar venda ou cliente..." value={search} onChange={e => setSearch(e.target.value)} className="text-sm outline-none flex-1 peract-font-color-default placeholder:text-gray-400" />
         </div>
-        <PeractNativeSelect value={pagamentoFilter} onChange={e => setPagamentoFilter(e.target.value)} className="border peract-border-color rounded-lg px-3 py-2 text-sm text-gray-700 focus:outline-none sm:w-44" onFocus={e => e.target.style.borderColor = ACC} onBlur={e => e.target.style.borderColor = ""}>
+        <PeractNativeSelect value={pagamentoFilter} onChange={e => setPagamentoFilter(e.target.value)} className="h-10 border peract-border-color rounded-lg px-3 py-1 text-sm text-gray-700 focus:outline-none sm:w-44" onFocus={e => e.target.style.borderColor = ACC} onBlur={e => e.target.style.borderColor = ""}>
           <option value="todos">Todos os pagamentos</option>
           {pagamentosOpcoes.map(p => <option key={p} value={p}>{p}</option>)}
         </PeractNativeSelect>
-        <div className="flex rounded-lg overflow-hidden border peract-border-color self-start">
-          {(["todos", "presencial", "online"] as const).map(key => <PeractButtonPrimitive key={key} onClick={() => setTipoFilter(key)} className="px-3 py-2 text-xs transition-all" style={tipoFilter === key ? {
+        <div className="flex rounded-lg overflow-hidden border peract-border-color">
+          {(["todos", "presencial", "online"] as const).map(key => <PeractButtonPrimitive key={key} onClick={() => setTipoFilter(key)} className="px-3 py-1.5 text-xs transition-all" style={tipoFilter === key ? {
           background: ACC,
           color: "white"
         } : {
@@ -85,7 +97,7 @@ export function SalesHistoryView({
               {key === "todos" ? "Todos" : key === "presencial" ? "Presencial" : "Online (WA/Site)"}
             </PeractButtonPrimitive>)}
         </div>
-        <div className="flex rounded-lg overflow-hidden border peract-border-color self-start">
+        <div className="flex rounded-lg overflow-hidden border peract-border-color">
           {[{
           key: "todos" as StatusFilter,
           label: "Todos"
@@ -98,7 +110,7 @@ export function SalesHistoryView({
         }].map(({
           key,
           label
-        }) => <PeractButtonPrimitive key={key} onClick={() => setStatusFilter(key)} className="px-3 py-2 text-xs transition-all" style={statusFilter === key ? {
+        }) => <PeractButtonPrimitive key={key} onClick={() => setStatusFilter(key)} className="px-3 py-1.5 text-xs transition-all" style={statusFilter === key ? {
           background: ACC,
           color: "white"
         } : {
@@ -122,7 +134,7 @@ export function SalesHistoryView({
               </PeractTableRow>
             </PeractTableHeader>
             <PeractTableBody className="divide-y divide-gray-50">
-              {filtered.length === 0 ? <PeractTableRow><PeractTableCell colSpan={8} className="text-center py-12 peract-font-color-muted text-sm">Nenhuma venda encontrada.</PeractTableCell></PeractTableRow> : filtered.map(venda => {
+              {filtered.length === 0 ? <PeractTableRow><PeractTableCell colSpan={8} className="text-center py-12 peract-font-color-muted text-sm">Nenhuma venda encontrada.</PeractTableCell></PeractTableRow> : paginatedSales.map(venda => {
               const status = getVendaStatus(venda);
               return <PeractTableRow key={venda.id} className={`hover:bg-gray-50/50 transition-colors ${status === "Cancelado" ? "opacity-60" : ""}`}>
                     <PeractTableCell className="px-4 py-3"><span className="text-sm font-mono font-medium text-gray-700">{venda.id}</span></PeractTableCell>
@@ -143,12 +155,17 @@ export function SalesHistoryView({
             </PeractTableBody>
           </PeractTableRoot>
         </div>
-        <div className="px-4 py-3 border-t border-gray-50"><p className="text-xs peract-font-color-muted">{filtered.length} venda(s)</p></div>
+        <div className="px-4 py-3 border-t border-gray-50">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-xs peract-font-color-muted">Exibindo {firstSaleOnPage} a {lastSaleOnPage} de {filtered.length} venda(s)</p>
+            <PeractPagination currentPage={currentPage} onPageChange={setCurrentPage} totalPages={totalPages} />
+          </div>
+        </div>
       </PeractCard>
 
       {/* Mobile cards */}
       <div className="md:hidden flex flex-col gap-3">
-        {filtered.map(venda => {
+        {paginatedSales.map(venda => {
         const status = getVendaStatus(venda);
         return <div key={venda.id} className={`bg-white rounded-xl border border-gray-100 p-4 shadow-sm ${status === "Cancelado" ? "opacity-60" : ""}`}>
               <div className="flex items-center justify-between mb-1">
@@ -176,6 +193,12 @@ export function SalesHistoryView({
             </div>;
       })}
         {filtered.length === 0 && <PeractCard className="text-center py-12 peract-font-color-muted text-sm peract-bg-card rounded-xl border peract-border-color">Nenhuma venda encontrada.</PeractCard>}
+      </div>
+      <div className="mt-4 md:hidden">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-xs peract-font-color-muted">Exibindo {firstSaleOnPage} a {lastSaleOnPage} de {filtered.length} venda(s)</p>
+          <PeractPagination currentPage={currentPage} onPageChange={setCurrentPage} totalPages={totalPages} />
+        </div>
       </div>
     </div>;
 }

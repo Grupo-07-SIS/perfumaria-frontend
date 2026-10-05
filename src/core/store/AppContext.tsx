@@ -92,6 +92,7 @@ export interface VendaItem {
   volume?: string;
   quantidade: number;
   valorUnitario: number;
+  tipoItem?: "PRODUTO" | "DECANT" | "BODY_SPLASH_FRACIONADO";
 }
 
 export interface Venda {

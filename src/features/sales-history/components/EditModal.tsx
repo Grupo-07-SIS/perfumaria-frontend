@@ -72,7 +72,7 @@ export function EditModal({
                   </p>
                 </div>}
               {/* Desconto */}
-              {venda.desconto && venda.desconto > 0 && <div className="p-2.5 rounded-lg bg-green-50">
+              {venda.desconto != null && venda.desconto > 0 && <div className="p-2.5 rounded-lg bg-green-50">
                   <p className="text-xs peract-font-color-muted mb-1">Desconto aplicado</p>
                   <p className="text-sm font-medium text-green-700">- R$ {venda.desconto.toFixed(2).replace(".", ",")}</p>
                 </div>}

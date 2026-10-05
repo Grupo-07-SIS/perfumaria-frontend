@@ -276,7 +276,7 @@ export function AppLayout() {
         <div className="hidden shrink-0 border-t p-2 lg:block" style={{
         borderColor: C.border
       }}>
-          <PeractButton action={() => setSidebarCollapsed(!sidebarCollapsed)} className="w-full justify-center gap-2 text-sm hover:bg-gray-100" style={{
+          <PeractButton action={() => setSidebarCollapsed(!sidebarCollapsed)} className="h-9 min-h-9 w-full justify-center gap-2 px-3 py-2 text-xs hover:bg-gray-100" style={{
           color: C.textMid
         }} theme="secondary">
             {sidebarCollapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}

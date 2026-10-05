@@ -72,7 +72,7 @@ export function ProductsTable({
 }: ProductsTableProps) {
   const firstProduct = products.length === 0 ? 0 : (currentPage - 1) * PRODUCTS_PAGE_SIZE + 1;
   const lastProduct = products.length === 0 ? 0 : firstProduct + products.length - 1;
-  const pagination = <div className="flex flex-wrap items-center justify-between gap-4">
+  const pagination = <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
       <p className="text-xs peract-font-color-muted">Exibindo {firstProduct} a {lastProduct} de {totalProducts} produtos</p>
       <PeractPagination currentPage={currentPage} onPageChange={onPageChange} targetSelection="products-section" totalPages={totalPages} />
     </div>;
