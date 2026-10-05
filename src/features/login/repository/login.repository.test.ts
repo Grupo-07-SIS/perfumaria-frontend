@@ -1,12 +1,23 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { fetchMock } = vi.hoisted(() => ({
-  fetchMock: vi.fn(),
+const { apiClientPostMock } = vi.hoisted(() => ({
+  apiClientPostMock: vi.fn(),
 }));
 
-vi.stubGlobal("fetch", fetchMock);
+vi.mock("../../../core/services/http-client", () => ({
+  apiClient: {
+    post: apiClientPostMock,
+  },
+}));
 
 import { loginRepository } from "./login.repository";
+
+function axiosError(status: number) {
+  return {
+    isAxiosError: true,
+    response: { status },
+  };
+}
 
 describe("loginRepository", () => {
   beforeEach(() => {
@@ -14,33 +25,24 @@ describe("loginRepository", () => {
   });
 
   it("posts login credentials to the backend auth route", async () => {
-    fetchMock.mockResolvedValue({
-      json: vi.fn().mockResolvedValue({ accessToken: "token-123" }),
-      ok: true,
-    });
+    apiClientPostMock.mockResolvedValue({ data: { accessToken: "token-123" } });
 
-    await loginRepository.authenticate({
+    const result = await loginRepository.authenticate({
       credentials: {
         email: "admin@canalperfumado.com.br",
         senha: "admin123",
       },
     });
 
-    expect(fetchMock).toHaveBeenCalledWith("http://localhost:8080/auth/login", {
-      body: JSON.stringify({
-        email: "admin@canalperfumado.com.br",
-        senha: "admin123",
-      }),
-      credentials: "include",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      method: "POST",
+    expect(apiClientPostMock).toHaveBeenCalledWith("/auth/login", {
+      email: "admin@canalperfumado.com.br",
+      senha: "admin123",
     });
+    expect(result).toEqual({ accessToken: "token-123" });
   });
 
-  it("throws when the backend rejects the login", async () => {
-    fetchMock.mockResolvedValue({ ok: false, status: 401 });
+  it("preserves the login error code and Axios response status", async () => {
+    apiClientPostMock.mockRejectedValue(axiosError(401));
 
     await expect(
       loginRepository.authenticate({
@@ -50,5 +52,9 @@ describe("loginRepository", () => {
         },
       }),
     ).rejects.toThrow("LOGIN_REQUEST_FAILED:401");
+    expect(apiClientPostMock).toHaveBeenCalledWith("/auth/login", {
+      email: "admin@canalperfumado.com.br",
+      senha: "errada",
+    });
   });
 });

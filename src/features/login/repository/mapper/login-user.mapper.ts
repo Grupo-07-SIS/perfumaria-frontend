@@ -1,4 +1,4 @@
-import type { Funcionario } from "../../../../app/context/AppContext";
+import type { Funcionario } from "../../../../core/store/AppContext";
 import type { LoginUserDto } from "../dto/login-user.dto";
 
 export function toLoginUserDto(user: Funcionario): LoginUserDto {

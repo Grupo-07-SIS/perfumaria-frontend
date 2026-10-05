@@ -1,0 +1,10 @@
+import type { ComponentProps } from "react";
+export type PeractCommandProps = ComponentProps<typeof import("./PeractCommand").PeractCommand>;
+export type PeractCommandDialogProps = ComponentProps<typeof import("./PeractCommand").PeractCommandDialog>;
+export type PeractCommandInputProps = ComponentProps<typeof import("./PeractCommand").PeractCommandInput>;
+export type PeractCommandListProps = ComponentProps<typeof import("./PeractCommand").PeractCommandList>;
+export type PeractCommandEmptyProps = ComponentProps<typeof import("./PeractCommand").PeractCommandEmpty>;
+export type PeractCommandGroupProps = ComponentProps<typeof import("./PeractCommand").PeractCommandGroup>;
+export type PeractCommandItemProps = ComponentProps<typeof import("./PeractCommand").PeractCommandItem>;
+export type PeractCommandShortcutProps = ComponentProps<typeof import("./PeractCommand").PeractCommandShortcut>;
+export type PeractCommandSeparatorProps = ComponentProps<typeof import("./PeractCommand").PeractCommandSeparator>;

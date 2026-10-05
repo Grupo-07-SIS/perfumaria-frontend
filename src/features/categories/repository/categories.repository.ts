@@ -1,67 +1,47 @@
-import { environment } from "../../../environment";
+import axios, { type AxiosResponse } from "axios";
+import { apiClient } from "../../../core/services/http-client";
 import type { CategoryRequestDto } from "./dto/category-request.dto";
 import type { CategoryResponseDto } from "./dto/category-response.dto";
 
-async function parseJsonResponse<T>(response: Response): Promise<T> {
-  return response.json() as Promise<T>;
+async function requestData<T>(request: Promise<AxiosResponse<T>>, errorCode: string): Promise<T> {
+  try {
+    const response = await request;
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      throw new Error(`${errorCode}:${error.response?.status ?? "unknown"}`);
+    }
+
+    throw error;
+  }
 }
 
 export const categoriesRepository = {
   async createCategory(payload: CategoryRequestDto): Promise<CategoryResponseDto> {
-    const response = await fetch(`${environment.backendUrl}/categorias`, {
-      body: JSON.stringify(payload),
-      credentials: "include",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      method: "POST",
-    });
-
-    if (!response.ok) {
-      throw new Error(`CATEGORIES_CREATE_FAILED:${response.status}`);
-    }
-
-    return parseJsonResponse<CategoryResponseDto>(response);
+    return requestData(
+      apiClient.post<CategoryResponseDto>("/categorias", payload),
+      "CATEGORIES_CREATE_FAILED",
+    );
   },
 
   async deleteCategory(categoryId: number): Promise<void> {
-    const response = await fetch(`${environment.backendUrl}/categorias/${categoryId}`, {
-      credentials: "include",
-      method: "DELETE",
-    });
-
-    if (!response.ok) {
-      throw new Error(`CATEGORIES_DELETE_FAILED:${response.status}`);
-    }
+    await requestData(
+      apiClient.delete<void>(`/categorias/${categoryId}`),
+      "CATEGORIES_DELETE_FAILED",
+    );
   },
 
   async listCategories(): Promise<CategoryResponseDto[]> {
-    const response = await fetch(`${environment.backendUrl}/categorias`, {
-      credentials: "include",
-      method: "GET",
-    });
-
-    if (!response.ok) {
-      throw new Error(`CATEGORIES_LIST_FAILED:${response.status}`);
-    }
-
-    return parseJsonResponse<CategoryResponseDto[]>(response);
+    return requestData(
+      apiClient.get<CategoryResponseDto[]>("/categorias"),
+      "CATEGORIES_LIST_FAILED",
+    );
   },
 
   async updateCategory(categoryId: number, payload: CategoryRequestDto): Promise<CategoryResponseDto> {
-    const response = await fetch(`${environment.backendUrl}/categorias/${categoryId}`, {
-      body: JSON.stringify(payload),
-      credentials: "include",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      method: "PUT",
-    });
-
-    if (!response.ok) {
-      throw new Error(`CATEGORIES_UPDATE_FAILED:${response.status}`);
-    }
-
-    return parseJsonResponse<CategoryResponseDto>(response);
+    return requestData(
+      apiClient.put<CategoryResponseDto>(`/categorias/${categoryId}`, payload),
+      "CATEGORIES_UPDATE_FAILED",
+    );
   },
 };

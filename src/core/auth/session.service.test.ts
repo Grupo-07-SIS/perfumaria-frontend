@@ -104,4 +104,19 @@ describe("sessionService", () => {
     expect(tokenClearMock).toHaveBeenCalled();
     expect(removeCookieMock).toHaveBeenCalledWith("authUser");
   });
+
+  it("preserves the organization when saving and restoring the authenticated user", () => {
+    const user = {
+      cargo: "Administrador" as const,
+      email: "admin@example.test",
+      id: "user-1",
+      idOrganizacao: 7,
+      nome: "Admin",
+    };
+    sessionService.save({ accessToken: "token-123", user });
+    expect(setCookieMock).toHaveBeenCalledWith("authUser", JSON.stringify(user), expect.any(Object));
+    tokenGetMock.mockReturnValue("token-123");
+    getCookieMock.mockReturnValue(JSON.stringify(user));
+    expect(sessionService.restore()?.user).toEqual(user);
+  });
 });

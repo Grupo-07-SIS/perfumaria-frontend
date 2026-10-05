@@ -1,8 +1,8 @@
 import {
-  Pagination,
-  PaginationContent,
-  PaginationItem,
-} from "../ui/pagination";
+  PeractPaginationRoot as Pagination,
+  PeractPaginationContent as PaginationContent,
+  PeractPaginationItem as PaginationItem,
+} from "./PeractPaginationPrimitives";
 import { PeractButton } from "../peract-button";
 import type { PeractPaginationProps } from "./PeractPagination.types";
 

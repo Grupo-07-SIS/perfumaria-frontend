@@ -1,34 +1,32 @@
 import { PeractButton } from "../peract-button";
-import { PeractCard } from "../peract-card";
+import { PeractModal, PeractModalTitle } from "../peract-modal";
 import type { PeractModalActionProps } from "./PeractModalAction.types";
-
 export function PeractModalAction({
   btnPrimaryAction,
   buttonSecondaryAction,
   children,
   content,
+  heading,
+  actions,
+  submitting = false,
   primaryLabel = "Confirmar",
   secondaryLabel = "Cancelar",
-  title,
+  title
 }: PeractModalActionProps) {
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <PeractCard className="w-full max-w-sm overflow-hidden shadow-2xl">
-        <div className="border-b border-gray-100 p-4">
-          <h3 className="peract-serif-font text-lg text-[#26221E]">{title}</h3>
+  return <PeractModal className="max-w-sm shadow-2xl" onClose={() => { if (!submitting) buttonSecondaryAction(); }}>
+        <div className="border-b peract-border-color p-4">
+          {heading ?? <PeractModalTitle className="peract-serif-font text-lg peract-font-color-default">{title}</PeractModalTitle>}
         </div>
         <div className="p-4">
           {children ?? <p className="text-sm text-gray-600">{content}</p>}
         </div>
-        <div className="flex gap-2 border-t border-gray-100 p-4">
-          <PeractButton action={buttonSecondaryAction} className="flex-1 text-gray-600" theme="secondary">
+        <div className="flex gap-2 border-t peract-border-color p-4">
+          {actions ?? <><PeractButton disabled={submitting} action={buttonSecondaryAction} className="flex-1 text-gray-600" theme="secondary">
             {secondaryLabel}
           </PeractButton>
-          <PeractButton action={btnPrimaryAction} className="flex-1">
+          <PeractButton disabled={submitting} action={btnPrimaryAction} className="flex-1">
             {primaryLabel}
-          </PeractButton>
+          </PeractButton></>}
         </div>
-      </PeractCard>
-    </div>
-  );
+    </PeractModal>;
 }

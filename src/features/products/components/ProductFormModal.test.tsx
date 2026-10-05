@@ -3,6 +3,19 @@ import { describe, expect, it, vi } from "vitest";
 import { ProductFormModal } from "./ProductFormModal";
 
 describe("ProductFormModal", () => {
+  it("shows save errors inside the dialog and supports retry", async () => {
+    const onSave = vi.fn().mockRejectedValueOnce(new Error("PRODUCTS_SUBMIT_FAILED")).mockResolvedValue(undefined);
+    const onClose = vi.fn();
+    render(<ProductFormModal categories={[{ id: 1, nome: "Perfumes" }]} defaultValues={{ categoriaId: "1", estoqueAtual: "4", hasVolume: false, marca: "Chanel", medida: "ML", nome: "Chance", precoCompra: "100", precoVenda: "180", volume: "" }} onClose={onClose} onSave={onSave} submitting={false} title="Editar Produto" />);
+    fireEvent.click(screen.getByRole("button", { name: "Salvar" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("Não foi possível salvar o produto.");
+    expect(screen.getByRole("dialog")).toContainElement(screen.getByRole("alert"));
+    expect(onClose).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: "Salvar" }));
+    await waitFor(() => expect(onSave).toHaveBeenCalledTimes(2));
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
+
   it("validates and submits the product form", async () => {
     const onSave = vi.fn().mockResolvedValue(undefined);
 

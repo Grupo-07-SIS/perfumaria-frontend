@@ -1,4 +1,5 @@
-import { environment } from "../../../environment";
+import axios, { type AxiosResponse } from "axios";
+import { apiClient } from "../../../core/services/http-client";
 import { PRODUCTS_PAGE_SIZE } from "../config/products.config";
 import type { ProductCategoryResponseDto } from "./dto/product-category-response.dto";
 import type { ProductRequestDto } from "./dto/product-request.dto";
@@ -13,93 +14,66 @@ interface ListProductsParams {
   page?: number;
 }
 
-async function parseJsonResponse<T>(response: Response): Promise<T> {
-  return response.json() as Promise<T>;
+async function requestData<T>(request: Promise<AxiosResponse<T>>, errorCode: string): Promise<T> {
+  try {
+    const response = await request;
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      throw new Error(`${errorCode}:${error.response?.status ?? "unknown"}`);
+    }
+
+    throw error;
+  }
 }
 
 export const productsRepository = {
   async createProduct(payload: ProductRequestDto): Promise<ProductResponseDto> {
-    const response = await fetch(`${environment.backendUrl}/produtos`, {
-      body: JSON.stringify(payload),
-      credentials: "include",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      method: "POST",
-    });
-
-    if (!response.ok) {
-      throw new Error(`PRODUCTS_CREATE_FAILED:${response.status}`);
-    }
-
-    return parseJsonResponse<ProductResponseDto>(response);
+    return requestData(
+      apiClient.post<ProductResponseDto>("/produtos", payload),
+      "PRODUCTS_CREATE_FAILED",
+    );
   },
 
   async deleteProduct(productId: number): Promise<void> {
-    const response = await fetch(`${environment.backendUrl}/produtos/${productId}`, {
-      credentials: "include",
-      method: "DELETE",
-    });
-
-    if (!response.ok) {
-      throw new Error(`PRODUCTS_DELETE_FAILED:${response.status}`);
-    }
+    await requestData(
+      apiClient.delete<void>(`/produtos/${productId}`),
+      "PRODUCTS_DELETE_FAILED",
+    );
   },
 
   async listCategories(): Promise<ProductCategoryResponseDto[]> {
-    const response = await fetch(`${environment.backendUrl}/categorias`, {
-      credentials: "include",
-      method: "GET",
-    });
-
-    if (!response.ok) {
-      throw new Error(`PRODUCTS_CATEGORIES_LIST_FAILED:${response.status}`);
-    }
-
-    return parseJsonResponse<ProductCategoryResponseDto[]>(response);
+    return requestData(
+      apiClient.get<ProductCategoryResponseDto[]>("/categorias"),
+      "PRODUCTS_CATEGORIES_LIST_FAILED",
+    );
   },
 
   async listProducts({ categoriaId, estoqueMin, estoqueMax, nome, ordenacao = "nome,asc", page = 0 }: ListProductsParams = {}): Promise<ProductPageDto> {
-    const searchParams = new URLSearchParams({
+    const params: Record<string, number | string> = {
       ordenacao,
-      page: String(page),
-      size: String(PRODUCTS_PAGE_SIZE),
-    });
+      page,
+      size: PRODUCTS_PAGE_SIZE,
+    };
 
     if (nome?.trim()) {
-      searchParams.set("nome", nome.trim());
+      params.nome = nome.trim();
     }
 
-    if (categoriaId !== undefined) searchParams.set("categoriaId", String(categoriaId));
-    if (estoqueMin !== undefined) searchParams.set("estoqueMin", String(estoqueMin));
-    if (estoqueMax !== undefined) searchParams.set("estoqueMax", String(estoqueMax));
+    if (categoriaId !== undefined) params.categoriaId = categoriaId;
+    if (estoqueMin !== undefined) params.estoqueMin = estoqueMin;
+    if (estoqueMax !== undefined) params.estoqueMax = estoqueMax;
 
-    const response = await fetch(`${environment.backendUrl}/produtos?${searchParams.toString()}`, {
-      credentials: "include",
-      method: "GET",
-    });
-
-    if (!response.ok) {
-      throw new Error(`PRODUCTS_LIST_FAILED:${response.status}`);
-    }
-
-    return parseJsonResponse<ProductPageDto>(response);
+    return requestData(
+      apiClient.get<ProductPageDto>("/produtos", { params }),
+      "PRODUCTS_LIST_FAILED",
+    );
   },
 
   async updateProduct(productId: number, payload: ProductRequestDto): Promise<ProductResponseDto> {
-    const response = await fetch(`${environment.backendUrl}/produtos/${productId}`, {
-      body: JSON.stringify(payload),
-      credentials: "include",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      method: "PUT",
-    });
-
-    if (!response.ok) {
-      throw new Error(`PRODUCTS_UPDATE_FAILED:${response.status}`);
-    }
-
-    return parseJsonResponse<ProductResponseDto>(response);
+    return requestData(
+      apiClient.put<ProductResponseDto>(`/produtos/${productId}`, payload),
+      "PRODUCTS_UPDATE_FAILED",
+    );
   },
 };

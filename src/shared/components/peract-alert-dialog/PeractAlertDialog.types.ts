@@ -1,0 +1,12 @@
+import type { ComponentProps } from "react";
+export type PeractAlertDialogProps = ComponentProps<typeof import("./PeractAlertDialog").PeractAlertDialog>;
+export type PeractAlertDialogPortalProps = ComponentProps<typeof import("./PeractAlertDialog").PeractAlertDialogPortal>;
+export type PeractAlertDialogOverlayProps = ComponentProps<typeof import("./PeractAlertDialog").PeractAlertDialogOverlay>;
+export type PeractAlertDialogTriggerProps = ComponentProps<typeof import("./PeractAlertDialog").PeractAlertDialogTrigger>;
+export type PeractAlertDialogContentProps = ComponentProps<typeof import("./PeractAlertDialog").PeractAlertDialogContent>;
+export type PeractAlertDialogHeaderProps = ComponentProps<typeof import("./PeractAlertDialog").PeractAlertDialogHeader>;
+export type PeractAlertDialogFooterProps = ComponentProps<typeof import("./PeractAlertDialog").PeractAlertDialogFooter>;
+export type PeractAlertDialogTitleProps = ComponentProps<typeof import("./PeractAlertDialog").PeractAlertDialogTitle>;
+export type PeractAlertDialogDescriptionProps = ComponentProps<typeof import("./PeractAlertDialog").PeractAlertDialogDescription>;
+export type PeractAlertDialogActionProps = ComponentProps<typeof import("./PeractAlertDialog").PeractAlertDialogAction>;
+export type PeractAlertDialogCancelProps = ComponentProps<typeof import("./PeractAlertDialog").PeractAlertDialogCancel>;
