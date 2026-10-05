@@ -119,7 +119,7 @@ describe("ProductsTable", () => {
 
     expect(props.onSort).toHaveBeenCalledWith("nome");
     expect(props.onEditProduct).toHaveBeenCalledWith(product);
-    expect(props.onDeleteProduct).toHaveBeenCalledWith({ id: 7, nome: "Chance" });
+    expect(props.onDeleteProduct).toHaveBeenCalledWith({ id: 7, nome: "Chance", categoriaNome: "Perfumes" });
     expect(props.onPageChange).toHaveBeenCalledWith(2);
   });
 

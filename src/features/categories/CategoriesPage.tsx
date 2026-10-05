@@ -2,7 +2,6 @@ import { Plus } from "lucide-react";
 import { PeractButton } from "../../shared/components/peract-button";
 import { CategoryFormModal } from "./components/CategoryFormModal";
 import { CategoriesTable } from "./components/CategoriesTable";
-import { CategorySummaryCards } from "./components/CategorySummaryCards";
 import { DeleteCategoryModal } from "./components/DeleteCategoryModal";
 import { useCategoriesFacade } from "./facade/useCategoriesFacade";
 export function CategoriesPage() {
@@ -25,8 +24,6 @@ export function CategoriesPage() {
       {facade.error ? <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700" role="alert">
           {facade.error}
         </div> : null}
-
-      <CategorySummaryCards categories={facade.categories} />
 
       <CategoriesTable categories={facade.paginatedCategories} currentPage={facade.currentPage} onCreateCategory={facade.openCreateForm} onDeleteCategory={facade.openDeleteConfirm} onEditCategory={facade.openEditForm} onPageChange={facade.setCurrentPage} totalCategories={facade.categories.length} totalPages={facade.totalPages} />
 

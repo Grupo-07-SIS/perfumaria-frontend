@@ -23,7 +23,7 @@ export function ProductsPage() {
   return <div className="mx-auto max-w-[1400px] p-4 lg:p-6" id="products-section">
       {facade.isFormOpen ? <ProductFormModal categories={facade.categoryOptions} defaultValues={facade.formTarget ? getDefaultFormValues(facade.formTarget) : undefined} onClose={facade.closeForm} onSave={facade.submitProduct} submitting={facade.isSubmitting} title={facade.formTarget ? "Editar Produto" : "Novo Produto"} /> : null}
 
-      {facade.deleteTarget ? <DeleteProductModal nome={facade.deleteTarget.nome} onClose={facade.closeDeleteConfirm} onConfirm={() => void facade.confirmDelete()} submitting={facade.isDeleteSubmitting} /> : null}
+      {facade.deleteTarget ? <DeleteProductModal categoriaNome={facade.deleteTarget.categoriaNome} nome={facade.deleteTarget.nome} onClose={facade.closeDeleteConfirm} onConfirm={() => void facade.confirmDelete()} submitting={facade.isDeleteSubmitting} /> : null}
 
       <div className="mb-5 flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
         <div>

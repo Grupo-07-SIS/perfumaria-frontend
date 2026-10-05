@@ -80,7 +80,8 @@ export function ProductsTable({
       <PeractButton action={() => onEditProduct(product)} className="h-8 w-8 peract-font-color-muted hover:bg-amber-50 hover:text-amber-700" size="icon" theme="secondary" title="Editar"><Edit3 size={15} /></PeractButton>
       <PeractButton action={() => onDeleteProduct({
       id: product.id,
-      nome: product.nome
+      nome: product.nome,
+      categoriaNome: product.categoriaNome
     })} className="h-8 w-8 peract-font-color-muted hover:bg-red-50 hover:text-red-600" size="icon" theme="secondary" title="Excluir"><Trash2 size={15} /></PeractButton>
     </div>;
   return <>
@@ -172,7 +173,8 @@ export function ProductsTable({
                 <PeractButton action={() => onEditProduct(product)} className="flex-1 text-gray-600" size="sm" theme="secondary">Editar</PeractButton>
                 <PeractButton action={() => onDeleteProduct({
               id: product.id,
-              nome: product.nome
+              nome: product.nome,
+              categoriaNome: product.categoriaNome
             })} className="border-red-200 text-red-600 hover:bg-red-50" size="sm" theme="secondary"><Trash2 size={13} /></PeractButton>
               </div>
             </PeractCard>;
