@@ -1,9 +1,13 @@
 export interface CatalogItem {
   id: number;
   nome: string;
+  nomeExibicao?: string;
+  categoriaNome?: string;
+  apresentacao?: string;
+  volumetria?: string;
   preco: number;
-  tipo: "produto";
-  estoqueAtual: number;
+  tipo: "produto" | "decant" | "body-splash-fracionado";
+  estoqueAtual?: number;
 }
 export interface CartItem {
   catalogItem: CatalogItem;

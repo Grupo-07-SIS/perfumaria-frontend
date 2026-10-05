@@ -70,14 +70,23 @@ describe("bodySplashRepository", () => {
     });
   });
 
-  it("loads product options with the required pagination and ordering", async () => {
+  it("loads product options from the encoded Body Splash category with the required pagination and ordering", async () => {
     const productPage = { ...emptyPage, content: [{ id: 7, nome: "Lavanda & Ylang" }], size: 100 };
     apiClientGetMock.mockResolvedValue({ data: productPage });
 
     await expect(bodySplashRepository.listProducts()).resolves.toEqual(productPage);
-    expect(apiClientGetMock).toHaveBeenCalledWith("/produtos", {
+    expect(apiClientGetMock).toHaveBeenCalledWith("/produtos/categoria/Body%20Splash", {
       params: { page: 0, size: 100, ordenacao: "nome,asc" },
     });
+  });
+
+  it.each([
+    { products: [{ id: 7, nome: "Lavanda & Ylang" }] },
+    { products: [] },
+  ])("normalizes a direct category list into product content: $products", async ({ products }) => {
+    apiClientGetMock.mockResolvedValue({ data: products });
+
+    await expect(bodySplashRepository.listProducts()).resolves.toEqual({ content: products });
   });
 
   it("creates, updates and deletes with the flat OpenAPI payload", async () => {

@@ -19,15 +19,17 @@ function normalizeName(value: string) {
 }
 
 export async function fetchBodySplashCatalog(params: { page?: number; size?: number; produtoId?: number; busca?: string } = {}) {
-  const [page, productsPage] = await Promise.all([
+  const [pageResult, optionsResult] = await Promise.allSettled([
     Object.keys(params).length === 0
       ? bodySplashRepository.listBodySplashes()
       : bodySplashRepository.listBodySplashes(params),
-    bodySplashRepository.listProducts(),
+    bodySplashRepository.listProducts().then(productsPage => productsPage.content
+      .map(toBodySplashProductOption)
+      .sort((left, right) => left.nome.localeCompare(right.nome))),
   ]);
-  const productOptions = productsPage.content
-    .map(toBodySplashProductOption)
-    .sort((left, right) => left.nome.localeCompare(right.nome));
+  if (pageResult.status === "rejected") throw pageResult.reason;
+  const page = pageResult.value;
+  const productOptions = optionsResult.status === "fulfilled" ? optionsResult.value : [];
   return {
     page: {
       ...page,
@@ -37,6 +39,9 @@ export async function fetchBodySplashCatalog(params: { page?: number; size?: num
       }),
     },
     productOptions,
+    productOptionsError: optionsResult.status === "rejected"
+      ? "Os preços foram carregados, mas não foi possível carregar os produtos Body Splash para vínculo."
+      : "",
   };
 }
 

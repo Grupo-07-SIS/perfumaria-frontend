@@ -23,8 +23,11 @@ export function useBodySplashFacade() {
         if (currentRequestId !== requestId.current) return;
         setItems(catalog.page.content);
         setProductOptions(catalog.productOptions);
+        setError(catalog.productOptionsError ?? "");
       })
-      .catch(() => setError("Não foi possível carregar os preços de Body Splash."))
+      .catch(() => {
+        if (currentRequestId === requestId.current) setError("Não foi possível carregar os preços de Body Splash.");
+      })
       .finally(() => {
         if (currentRequestId === requestId.current) setIsLoading(false);
       });
@@ -40,6 +43,7 @@ export function useBodySplashFacade() {
       if (currentRequestId !== requestId.current) return;
       setItems(catalog.page.content);
       setProductOptions(catalog.productOptions);
+      setError(catalog.productOptionsError ?? "");
     } catch {
       if (currentRequestId !== requestId.current) return;
       setError("Não foi possível carregar os preços de Body Splash.");

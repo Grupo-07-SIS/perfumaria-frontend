@@ -2,6 +2,9 @@ import { apiClient } from "../../../core/services/http-client";
 import type { SaleCustomerDto, SaleCustomerRequestDto, SaleCustomersPageDto, SaleProductDto, SaleProductsPageDto, SaleRequestDto } from "./dto/sales.dto";
 
 export const salesRepository = {
+  async searchSaleItems(nome: string): Promise<SaleProductDto[]> {
+    return (await apiClient.get<SaleProductDto[]>("/vendas/itens-busca", { params: { nome } })).data;
+  },
   async listProducts(): Promise<SaleProductDto[]> {
     const products: SaleProductDto[] = [];
     let page = 0;

@@ -3,6 +3,7 @@ import { useForm } from "react-hook-form";
 import type { SetStateAction } from "react";
 import type { NovoClienteModalFormValues } from "../models/sales.models";
 import { useRef, useState } from "react";
+import { formatTelefone } from "../../../shared/utils/masks";
 export function useNovoClienteModalForm({
   onClose,
   onSave
@@ -25,7 +26,7 @@ export function useNovoClienteModalForm({
   const setNome = (value: SetStateAction<NovoClienteModalFormValues["nome"]>) => form.setValue("nome", typeof value === "function" ? value(form.getValues("nome")) : value, {
     shouldDirty: true
   });
-  const setTelefone = (value: SetStateAction<NovoClienteModalFormValues["telefone"]>) => form.setValue("telefone", typeof value === "function" ? value(form.getValues("telefone")) : value, {
+  const setTelefone = (value: SetStateAction<NovoClienteModalFormValues["telefone"]>) => form.setValue("telefone", formatTelefone(typeof value === "function" ? value(form.getValues("telefone")) : value), {
     shouldDirty: true
   });
   const [errors, setErrors] = useState<Record<string, string>>({});

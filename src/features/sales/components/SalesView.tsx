@@ -4,6 +4,7 @@ import { PeractCard } from "../../../shared/components/peract-card";
 import { PeractButtonPrimitive } from "../../../shared/components/peract-button";
 import { PeractInputControl } from "../../../shared/components/peract-input";
 import { PeractTag } from "../../../shared/components/peract-tag";
+import { PeractBadge } from "../../../shared/components/peract-badge";
 import { PeractField } from "../../../shared/components/peract-field";
 import { PeractLabel } from "../../../shared/components/peract-label";
 import { PeractNativeSelect } from "../../../shared/components/peract-select";
@@ -23,6 +24,8 @@ export function SalesView({
   setClienteOpen,
   itemSearch,
   setItemSearch,
+  itemSearchLoading,
+  itemSearchError,
   itemOpen,
   setItemOpen,
   cart,
@@ -203,14 +206,16 @@ export function SalesView({
               {itemOpen && itemSearch && catalogoFiltrado.length > 0 && <PeractCard className="absolute top-full left-0 right-0 mt-1 peract-bg-card border peract-border-color rounded-xl shadow-lg z-20 overflow-hidden max-h-52 overflow-y-auto">
                   {catalogoFiltrado.map(p => {
                 const estoqueAtual = p.estoqueAtual;
-                return <PeractButtonPrimitive key={p.id} disabled={estoqueAtual <= 0} className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-amber-50 transition-colors border-b border-gray-50 last:border-0 flex items-center justify-between gap-3" onClick={() => addToCart(p)} variant="plain" size="plain">
-                        <div className="flex items-center gap-2 min-w-0">
-                          <span className="truncate">{p.nome}</span>
+                return <PeractButtonPrimitive key={p.id} disabled={estoqueAtual !== undefined && estoqueAtual <= 0} className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-amber-50 transition-colors border-b border-gray-50 last:border-0 flex items-center justify-between gap-3" onClick={() => addToCart(p)} variant="plain" size="plain">
+                        <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5 min-w-0">
+                          <span className="max-w-full break-words">{p.nomeExibicao ?? p.nome}</span>
+                          <span className="max-w-full break-words text-xs peract-font-color-muted">{p.apresentacao ?? p.categoriaNome ?? "Produto completo"}</span>
                         </div>
                         <div className="flex items-center gap-2 shrink-0">
                           {estoqueAtual !== undefined && <span className={`text-xs ${estoqueAtual === 0 ? "text-red-500" : "peract-font-color-muted"}`}>
                               {estoqueAtual === 0 ? "Esgotado" : `${estoqueAtual} em est.`}
                             </span>}
+                          {p.volumetria && <PeractBadge variant="secondary" className="peract-font-color-muted">{p.volumetria}</PeractBadge>}
                           <span className="text-xs font-medium" style={{
                       color: "#A67449"
                     }}>
@@ -220,7 +225,9 @@ export function SalesView({
                       </PeractButtonPrimitive>;
               })}
                 </PeractCard>}
-              {itemOpen && itemSearch && catalogoFiltrado.length === 0 && <p className="text-sm peract-font-color-muted mt-2">Nenhum produto encontrado.</p>}
+              {itemOpen && itemSearch && itemSearchLoading && <p role="status" className="text-sm peract-font-color-muted mt-2">Buscando itens...</p>}
+              {itemOpen && itemSearch && itemSearchError && <p role="alert" className="text-sm text-red-600 mt-2">{itemSearchError}</p>}
+              {itemOpen && itemSearch && !itemSearchLoading && !itemSearchError && catalogoFiltrado.length === 0 && <p className="text-sm peract-font-color-muted mt-2">Nenhum produto encontrado.</p>}
               {itemOpen && <div className="fixed inset-0 z-10" onClick={() => setItemOpen(false)} />}
             </div>
           </PeractCard>
@@ -262,12 +269,8 @@ export function SalesView({
                       <div className="col-span-12 sm:col-span-5">
                         <p className="text-sm font-medium peract-font-color-default truncate">
                           {item.catalogItem.nome}
+                          <span className="block text-xs peract-font-color-muted">{item.catalogItem.apresentacao ?? item.catalogItem.categoriaNome ?? "Produto completo"}</span>
                         </p>
-                        <div className="flex items-center gap-1 mt-0.5">
-                          <span className="text-xs px-1.5 py-0.5 rounded bg-stone-100 text-stone-600">
-                            Produto
-                          </span>
-                        </div>
                       </div>
                       <div className="col-span-4 sm:col-span-2 flex items-center justify-center">
                         <PeractInputControl aria-label={`Quantidade de ${item.catalogItem.nome}`} type="number" min={1} max={item.catalogItem.estoqueAtual} step={1} value={item.quantidade} onChange={e => updateQty(item.catalogItem.id, Number(e.target.value))} className="w-16 border peract-border-color rounded-lg px-2 py-1 text-sm text-center focus:outline-none focus:border-[#A67449]" />

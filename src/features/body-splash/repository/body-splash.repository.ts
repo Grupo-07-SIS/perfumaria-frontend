@@ -1,7 +1,7 @@
 import axios, { type AxiosResponse } from "axios";
 import { apiClient } from "../../../core/services/http-client";
 import type { BodySplashRequestDto } from "./dto/body-splash-request.dto";
-import type { BodySplashPageDto, BodySplashProductPageDto, BodySplashResponseDto } from "./dto/body-splash-response.dto";
+import type { BodySplashPageDto, BodySplashProductDto, BodySplashProductPageDto, BodySplashResponseDto } from "./dto/body-splash-response.dto";
 
 interface ListBodySplashesParams {
   page?: number;
@@ -27,10 +27,11 @@ export const bodySplashRepository = {
       params: { page: 0, size: 10, ...params },
     }), "BODY_SPLASH_LIST_FAILED");
   },
-  listProducts(): Promise<BodySplashProductPageDto> {
-    return requestData(apiClient.get<BodySplashProductPageDto>("/produtos", {
+  async listProducts(): Promise<BodySplashProductPageDto> {
+    const response = await requestData(apiClient.get<BodySplashProductDto[] | BodySplashProductPageDto>("/produtos/categoria/Body%20Splash", {
       params: { page: 0, size: 100, ordenacao: "nome,asc" },
     }), "BODY_SPLASH_PRODUCTS_LIST_FAILED");
+    return Array.isArray(response) ? { content: response } : response;
   },
   createBodySplash(payload: BodySplashRequestDto): Promise<BodySplashResponseDto> {
     return requestData(apiClient.post<BodySplashResponseDto>("/body-splash", payload), "BODY_SPLASH_CREATE_FAILED");

@@ -50,13 +50,22 @@ describe("decantsRepository", () => {
     });
   });
 
-  it("loads perfume options from products using the required ordering", async () => {
+  it("loads perfume options from the Perfume category using the required ordering", async () => {
     const productPage = { ...emptyPage, content: [{ id: 7, nome: "Chanel N°5" }], size: 100 };
     apiClientGetMock.mockResolvedValue({ data: productPage });
     await expect(decantsRepository.listPerfumeProducts()).resolves.toEqual(productPage);
-    expect(apiClientGetMock).toHaveBeenCalledWith("/produtos", {
+    expect(apiClientGetMock).toHaveBeenCalledWith("/produtos/categoria/Perfume", {
       params: { page: 0, size: 100, ordenacao: "nome,asc" },
     });
+  });
+
+  it.each([
+    { products: [{ id: 7, nome: "Libre" }] },
+    { products: [] },
+  ])("normalizes a direct category list into product content: $products", async ({ products }) => {
+    apiClientGetMock.mockResolvedValue({ data: products });
+
+    await expect(decantsRepository.listPerfumeProducts()).resolves.toEqual({ content: products });
   });
 
   it("creates, updates and deletes with the OpenAPI payload", async () => {

@@ -1,7 +1,7 @@
 import axios, { type AxiosResponse } from "axios";
 import { apiClient } from "../../../core/services/http-client";
 import type { DecantRequestDto } from "./dto/decant-request.dto";
-import type { DecantPageDto, DecantResponseDto, PerfumeProductPageDto } from "./dto/decant-response.dto";
+import type { DecantPageDto, DecantResponseDto, PerfumeProductDto, PerfumeProductPageDto } from "./dto/decant-response.dto";
 
 interface ListDecantsParams {
   page?: number;
@@ -27,10 +27,11 @@ export const decantsRepository = {
       params: { page: 0, size: 10, ...params },
     }), "DECANTS_LIST_FAILED");
   },
-  listPerfumeProducts(): Promise<PerfumeProductPageDto> {
-    return requestData(apiClient.get<PerfumeProductPageDto>("/produtos", {
+  async listPerfumeProducts(): Promise<PerfumeProductPageDto> {
+    const response = await requestData(apiClient.get<PerfumeProductDto[] | PerfumeProductPageDto>("/produtos/categoria/Perfume", {
       params: { page: 0, size: 100, ordenacao: "nome,asc" },
     }), "DECANTS_PRODUCTS_LIST_FAILED");
+    return Array.isArray(response) ? { content: response } : response;
   },
   createDecant(payload: DecantRequestDto): Promise<DecantResponseDto> {
     return requestData(apiClient.post<DecantResponseDto>("/decants", payload), "DECANTS_CREATE_FAILED");

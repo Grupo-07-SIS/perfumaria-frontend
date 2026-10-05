@@ -1,5 +1,5 @@
 import axios from "axios";
-import type { NovoClienteModalFormValues, CartItem, SalesFormValues, SaleCustomer } from "../models/sales.models";
+import type { NovoClienteModalFormValues, CartItem, CatalogItem, SalesFormValues, SaleCustomer } from "../models/sales.models";
 import { pagamentos } from "../config/sales.config";
 import { salesRepository } from "../repository/sales.repository";
 import { toSaleCustomer, toSaleProduct, toSaleRequest } from "../repository/mapper/sales.mapper";
@@ -54,9 +54,15 @@ export function validateNovoCliente({
 export async function fetchSalesData() {
   const [products, customers] = await Promise.all([salesRepository.listProducts(), salesRepository.listCustomers()]);
   return {
-    products: products.filter((product) => product.status === 1).map(toSaleProduct),
+    products: products.filter((product) => product.status === 1).map(dto => toSaleProduct(dto, { id: dto.id, nome: dto.nome, preco: dto.precoVenda, tipo: "produto" })),
     customers: customers.filter((customer) => customer.status === 1).map(toSaleCustomer),
   };
+}
+
+export async function searchSaleItems(nome: string, products: CatalogItem[] = []) {
+  const items = await salesRepository.searchSaleItems(nome);
+  return items.filter(item => item.status == null || item.status === 1)
+    .map(dto => toSaleProduct(dto, products.find(product => product.id === dto.id)));
 }
 
 export function validateSale(cart: CartItem[], customer: SaleCustomer | null, form: SalesFormValues): string[] {
@@ -75,7 +81,7 @@ export function validateSale(cart: CartItem[], customer: SaleCustomer | null, fo
     quantities.set(catalogItem.id, quantity);
     if (!Number.isSafeInteger(catalogItem.id) || catalogItem.id <= 0 || !Number.isFinite(catalogItem.preco) || catalogItem.preco < 0) errors.push("Selecione um produto válido do catálogo.");
     if (!Number.isInteger(quantidade) || quantidade < 1 || quantity > 2147483647) errors.push("Informe uma quantidade inteira válida.");
-    if (!Number.isInteger(catalogItem.estoqueAtual) || quantity > catalogItem.estoqueAtual) errors.push(`Estoque insuficiente para ${catalogItem.nome}.`);
+    if (catalogItem.estoqueAtual !== undefined && (!Number.isInteger(catalogItem.estoqueAtual) || quantity > catalogItem.estoqueAtual)) errors.push(`Estoque insuficiente para ${catalogItem.nome}.`);
   }
   return errors;
 }

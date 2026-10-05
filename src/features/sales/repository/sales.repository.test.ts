@@ -7,6 +7,14 @@ vi.mock("../../../core/services/http-client", () => ({ apiClient: { get: vi.fn()
 describe("salesRepository", () => {
   beforeEach(() => vi.resetAllMocks());
 
+  it("searches sale items including volume bottles with nullable stock and status", async () => {
+    const items = [{ id: 1002, nome: "Decant Sauvage 2ml", precoVenda: 49.9, estoqueAtual: null, status: null }];
+    vi.mocked(apiClient.get).mockResolvedValueOnce({ data: items });
+
+    await expect(salesRepository.searchSaleItems("Sauvage")).resolves.toEqual(items);
+    expect(apiClient.get).toHaveBeenCalledWith("/vendas/itens-busca", { params: { nome: "Sauvage" } });
+  });
+
   it("loads every product page with status and stock from the complete catalog", async () => {
     const firstProduct = { id: 42, nome: "Perfume", precoVenda: 90, estoqueAtual: 8, status: 1 };
     const secondProduct = { ...firstProduct, id: 43, nome: "Outro perfume" };

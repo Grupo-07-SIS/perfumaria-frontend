@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { salesRepository } from "../repository/sales.repository";
-import { calculateSaleTotals, fetchSalesData, registerSale, createSaleCustomer, validateNovoCliente } from "./sales.service";
+import { calculateSaleTotals, fetchSalesData, registerSale, createSaleCustomer, searchSaleItems, validateNovoCliente } from "./sales.service";
 
-vi.mock("../repository/sales.repository", () => ({ salesRepository: { listProducts: vi.fn(), listCustomers: vi.fn(), createSale: vi.fn(), createCustomer: vi.fn() } }));
+vi.mock("../repository/sales.repository", () => ({ salesRepository: { listProducts: vi.fn(), searchSaleItems: vi.fn(), listCustomers: vi.fn(), createSale: vi.fn(), createCustomer: vi.fn() } }));
 
 const product = { id: 42, nome: "Perfume", preco: 45, estoqueAtual: 4, tipo: "produto" as const };
 const customer = { id: 81, nome: "Ana", telefone: "11999998888", email: "ana@example.test" };
@@ -21,6 +21,27 @@ describe("sales service", () => {
       { ...customer, status: 1 }, { ...customer, id: 82, email: null, telefone: null, status: 1 }, { ...customer, id: 83, status: 0 },
     ]);
     expect(await fetchSalesData()).toEqual({ products: [product], customers: [customer, { ...customer, id: 82, email: "", telefone: "" }] });
+  });
+
+  it("distinguishes full products and fractionated bottles with nullable metadata", async () => {
+    vi.mocked(salesRepository.searchSaleItems).mockResolvedValue([
+      { id: 1002, nome: "Decant Sauvage 2ml", precoVenda: 49.9, volume: null, estoqueAtual: null, status: null },
+      { id: 4010, nome: "Body Splash Sauvage 10ml", precoVenda: 69.9, estoqueAtual: null, status: null },
+      { id: 42, nome: "Sauvage", precoVenda: 599.9, categoriaNome: null, estoqueAtual: null, status: null },
+      { id: 43, nome: "Body Splash Sauvage 200ml", precoVenda: 299.9, categoriaNome: null, estoqueAtual: null, status: null },
+      { id: 44, nome: "Inativo", precoVenda: 10, estoqueAtual: 3, status: 0 },
+    ]);
+    const items = await searchSaleItems("Sauvage", [
+      { ...product, categoriaNome: "Perfume" },
+      { ...product, id: 43, categoriaNome: "Body Splash" },
+    ]);
+
+    expect(items.map(item => item.apresentacao)).toEqual(["Fracionado", "Fracionado", "Perfume completo", "Body Splash completo"]);
+    expect(items.map(item => item.volumetria)).toEqual(["2ml", "10ml", undefined, "200ml"]);
+    expect(items[0].estoqueAtual).toBeUndefined();
+    expect(items[2].estoqueAtual).toBe(4);
+    await registerSale([{ catalogItem: items[0], quantidade: 1 }], customer, form);
+    expect(salesRepository.createSale).toHaveBeenCalledWith(expect.objectContaining({ itens: [{ produtoId: 1002, quantidade: 1 }] }));
   });
 
   it("posts only supported fields with backend IDs and percentage discount", async () => {

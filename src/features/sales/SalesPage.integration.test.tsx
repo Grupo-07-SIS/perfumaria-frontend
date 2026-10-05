@@ -45,6 +45,64 @@ describe("Sales backend integration", () => {
     expect(apiClient.post).not.toHaveBeenCalled();
   });
 
+  it("shows category names next to products with the same name in cart search", async () => {
+    vi.mocked(apiClient.get).mockImplementation(async (url) => {
+      if (url === "/clientes") return { data: { content: [customer], totalPages: 1 } };
+      if (url === "/produtos") return { data: { content: [
+        { ...product, nome: "Sauvage", categoriaNome: "Perfume" },
+        { ...product, id: 43, nome: "Sauvage", categoriaNome: "Body Splash" },
+      ], totalPages: 1 } };
+      throw new Error(`Unexpected endpoint: ${url}`);
+    });
+    const user = userEvent.setup();
+    await renderLoaded();
+    await user.type(screen.getByPlaceholderText("Buscar produto..."), "Sauvage");
+
+    const perfume = screen.getByRole("button", { name: /^Sauvage Perfume/ });
+    const bodySplash = screen.getByRole("button", { name: /^Sauvage Body Splash/ });
+    expect(within(perfume).getByText("Perfume completo")).toBeInTheDocument();
+    expect(within(bodySplash).getByText("Body Splash completo")).toBeInTheDocument();
+    await user.click(bodySplash);
+    expect(screen.getByRole("spinbutton", { name: "Quantidade de Sauvage" })).toHaveValue(1);
+  });
+
+  it("shows fractionated volume badges and keeps the presentation visible in the cart", async () => {
+    vi.mocked(apiClient.get).mockImplementation(async (url) => {
+      if (url === "/clientes") return { data: { content: [customer], totalPages: 1 } };
+      if (url === "/produtos") return { data: { content: [product], totalPages: 1 } };
+      if (url === "/vendas/itens-busca") return { data: [
+        { id: 1002, nome: "Decant Sauvage 2ml", precoVenda: 49.9, volume: null, estoqueAtual: null, status: null },
+        { id: 4010, nome: "Body Splash Sauvage 10ml", precoVenda: 69.9, volume: null, estoqueAtual: null, status: null },
+      ] };
+      throw new Error(`Unexpected endpoint: ${url}`);
+    });
+    const user = userEvent.setup();
+    await renderLoaded();
+    await user.type(screen.getByPlaceholderText("Buscar produto..."), "Sauvage");
+    const decant = await screen.findByRole("button", { name: /^Decant Sauvage Fracionado 2ml/ });
+    expect(decant).toBeEnabled();
+    expect(within(decant).getByText("Decant Sauvage")).toBeInTheDocument();
+    expect(within(decant).queryByText("Decant Sauvage 2ml")).not.toBeInTheDocument();
+    expect(within(decant).getByText("2ml")).toHaveAttribute("data-slot", "badge");
+    expect(within(decant).getByText("2ml").parentElement).toHaveTextContent("R$ 49.90");
+    expect(within(decant).getByText("Fracionado")).toBeInTheDocument();
+    expect(decant).not.toHaveTextContent("em est.");
+    expect(apiClient.get).toHaveBeenCalledWith("/vendas/itens-busca", { params: { nome: "Sauvage" } });
+    await user.click(decant);
+    await user.type(screen.getByPlaceholderText("Buscar produto..."), "Body Splash");
+    const bodySplash = await screen.findByRole("button", { name: /^Body Splash Sauvage Fracionado 10ml/ });
+    expect(within(bodySplash).getByText("Body Splash Sauvage")).toBeInTheDocument();
+    expect(within(bodySplash).queryByText("Body Splash Sauvage 10ml")).not.toBeInTheDocument();
+    expect(within(bodySplash).getByText("10ml")).toHaveAttribute("data-slot", "badge");
+    expect(within(bodySplash).getByText("10ml").parentElement).toHaveTextContent("R$ 69.90");
+    expect(within(bodySplash).getByText("Fracionado")).toBeInTheDocument();
+    await user.click(bodySplash);
+    expect(screen.getByRole("spinbutton", { name: "Quantidade de Decant Sauvage 2ml" })).toHaveValue(1);
+    expect(screen.getByRole("spinbutton", { name: "Quantidade de Body Splash Sauvage 10ml" })).not.toHaveAttribute("max");
+    expect(screen.getAllByText("Fracionado")).toHaveLength(2);
+    expect(screen.queryByText("Produto", { exact: true })).not.toBeInTheDocument();
+  });
+
   it("removes a selected customer after focusing the search and allows selecting again", async () => {
     const user = userEvent.setup();
     await renderLoaded();
@@ -174,6 +232,22 @@ describe("Sales backend integration", () => {
     await waitFor(() => expect(screen.getByRole("button", { name: "Registrar venda" })).toBeEnabled());
   });
 
+  it.each([
+    { input: "1133334444", expected: "(11) 3333-4444" },
+    { input: "11999997777", expected: "(11) 99999-7777" },
+    { input: "(11) 99999-7777abc123", expected: "(11) 99999-7777" },
+  ])("masks customer phone input $input and allows clearing it", async ({ input, expected }) => {
+    const user = userEvent.setup();
+    await renderLoaded();
+    await user.click(screen.getByRole("button", { name: "Cadastrar novo cliente" }));
+    const phone = within(screen.getByRole("dialog")).getByLabelText(/Telefone/);
+
+    fireEvent.change(phone, { target: { value: input } });
+    expect(phone).toHaveValue(expected);
+    await user.clear(phone);
+    expect(phone).toHaveValue("");
+  });
+
   it("creates a customer with email, retains errors and selects the backend ID", async () => {
     const user = userEvent.setup();
     await renderLoaded();
@@ -183,6 +257,7 @@ describe("Sales backend integration", () => {
     expect(apiClient.post).not.toHaveBeenCalled();
     await user.type(modal.getByLabelText(/Nome completo/), "Nova cliente");
     await user.type(modal.getByLabelText(/Telefone/), "11999997777");
+    expect(modal.getByLabelText(/Telefone/)).toHaveValue("(11) 99999-7777");
     await user.type(modal.getByLabelText(/E-mail/), "nova@example.test");
     vi.mocked(apiClient.post).mockRejectedValueOnce({ isAxiosError: true, response: { status: 409 } });
     await user.click(modal.getByRole("button", { name: "Cadastrar", exact: true }));

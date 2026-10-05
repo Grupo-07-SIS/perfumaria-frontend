@@ -82,6 +82,7 @@ describe("bodySplashService", () => {
     await expect(fetchBodySplashCatalog()).resolves.toEqual({
       page: { content: [model], number: 0, totalElements: 1, totalPages: 1 },
       productOptions: [{ id: 7, nome: "lavanda & ylang" }, { id: 8, nome: "Rosa & Baunilha" }],
+      productOptionsError: "",
     });
     expect(listBodySplashesMock).toHaveBeenCalledWith();
     expect(listProductsMock).toHaveBeenCalledWith();
@@ -96,8 +97,27 @@ describe("bodySplashService", () => {
     await expect(fetchBodySplashCatalog({ busca: "Lavanda", page: 0, size: 10 })).resolves.toEqual({
       page: { content: [model], number: 0, totalElements: 1, totalPages: 1 },
       productOptions: [{ id: 7, nome: "lavanda & ylang" }, { id: 8, nome: "Rosa & Baunilha" }],
+      productOptionsError: "",
     });
     expect(listBodySplashesMock).toHaveBeenCalledWith({ busca: "Lavanda", page: 0, size: 10 });
+  });
+
+  it("keeps Body Splash prices when category options fail and reports the failure", async () => {
+    listBodySplashesMock.mockResolvedValue({ content: [response], number: 0, totalElements: 1, totalPages: 1 });
+    listProductsMock.mockRejectedValueOnce(new Error("BODY_SPLASH_PRODUCTS_LIST_FAILED:404"));
+
+    const catalog = await fetchBodySplashCatalog();
+
+    expect(catalog.page.content).toEqual([{ ...model, produtoId: undefined }]);
+    expect(catalog.productOptions).toEqual([]);
+    expect(catalog.productOptionsError).toContain("Body Splash para vínculo");
+  });
+
+  it("still rejects when the Body Splash price list fails", async () => {
+    listBodySplashesMock.mockRejectedValueOnce(new Error("BODY_SPLASH_LIST_FAILED:503"));
+    listProductsMock.mockResolvedValue({ content: [] });
+
+    await expect(fetchBodySplashCatalog()).rejects.toThrow("BODY_SPLASH_LIST_FAILED:503");
   });
 
   it("preserves an unmatched response name with an undefined product id", async () => {

@@ -49,6 +49,18 @@ describe("useDecantsFacade", () => {
     expect(result.current.error).toBe("");
   });
 
+  it("keeps decants visible and warns when category options fail", async () => {
+    fetchPerfumeOptionsMock.mockRejectedValueOnce(new Error("DECANTS_PRODUCTS_LIST_FAILED:404"));
+    const { result } = renderHook(() => useDecantsFacade());
+
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+    expect(result.current.decants).toEqual([original]);
+    expect(result.current.totalElements).toBe(1);
+    expect(result.current.perfumeOptions).toEqual([]);
+    expect(result.current.error).toContain("perfumes para vínculo");
+  });
+
   it("loads and exposes the pagination metadata returned by the backend", async () => {
     fetchDecantsMock.mockResolvedValue({ content: [original], number: 1, totalElements: 23, totalPages: 3 });
 

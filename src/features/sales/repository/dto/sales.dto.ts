@@ -12,9 +12,11 @@ export interface SaleRequestDto {
 export interface SaleProductDto {
   id: number;
   nome: string;
+  categoriaNome?: string | null;
+  volume?: number | null;
   precoVenda: number;
-  estoqueAtual: number;
-  status: number;
+  estoqueAtual: number | null;
+  status: number | null;
 }
 
 export interface SaleProductsPageDto {

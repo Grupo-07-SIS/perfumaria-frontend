@@ -74,7 +74,7 @@ export function NovoClienteModal({
             {errors.telefone && <p className="text-xs text-red-600 mt-1">{errors.telefone}</p>}
           </PeractField>
           <PeractField>
-            <PeractLabel htmlFor="sale-customer-email" className="text-sm text-gray-700 block mb-1.5">E-mail *</PeractLabel>
+            <PeractLabel htmlFor="sale-customer-email" className="text-sm text-gray-700 block mb-1.5">E-mail <span className="text-red-500">*</span></PeractLabel>
             <PeractInputControl id="sale-customer-email" type="email" maxLength={100} value={email} onChange={event => setEmail(event.target.value)} className="w-full border peract-border-color rounded-lg px-3 py-2 text-sm" />
             {errors.email && <p className="text-xs text-red-600 mt-1">{errors.email}</p>}
           </PeractField>

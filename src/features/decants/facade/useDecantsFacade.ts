@@ -23,19 +23,27 @@ export function useDecantsFacade() {
 
   useEffect(() => {
     const currentRequestId = ++requestId.current;
-    Promise.all([
+    Promise.allSettled([
       fetchDecants({ busca: "", page: 0, size: PAGE_SIZE }),
       fetchPerfumeOptions(),
     ])
-      .then(([page, options]) => {
-        setPerfumeOptions(options);
+      .then(([pageResult, optionsResult]) => {
         if (currentRequestId !== requestId.current) return;
+        if (pageResult.status === "rejected") throw pageResult.reason;
+        const page = pageResult.value;
+        if (optionsResult.status === "fulfilled") {
+          setPerfumeOptions(optionsResult.value);
+        } else {
+          setError("Os decants foram carregados, mas não foi possível carregar os perfumes para vínculo.");
+        }
         setDecants(page.content);
         setCurrentPageState(1);
         setTotalElements(page.totalElements);
         setTotalPages(page.totalPages);
       })
-      .catch(() => setError("Não foi possível carregar os decants."))
+      .catch(() => {
+        if (currentRequestId === requestId.current) setError("Não foi possível carregar os decants.");
+      })
       .finally(() => {
         if (currentRequestId === requestId.current) setIsLoading(false);
       });

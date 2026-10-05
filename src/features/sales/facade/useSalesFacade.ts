@@ -1,7 +1,8 @@
-import { calculateSaleTotals, createSaleCustomer, fetchSalesData, registerSale, salesErrorMessage, validateSale } from "../services/sales.service";
+import { calculateSaleTotals, createSaleCustomer, fetchSalesData, registerSale, salesErrorMessage, searchSaleItems, validateSale } from "../services/sales.service";
 import { useForm } from "react-hook-form";
 import type { SalesFormValues, CatalogItem, CartItem, SaleCustomer, NovoClienteModalFormValues } from "../models/sales.models";
 import { useEffect, useRef, useState } from "react";
+import { useDebouncedValue } from "../../../shared/hooks/useDebouncedValue";
 export function useSalesFacade() {
   const [products, setProducts] = useState<CatalogItem[]>([]);
   const [clientes, setClientes] = useState<SaleCustomer[]>([]);
@@ -30,6 +31,28 @@ export function useSalesFacade() {
   const [clienteOpen, setClienteOpen] = useState(false);
   const [itemSearch, setItemSearch] = useState("");
   const [itemOpen, setItemOpen] = useState(false);
+  const [itemResults, setItemResults] = useState<{ query: string; items: CatalogItem[] } | null>(null);
+  const [itemSearchLoading, setItemSearchLoading] = useState(false);
+  const [itemSearchError, setItemSearchError] = useState("");
+  const debouncedItemSearch = useDebouncedValue(itemSearch.trim());
+  useEffect(() => {
+    let active = true;
+    setItemSearchError("");
+    if (!debouncedItemSearch) {
+      setItemResults(null);
+      setItemSearchLoading(false);
+      return;
+    }
+    setItemSearchLoading(true);
+    searchSaleItems(debouncedItemSearch, products).then(items => {
+      if (active) setItemResults({ query: debouncedItemSearch, items });
+    }).catch(error => {
+      if (active) setItemSearchError(salesErrorMessage(error, "Não foi possível buscar os itens da venda."));
+    }).finally(() => {
+      if (active) setItemSearchLoading(false);
+    });
+    return () => { active = false; };
+  }, [debouncedItemSearch, products]);
   const [cart, setCart] = useState<CartItem[]>([]);
   const form = useForm<SalesFormValues>({
     defaultValues: {
@@ -62,7 +85,9 @@ export function useSalesFacade() {
     const query = clienteSearch.toLowerCase();
     return c.nome.toLowerCase().includes(query) || c.telefone.includes(query) || c.email.toLowerCase().includes(query);
   });
-  const catalogoFiltrado = products.filter(product => product.nome.toLowerCase().includes(itemSearch.toLowerCase()));
+  const catalogoFiltrado = itemResults?.query === itemSearch.trim()
+    ? itemResults.items
+    : products.filter(product => product.nome.toLowerCase().includes(itemSearch.toLowerCase()));
   const addToCart = (item: CatalogItem) => {
     setSuccess(false);
     setCart(prev => {
@@ -153,6 +178,8 @@ export function useSalesFacade() {
     setClienteOpen,
     itemSearch,
     setItemSearch,
+    itemSearchLoading: itemSearchLoading || (!!itemSearch.trim() && itemSearch.trim() !== debouncedItemSearch),
+    itemSearchError,
     itemOpen,
     setItemOpen,
     cart,

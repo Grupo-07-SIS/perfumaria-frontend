@@ -78,6 +78,27 @@ describe("useBodySplashFacade", () => {
     expect(result.current.error).toBe("");
   });
 
+  it("shows category option failures without hiding prices on mount or search", async () => {
+    const warning = "Não foi possível carregar os produtos Body Splash para vínculo.";
+    fetchBodySplashCatalogMock.mockResolvedValue({
+      page: { content: [original], number: 0, totalElements: 1, totalPages: 1 },
+      productOptions: [],
+      productOptionsError: warning,
+    });
+    const { result } = renderHook(() => useBodySplashFacade());
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+    expect(result.current.items).toEqual([original]);
+    expect(result.current.productOptions).toEqual([]);
+    expect(result.current.error).toBe(warning);
+
+    act(() => result.current.setSearch("Lavanda"));
+    await act(async () => result.current.submitSearch());
+
+    expect(result.current.items).toEqual([original]);
+    expect(result.current.error).toBe(warning);
+  });
+
   it("keeps the current backend results intact while the search text is edited", async () => {
     const { result } = renderHook(() => useBodySplashFacade());
     await waitFor(() => expect(result.current.isLoading).toBe(false));
