@@ -111,7 +111,7 @@ export function DecantsView({
                   }}>
                         <Droplets size={13} className="peract-font-color-accent" />
                       </div>
-                      <span className="text-sm font-medium peract-font-color-default">{d.perfume}</span>
+                      <span className="max-w-[18rem] truncate text-sm font-medium peract-font-color-default" title={d.perfume}>{d.perfume}</span>
                     </div>
                   </PeractTableCell>
                   {/* Sem destaque de cor em nenhuma coluna de preço */}
@@ -151,7 +151,7 @@ export function DecantsView({
             }}>
                   <Droplets size={15} className="peract-font-color-accent" />
                 </div>
-                <p className="text-sm font-medium peract-font-color-default">{d.perfume}</p>
+                <p className="min-w-0 truncate text-sm font-medium peract-font-color-default" title={d.perfume}>{d.perfume}</p>
               </div>
               <div className="flex items-center gap-1">
                 <PeractButtonPrimitive onClick={() => setEditDecant(d)} className="p-1.5 rounded-lg peract-font-color-muted hover:bg-gray-100" variant="plain" size="plain" aria-label="Editar">

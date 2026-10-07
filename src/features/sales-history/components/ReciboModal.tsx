@@ -38,11 +38,11 @@ export function ReciboModal({
           </div>
 
           <div className="grid grid-cols-2 gap-3 mb-4">
-            <div className="p-3 rounded-lg peract-bg-accent-soft">
+            <div className="p-3 rounded-lg peract-bg-accent-soft min-w-0">
               <p className="text-xs peract-font-color-muted mb-0.5">Cliente</p>
               <p className="text-sm font-medium peract-font-color-default">{venda.cliente || "Não vinculado"}</p>
             </div>
-            <div className="p-3 rounded-lg peract-bg-accent-soft">
+            <div className="p-3 rounded-lg peract-bg-accent-soft min-w-0">
               <p className="text-xs peract-font-color-muted mb-0.5">Pagamento</p>
               <p className="text-sm font-medium peract-font-color-default">{venda.pagamento}</p>
             </div>
@@ -54,13 +54,13 @@ export function ReciboModal({
               <div className="grid grid-cols-12 gap-2 px-3 py-2 text-xs peract-font-color-muted border-b border-gray-50" style={{
             background: "#F9F9F9"
           }}>
-                <div className="col-span-6">Item</div>
+                <div className="col-span-6 min-w-0">Item</div>
                 <div className="col-span-2 text-center">Qtd.</div>
                 <div className="col-span-2 text-right">Unit.</div>
                 <div className="col-span-2 text-right">Total</div>
               </div>
               {venda.itens.filter(i => i.quantidade > 0).map((item, idx) => <div key={idx} className="grid grid-cols-12 gap-2 px-3 py-2.5 border-b border-gray-50 last:border-0">
-                  <div className="col-span-6">
+                  <div className="col-span-6 min-w-0">
                     <p className="text-xs font-medium peract-font-color-default leading-tight">{item.nome}</p>
                     {item.volume && <span className="text-xs peract-font-color-muted">{item.volume}</span>}
                   </div>

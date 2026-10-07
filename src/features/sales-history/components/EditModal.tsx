@@ -87,7 +87,7 @@ export function EditModal({
               </div>
               <div className="divide-y divide-gray-50 max-h-36 overflow-y-auto">
                 {venda.itens.filter(i => i.quantidade > 0).map((item, idx) => <div key={idx} className="flex items-center justify-between px-3 py-2">
-                    <div>
+                    <div className="min-w-0">
                       <p className="text-xs text-gray-700">{item.nome} {item.volume && <span className="peract-font-color-muted">({item.volume})</span>}</p>
                       <p className="text-xs peract-font-color-muted">×{item.quantidade}</p>
                     </div>

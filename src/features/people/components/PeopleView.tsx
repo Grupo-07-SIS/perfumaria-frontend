@@ -233,7 +233,7 @@ export function PeopleView({
                           <div className="w-7 h-7 rounded-full flex items-center justify-center text-white peract-bg-accent">
                             <User size={13} />
                           </div>
-                          <span className="text-sm font-medium peract-font-color-default">{f.nome}</span>
+                          <span className="max-w-[16rem] truncate text-sm font-medium peract-font-color-default" title={f.nome}>{f.nome}</span>
                         </div>
                       </PeractTableCell>
                       <PeractTableCell className="px-4 py-3">
@@ -241,7 +241,7 @@ export function PeopleView({
                           {f.cargo}
                         </span>
                       </PeractTableCell>
-                      <PeractTableCell className="px-4 py-3 text-sm text-gray-600">{f.email}</PeractTableCell>
+                      <PeractTableCell className="max-w-[16rem] truncate px-4 py-3 text-sm text-gray-600" title={f.email}>{f.email}</PeractTableCell>
                       <PeractTableCell className="px-4 py-3">
                         <span aria-label="Senha protegida" className="text-xs peract-font-color-muted font-mono bg-gray-50 px-2 py-0.5 rounded">••••••</span>
                       </PeractTableCell>
@@ -271,7 +271,7 @@ export function PeopleView({
                     <User size={16} />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium peract-font-color-default">{f.nome}</p>
+                    <p className="truncate text-sm font-medium peract-font-color-default">{f.nome}</p>
                     <span className={`text-xs px-2 py-0.5 rounded-full ${f.cargo === "Administrador" ? "bg-purple-100 text-purple-700" : "bg-stone-100 text-stone-600"}`}>{f.cargo}</span>
                   </div>
                   <CardActions onEdit={() => setModal({
@@ -280,7 +280,7 @@ export function PeopleView({
             })} onDelete={() => requestEmployeeDeletion(f)} />
                 </div>
                 <div className="mt-2 flex flex-col gap-1">
-                  <div className="flex items-center gap-2 text-xs peract-font-color-muted"><Mail size={12} className="shrink-0" />{f.email}</div>
+                  <div className="flex items-center gap-2 text-xs peract-font-color-muted"><Mail size={12} className="shrink-0" /><span className="truncate">{f.email}</span></div>
                 </div>
               </PeractCard>)}
           </div>

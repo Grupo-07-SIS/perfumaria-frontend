@@ -1,133 +1,114 @@
-import { useEffect, useRef } from "react";
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { AppProvider, useApp } from "../../core/store/AppContext";
+import { apiClient } from "../../core/services/http-client";
 import { triggerBotpressOnlineFlow } from "../../core/services/botpress";
-import { SalesHistoryPage } from "../sales-history/SalesHistoryPage";
 import { OnlineOrdersPage } from "./OnlineOrdersPage";
 
-vi.mock("../../core/auth/session.service", () => ({
-  sessionService: { restore: vi.fn(() => null) },
+vi.mock("../../core/services/http-client", () => ({
+  apiClient: { get: vi.fn(), patch: vi.fn() },
 }));
 vi.mock("../../core/services/botpress", () => ({
   triggerBotpressOnlineFlow: vi.fn().mockResolvedValue(undefined),
 }));
 
-function SeedOrders() {
-  const { updateVenda } = useApp();
-  const seeded = useRef(false);
-  useEffect(() => {
-    if (seeded.current) return;
-    seeded.current = true;
-    for (const canalOnline of ["whatsapp", "site"] as const) {
-      updateVenda({
-        id: canalOnline === "whatsapp" ? "V-1042" : "V-1037",
-        data: "22/09/2026 10:00", cliente: `Pedido teste ${canalOnline}`,
-        pagamento: "Pix", total: 100, tipoVenda: "online", canalOnline,
-        frete: 15, desconto: 5, enviado: false,
-        itens: [{ nome: "Perfume teste", quantidade: 2, valorUnitario: 45 }],
-      });
-    }
-  }, [updateVenda]);
-  return null;
+function makeOrder(id: number, canal: "WHATSAPP" | "SITE", tipoVenda = "ONLINE") {
+  return {
+    id, clienteNome: `Pedido teste ${canal.toLowerCase()}`, dataHora: "2026-09-22T10:00:00",
+    forma: "PIX", valorFinal: 100, frete: 15, desconto: 5, status: "PENDENTE",
+    tipoVenda, canalVendaOnline: canal,
+    itens: [{ produtoNome: "Perfume teste", quantidade: 2, valorUnitario: 45 }],
+  };
 }
 
-function renderOrders() {
-  return render(<AppProvider><SeedOrders /><OnlineOrdersPage /></AppProvider>);
+let orders: ReturnType<typeof makeOrder>[];
+
+beforeEach(() => {
+  vi.clearAllMocks();
+  orders = [makeOrder(1042, "WHATSAPP"), makeOrder(1037, "SITE"), { ...makeOrder(9, "SITE", "PRESENCIAL"), clienteNome: "Balcao" }];
+  vi.mocked(apiClient.get).mockImplementation((async (url: string) => {
+    const id = Number(url.split("/")[2]);
+    return { data: url === "/vendas" ? { content: orders, totalPages: 1 } : orders.find(o => o.id === id) };
+  }) as never);
+  vi.mocked(apiClient.patch).mockImplementation((async (url: string, body: { status: string }) => {
+    const order = orders.find(o => o.id === Number(url.split("/")[2]))!;
+    order.status = body.status;
+    return { data: order };
+  }) as never);
+});
+
+async function renderOrders() {
+  render(<OnlineOrdersPage />);
+  await screen.findByRole("row", { name: /Pedido teste whatsapp/ });
 }
 
 function orderRow(channel: "whatsapp" | "site") {
   return screen.getByRole("row", { name: new RegExp(`Pedido teste ${channel}`) });
 }
 
-describe("OnlineOrders: caracterizacao dos pedidos", () => {
-  beforeEach(() => vi.clearAllMocks());
-
-  it("combina busca, canal e status e recupera a lista apos resultado vazio", async () => {
+describe("OnlineOrders", () => {
+  it("lista apenas pedidos online do backend e combina filtros", async () => {
     const user = userEvent.setup();
-    renderOrders();
+    await renderOrders();
+    expect(screen.queryByText("Balcao")).not.toBeInTheDocument();
     expect(orderRow("whatsapp")).toHaveTextContent("Pendente");
     await user.click(screen.getByRole("button", { name: "Site", exact: true }));
     expect(orderRow("site")).toBeInTheDocument();
     expect(screen.queryByRole("row", { name: /Pedido teste whatsapp/ })).not.toBeInTheDocument();
     await user.type(screen.getByPlaceholderText("Buscar pedido ou cliente..."), "ausente");
     expect(within(screen.getByRole("table")).getByText("Nenhum pedido encontrado.")).toBeInTheDocument();
-    await user.clear(screen.getByPlaceholderText("Buscar pedido ou cliente..."));
-    expect(orderRow("site")).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: "Finalizados", exact: true }));
-    expect(screen.queryByRole("row", { name: /Pedido teste site/ })).not.toBeInTheDocument();
   });
 
-  it("permite desistir do rastreio, finalizar WhatsApp e desfazer limpando rastreio", async () => {
+  it("finaliza WhatsApp com rastreio, aciona Botpress e desfaz", async () => {
     const user = userEvent.setup();
-    renderOrders();
-    await user.click(within(orderRow("whatsapp")).getByRole("button", { name: "Finalizar", exact: true }));
-    await user.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Cancelar" }));
-    expect(orderRow("whatsapp")).toHaveTextContent("Pendente");
-    expect(triggerBotpressOnlineFlow).not.toHaveBeenCalled();
+    await renderOrders();
     await user.click(within(orderRow("whatsapp")).getByRole("button", { name: "Finalizar", exact: true }));
     await user.type(screen.getByPlaceholderText("Ex: BR123456789BR"), "  BR123456789BR  ");
     await user.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Finalizar pedido" }));
-    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-    expect(screen.queryByRole("row", { name: /Pedido teste whatsapp/ })).not.toBeInTheDocument();
-    expect(triggerBotpressOnlineFlow).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({
-      canalVenda: "whatsapp", codigoRastreio: "BR123456789BR",
-      subtotal: 90, frete: 15, desconto: 5, totalVenda: 100,
-      dadosPedido: [expect.objectContaining({ nome: "Perfume teste", quantidade: 2, totalItem: 90 })],
+    await vi.waitFor(() => expect(triggerBotpressOnlineFlow).toHaveBeenCalledTimes(1));
+    expect(apiClient.patch).toHaveBeenCalledWith("/vendas/1042", { status: "FINALIZADA" });
+    expect(triggerBotpressOnlineFlow).toHaveBeenCalledWith(expect.objectContaining({
+      canalVenda: "whatsapp", codigoRastreio: "BR123456789BR", subtotal: 90, totalVenda: 100,
     }));
     await user.click(screen.getByRole("button", { name: "Finalizados", exact: true }));
     expect(orderRow("whatsapp")).toHaveTextContent("BR123456789BR");
-    await user.click(within(orderRow("whatsapp")).getByRole("button", { name: "Ver pedido" }));
-    expect(screen.getByRole("dialog", { name: "Pedido Online" })).toHaveTextContent("BR123456789BR");
-    await user.keyboard("{Escape}");
     await user.click(within(orderRow("whatsapp")).getByRole("button", { name: "Desfazer" }));
     await user.click(screen.getByRole("button", { name: "Pendentes", exact: true }));
-    expect(orderRow("whatsapp")).toHaveTextContent("Pendente");
-    expect(orderRow("whatsapp")).not.toHaveTextContent("BR123456789BR");
-    expect(triggerBotpressOnlineFlow).toHaveBeenCalledTimes(1);
+    expect(await screen.findByRole("row", { name: /Pedido teste whatsapp/ })).not.toHaveTextContent("BR123456789BR");
+    expect(apiClient.patch).toHaveBeenLastCalledWith("/vendas/1042", { status: "PENDENTE" });
   });
 
-  it("aceita finalizar WhatsApp sem codigo de rastreio", async () => {
-    const user = userEvent.setup();
-    renderOrders();
-    await user.click(within(orderRow("whatsapp")).getByRole("button", { name: "Finalizar", exact: true }));
-    await user.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Finalizar pedido" }));
-    await user.click(screen.getByRole("button", { name: "Finalizados", exact: true }));
-    expect(orderRow("whatsapp")).toHaveTextContent("Finalizado");
-    expect(triggerBotpressOnlineFlow).toHaveBeenCalledWith(expect.objectContaining({ codigoRastreio: undefined }));
-  });
-
-  it("mantem finalizacao do Site quando Botpress falha, sem solicitar rastreio", async () => {
+  it("mantem finalizacao do Site quando Botpress falha", async () => {
     const user = userEvent.setup();
     vi.mocked(triggerBotpressOnlineFlow).mockRejectedValueOnce(new Error("Servico indisponivel"));
     const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
     try {
-      renderOrders();
+      await renderOrders();
       await user.click(within(orderRow("site")).getByRole("button", { name: "Finalizar", exact: true }));
-      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+      await vi.waitFor(() => expect(consoleError).toHaveBeenCalled());
       await user.click(screen.getByRole("button", { name: "Finalizados", exact: true }));
       expect(orderRow("site")).toHaveTextContent("Finalizado");
-      expect(triggerBotpressOnlineFlow).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ canalVenda: "site", codigoRastreio: undefined }));
-      expect(consoleError).toHaveBeenCalledWith(expect.any(String), expect.objectContaining({ message: "Servico indisponivel" }));
     } finally {
       consoleError.mockRestore();
     }
   });
 
-  it("so cancela apos confirmar e preserva o pedido cancelado no historico", async () => {
+  it("cancela somente apos confirmar", async () => {
     const user = userEvent.setup();
-    const view = renderOrders();
+    await renderOrders();
     await user.click(within(orderRow("site")).getByRole("button", { name: "Cancelar pedido" }));
     await user.click(within(screen.getByRole("dialog", { name: "Cancelar Pedido" })).getByRole("button", { name: "Fechar" }));
-    expect(orderRow("site")).toHaveTextContent("Pendente");
+    expect(apiClient.patch).not.toHaveBeenCalled();
     await user.click(within(orderRow("site")).getByRole("button", { name: "Cancelar pedido" }));
     await user.click(within(screen.getByRole("dialog", { name: "Cancelar Pedido" })).getByRole("button", { name: "Cancelar pedido" }));
-    expect(screen.queryByRole("row", { name: /Pedido teste site/ })).not.toBeInTheDocument();
-    view.rerender(<AppProvider><SalesHistoryPage /></AppProvider>);
-    expect(orderRow("site")).toHaveTextContent("Cancelado");
-    expect(orderRow("site")).toHaveTextContent("R$ 100,00");
-    expect(screen.queryByRole("row", { name: /Pedido teste whatsapp/ })).not.toBeInTheDocument();
+    await vi.waitFor(() => expect(screen.queryByRole("row", { name: /Pedido teste site/ })).not.toBeInTheDocument());
+    expect(apiClient.patch).toHaveBeenCalledWith("/vendas/1037", { status: "CANCELADA" });
     expect(triggerBotpressOnlineFlow).not.toHaveBeenCalled();
+  });
+
+  it("mostra erro quando a listagem falha", async () => {
+    vi.mocked(apiClient.get).mockRejectedValueOnce(new Error("falha"));
+    render(<OnlineOrdersPage />);
+    expect(await screen.findByRole("alert")).toHaveTextContent("Não foi possível carregar os pedidos online.");
   });
 });

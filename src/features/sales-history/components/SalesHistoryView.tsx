@@ -139,7 +139,7 @@ export function SalesHistoryView({
               return <PeractTableRow key={venda.id} className={`hover:bg-gray-50/50 transition-colors ${status === "Cancelado" ? "opacity-60" : ""}`}>
                     <PeractTableCell className="px-4 py-3"><span className="text-sm font-mono font-medium text-gray-700">{venda.id}</span></PeractTableCell>
                     <PeractTableCell className="px-4 py-3 text-sm text-gray-600">{venda.data}</PeractTableCell>
-                    <PeractTableCell className="px-4 py-3 text-sm font-medium peract-font-color-default">{venda.cliente || <span className="peract-font-color-muted italic">—</span>}</PeractTableCell>
+                    <PeractTableCell className="px-4 py-3 text-sm font-medium peract-font-color-default max-w-[16rem] truncate" title={venda.cliente}>{venda.cliente || <span className="peract-font-color-muted italic">—</span>}</PeractTableCell>
                     <PeractTableCell className="px-4 py-3"><CanalBadge venda={venda} /></PeractTableCell>
                     <PeractTableCell className="px-4 py-3"><PeractTag className="text-xs px-2 py-1 rounded-full bg-stone-100 text-stone-600">{venda.pagamento}</PeractTag></PeractTableCell>
                     <PeractTableCell className="px-4 py-3"><StatusBadge status={status} /></PeractTableCell>
@@ -178,7 +178,7 @@ export function SalesHistoryView({
                   {isAdmin && <PeractButtonPrimitive onClick={() => setEditVenda(venda)} className="p-1 rounded-lg peract-font-color-muted hover:bg-gray-100" variant="plain" size="plain" aria-label="Editar"><Pencil size={15} /></PeractButtonPrimitive>}
                 </div>
               </div>
-              <p className="text-sm font-medium peract-font-color-default">{venda.cliente || <span className="peract-font-color-muted italic">Sem cliente</span>}</p>
+              <p className="text-sm font-medium peract-font-color-default truncate" title={venda.cliente}>{venda.cliente || <span className="peract-font-color-muted italic">Sem cliente</span>}</p>
               <div className="flex items-center gap-2 mt-1 mb-2 flex-wrap">
                 <CanalBadge venda={venda} />
                 <PeractTag className="text-xs px-2 py-0.5 rounded-full bg-stone-100 text-stone-600">{venda.pagamento}</PeractTag>
