@@ -38,6 +38,7 @@ export function ClienteModal({
         </div>
         <div className="p-4 flex flex-col gap-4">
           {success && <div className="flex items-center gap-2 px-3 py-2 bg-green-50 border border-green-200 rounded-lg text-green-700 text-sm"><CheckCircle size={16} /> Salvo!</div>}
+          {errors.form && <p role="alert" className="text-sm text-red-600">{errors.form}</p>}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <PeractField>
               <PeractLabel className="text-sm text-gray-700 block mb-1.5">Nome completo <span className="text-red-500">*</span></PeractLabel>

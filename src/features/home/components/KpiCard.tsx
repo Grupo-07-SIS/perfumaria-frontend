@@ -43,7 +43,7 @@ export function KpiCard({
           {variacao !== undefined && <div className="flex items-center gap-1">
               {variacao >= 0 ? <TrendingUp size={12} className="text-green-500 shrink-0" /> : <TrendingDown size={12} className="text-red-500 shrink-0" />}
               <span className={`text-xs ${variacao >= 0 ? "text-green-600" : "text-red-500"}`}>
-                {variacao >= 0 ? "+" : ""}{variacao}% vs anterior
+                {variacao >= 0 ? "+" : ""}{variacao.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}% vs anterior
               </span>
             </div>}
           {sub && variacao === undefined && !value2 && <p className="text-xs peract-font-color-muted">{sub}</p>}

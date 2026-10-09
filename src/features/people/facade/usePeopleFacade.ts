@@ -1,5 +1,5 @@
 import { createPeopleTabs } from "../config/people.presentation";
-import { buildSearchParams, selectPeople } from "../services/people.service";
+import { buildSearchParams, peopleErrorMessage, selectPeople } from "../services/people.service";
 import { usePeopleRepository } from "../repository/people.repository";
 import { useEffect, useRef, useState } from "react";
 import { useDebouncedValue } from "../../../shared/hooks/useDebouncedValue";
@@ -18,6 +18,9 @@ export function usePeopleFacade() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
   const isAdmin = currentUser?.cargo === "Administrador";
+  const funcionariosVisiveis = currentUser
+    ? funcionarios.filter(funcionario => funcionario.id !== currentUser.id && funcionario.email.toLowerCase() !== currentUser.email.toLowerCase())
+    : funcionarios;
   const [aba, setAba] = useState<Aba>("clientes");
   const [search, setSearch] = useState("");
   const [submittedSearch, setSubmittedSearch] = useState("");
@@ -42,7 +45,7 @@ export function usePeopleFacade() {
   const [reactivateTarget, setReactivateTarget] = useState<Cliente | null>(null);
   const clientesAtivos = clientes.filter(c => c.ativo !== false);
   const clientesInativos = clientes.filter(c => c.ativo === false);
-  const allTabs = createPeopleTabs(clientesAtivos.length, fornecedores.length, funcionarios.length);
+  const allTabs = createPeopleTabs(clientesAtivos.length, fornecedores.length, funcionariosVisiveis.length);
   const tabs = allTabs.filter(t => isAdmin || !t.adminOnly);
   const startListRequest = (tab: Aba) => ++listRequestIds.current[tab];
   const isLatestListRequest = (tab: Aba, requestId: number) => listRequestIds.current[tab] === requestId;
@@ -59,7 +62,7 @@ export function usePeopleFacade() {
         if (isLatestListRequest("fornecedores", requestIds.fornecedores)) setFornecedores(loadedFornecedores);
         if (isLatestListRequest("funcionarios", requestIds.funcionarios)) setFuncionarios(loadedFuncionarios);
       })
-      .catch(loadError => setError(loadError instanceof Error ? loadError.message : "Não foi possível carregar pessoas."))
+      .catch(loadError => setError(peopleErrorMessage(loadError, "Não foi possível carregar pessoas. Tente novamente.")))
       .finally(() => setIsLoading(false));
   }, []);
 
@@ -79,7 +82,7 @@ export function usePeopleFacade() {
         if (isLatestListRequest(tab, requestId)) setFuncionarios(loaded);
       }
     } catch (loadError) {
-      if (isLatestListRequest(tab, requestId)) setError(loadError instanceof Error ? loadError.message : "Não foi possível buscar pessoas.");
+      if (isLatestListRequest(tab, requestId)) setError(peopleErrorMessage(loadError, "Não foi possível buscar pessoas. Tente novamente."));
     }
   };
 
@@ -113,7 +116,6 @@ export function usePeopleFacade() {
         : [...prev, saved]);
       setModal(null);
     } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : "Não foi possível salvar o cliente.");
       throw requestError;
     }
   };
@@ -127,7 +129,6 @@ export function usePeopleFacade() {
         : [...prev, saved]);
       setModal(null);
     } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : "Não foi possível salvar o fornecedor.");
       throw requestError;
     }
   };
@@ -141,7 +142,6 @@ export function usePeopleFacade() {
         : [...prev, saved]);
       setModal(null);
     } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : "Não foi possível salvar o funcionário.");
       throw requestError;
     }
   };
@@ -153,7 +153,7 @@ export function usePeopleFacade() {
   } = selectPeople({
     clientes,
     fornecedores,
-    funcionarios,
+    funcionarios: funcionariosVisiveis,
     statusFiltro
   });
   const openNew = () => {
@@ -175,7 +175,7 @@ export function usePeopleFacade() {
         setFornecedores(prev => prev.filter(fornecedor => fornecedor.id !== deletedId));
         setDeleteTarget(null);
       } catch (requestError) {
-        setError(requestError instanceof Error ? requestError.message : "Não foi possível excluir o fornecedor.");
+        setError(peopleErrorMessage(requestError, "Não foi possível excluir o fornecedor. Tente novamente."));
         throw requestError;
       }
     }
@@ -190,7 +190,7 @@ export function usePeopleFacade() {
         setClientes(prev => prev.map(cliente => cliente.id === deletedId ? { ...cliente, ativo: false } : cliente));
         setDeleteTarget(null);
       } catch (requestError) {
-        setError(requestError instanceof Error ? requestError.message : "Não foi possível excluir o cliente.");
+        setError(peopleErrorMessage(requestError, "Não foi possível excluir o cliente. Tente novamente."));
         throw requestError;
       }
     }
@@ -204,8 +204,8 @@ export function usePeopleFacade() {
         setFuncionarios(prev => prev.filter(funcionario => funcionario.id !== deletedId));
         setDeleteTarget(null);
       } catch (requestError) {
-        setError(requestError instanceof Error ? requestError.message : "Não foi possível excluir o funcionário.");
-        throw requestError;
+        setError(peopleErrorMessage(requestError, "Não foi possível excluir o funcionário. Tente novamente."));
+        setDeleteTarget(null);
       }
     }
   });
@@ -217,7 +217,7 @@ export function usePeopleFacade() {
       setClientes(prev => prev.map(cliente => cliente.id === reativado.id ? reativado : cliente));
       setReactivateTarget(null);
     } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : "Não foi possível reativar o cliente.");
+      setError(peopleErrorMessage(requestError, "Não foi possível reativar o cliente. Tente novamente."));
     }
   };
   return {

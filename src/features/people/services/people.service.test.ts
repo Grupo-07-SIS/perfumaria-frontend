@@ -1,9 +1,29 @@
 import { describe, expect, it } from "vitest";
-import { buildSearchParams, selectPeople, validateCliente, validateFornecedor } from "./people.service";
+import { buildSearchParams, peopleErrorMessage, selectPeople, validateCliente, validateFornecedor } from "./people.service";
 
 const endereco = { logradouro: "", numero: "", cep: "", bairro: "", cidade: "", uf: "" };
 
 describe("people.service", () => {
+  it("traduz conflito de e-mail do funcionário para orientação no campo", () => {
+    expect(peopleErrorMessage(new Error("PEOPLE_EMPLOYEES_CREATE_FAILED:409"), "Falha ao salvar.")).toBe(
+      "Este e-mail já está cadastrado. Informe outro e-mail."
+    );
+  });
+
+  it.each([
+    ["PEOPLE_CLIENTS_CREATE_FAILED:400", "Confira os dados informados e corrija os campos destacados."],
+    ["PEOPLE_CLIENTS_CREATE_FAILED:401", "Sua sessão expirou. Entre novamente para continuar."],
+    ["PEOPLE_CLIENTS_CREATE_FAILED:403", "Você não tem permissão para realizar esta operação."],
+    ["PEOPLE_CLIENTS_CREATE_FAILED:404", "O registro não foi encontrado. Atualize a lista e tente novamente."],
+    ["PEOPLE_CLIENTS_CREATE_FAILED:503", "O servidor está temporariamente indisponível. Tente novamente em instantes."],
+  ])("não mostra código HTTP para %s", (technicalError, expected) => {
+    expect(peopleErrorMessage(new Error(technicalError), "Falha ao salvar.")).toBe(expected);
+  });
+
+  it("preserva detalhe de validação fornecido pelo backend", () => {
+    expect(peopleErrorMessage(new Error("PEOPLE_CLIENTS_CREATE_FAILED:400|Telefone inválido"), "Falha ao salvar.")).toBe("Telefone inválido");
+  });
+
   it("monta params de busca omitindo texto vazio", () => {
     expect(buildSearchParams("Frascos")).toEqual({ busca: "Frascos" });
     expect(buildSearchParams("")).toEqual({});

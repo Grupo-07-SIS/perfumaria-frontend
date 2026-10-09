@@ -12,6 +12,27 @@
 }
 
 @layer components {
+  [data-slot="popover-content"],
+  [data-slot="dropdown-menu-content"],
+  [data-slot="context-menu-content"],
+  [data-slot="hover-card-content"],
+  [data-slot="tooltip-content"] {
+    animation-duration: 160ms;
+    animation-timing-function: cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+
+  [data-slot="dialog-overlay"],
+  [data-slot="alert-dialog-overlay"] {
+    animation-duration: 150ms;
+    animation-timing-function: ease-out;
+  }
+
+  [data-slot="dialog-content"],
+  [data-slot="alert-dialog-content"] {
+    animation-duration: 180ms;
+    animation-timing-function: cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+
   .peract-popup-layer {
     z-index: var(--peract-layer-popup);
   }
@@ -35,6 +56,14 @@
     background: rgb(0 0 0 / 50%);
   }
 
+  .peract-modal-overlay[data-state="open"] {
+    animation: peract-overlay-in 150ms ease-out both;
+  }
+
+  .peract-modal-overlay[data-state="closed"] {
+    animation: peract-overlay-out 120ms ease-in both;
+  }
+
   .peract-modal-surface {
     position: fixed;
     top: 50%;
@@ -47,6 +76,18 @@
     overflow-y: auto;
     border-radius: var(--radius);
     box-shadow: 0 24px 64px rgb(0 0 0 / 20%);
+  }
+
+  .peract-modal-surface[data-state="open"] {
+    animation: peract-modal-in 180ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  }
+
+  .peract-modal-surface[data-state="closed"] {
+    animation: peract-modal-out 130ms ease-in both;
+  }
+
+  .peract-feedback-enter {
+    animation: peract-feedback-in 180ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
   }
 
   .peract-field-control {
@@ -280,5 +321,47 @@
 
   .peract-interactive-hover:hover {
     background-color: var(--sidebar-accent);
+  }
+}
+
+@keyframes peract-overlay-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes peract-overlay-out {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+@keyframes peract-modal-in {
+  from { opacity: 0; transform: translate(-50%, -48%) scale(0.985); }
+  to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+
+@keyframes peract-modal-out {
+  from { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  to { opacity: 0; transform: translate(-50%, -48%) scale(0.985); }
+}
+
+@keyframes peract-feedback-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .peract-modal-overlay,
+  .peract-modal-surface,
+  .peract-feedback-enter,
+  [data-slot="popover-content"],
+  [data-slot="dropdown-menu-content"],
+  [data-slot="context-menu-content"],
+  [data-slot="hover-card-content"],
+  [data-slot="tooltip-content"],
+  [data-slot="dialog-overlay"],
+  [data-slot="dialog-content"],
+  [data-slot="alert-dialog-overlay"],
+  [data-slot="alert-dialog-content"] {
+    animation-duration: 1ms !important;
   }
 }

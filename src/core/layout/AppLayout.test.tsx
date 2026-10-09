@@ -22,7 +22,7 @@ function ProtectedPage({ label }: { label: string }) {
 function LayoutRoutes() {
   return <Routes>
         <Route element={<AppLayout />} path="/">
-          <Route element={<div>Inicio</div>} index />
+          <Route element={<div data-tour="tour-home-heading">Inicio</div>} index />
           <Route element={<ProtectedPage label="Produtos" />} path="estoque/produtos" />
           <Route element={<ProtectedPage label="Categorias" />} path="estoque/categorias" />
           <Route element={<div>Decants</div>} path="decants" />
@@ -83,10 +83,13 @@ describe("AppLayout", () => {
 
     expect(screen.queryByText("Gestão de Pessoas")).not.toBeInTheDocument();
     expect(screen.queryByText("Configurações")).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Registrar Venda" })).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Histórico de Vendas" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Pedidos Online" })).not.toBeInTheDocument();
     expect(screen.getByText(/Você está logado como/)).toBeInTheDocument();
   });
 
-  it.each(["/clientes", "/clientes/", "/configuracoes", "/estoque/produtos", "/estoque/categorias"])("redirects employees away from %s without mounting the protected page", async path => {
+      it.each(["/clientes", "/clientes/", "/configuracoes", "/estoque/produtos", "/estoque/categorias", "/vendas/historico", "/vendas/pedidos"]) ("redirects employees away from %s without mounting the protected page", async path => {
     useAppMock.mockReturnValue({
       currentUser: { cargo: "Funcionário", nome: "Funcionário", id: "employee" },
       notifications: [], logout: vi.fn(),
@@ -96,7 +99,7 @@ describe("AppLayout", () => {
     expect(protectedPageRender).not.toHaveBeenCalled();
   });
 
-  it.each(["/decants", "/bodysplash", "/vendas/registrar", "/vendas/historico", "/vendas/pedidos"])("keeps the permitted employee route %s available", path => {
+    it.each(["/decants", "/bodysplash", "/vendas/registrar"])("keeps the permitted employee route %s available", path => {
     useAppMock.mockReturnValue({
       currentUser: { cargo: "Funcionário", nome: "Funcionário", id: "employee" },
       notifications: [], logout: vi.fn(),
@@ -167,5 +170,34 @@ describe("AppLayout", () => {
     expect(markAllRead).toHaveBeenCalled();
     expect(dismissNotification).toHaveBeenCalledWith(1);
     expect(logout).toHaveBeenCalled();
+  });
+
+  it.each(["Administrador", "Funcionário"] as const)("offers the guided tour to %s", async cargo => {
+    useAppMock.mockReturnValue({
+      currentUser: { cargo, email: "user@example.test", nome: "Usuário", id: cargo },
+      dismissNotification: vi.fn(),
+      logout: vi.fn(),
+      markAllRead: vi.fn(),
+      notifications: [],
+    });
+    renderLayout("/vendas/registrar");
+
+    fireEvent.click(screen.getByRole("button", { name: "Escolher tour do sistema" }));
+    const tourMenu = within(screen.getByRole("dialog"));
+    if (cargo === "Funcionário") {
+      expect(tourMenu.queryByRole("button", { name: /^Estoque/ })).not.toBeInTheDocument();
+      expect(tourMenu.queryByRole("button", { name: /^Gestão de Pessoas/ })).not.toBeInTheDocument();
+      expect(tourMenu.queryByRole("button", { name: /^Configurações/ })).not.toBeInTheDocument();
+    } else {
+      expect(tourMenu.getByRole("button", { name: /^Estoque Tour completo/ })).toBeInTheDocument();
+      expect(tourMenu.getByRole("button", { name: /^Produtos/ })).toBeInTheDocument();
+      expect(tourMenu.getByRole("button", { name: /^Vendas Tour completo/ })).toBeInTheDocument();
+      expect(tourMenu.getByRole("button", { name: /^Registrar/ })).toBeInTheDocument();
+    }
+    fireEvent.click(tourMenu.getByRole("button", { name: "Tour completo" }));
+
+    expect(await screen.findByText("Este é o ponto de partida. A navegação lateral permite acessar as áreas liberadas para seu perfil.")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Finalizar tour" })).toBeInTheDocument();
+    await waitFor(() => expect(within(screen.getByRole("banner")).getByText("Início")).toBeInTheDocument());
   });
 });

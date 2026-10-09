@@ -48,7 +48,7 @@ export function SalesHistoryView({
       {editVenda && <EditModal venda={editVenda} onClose={() => setEditVenda(null)} onSave={handleSaveEdit} />}
 
       <div className="mb-5">
-        <h1 className="peract-font-color-default">Histórico de Vendas</h1>
+        <h1 data-tour="tour-history-heading" className="peract-font-color-default">Histórico de Vendas</h1>
         <nav className="text-xs peract-font-color-muted mt-0.5">Vendas &rsaquo; <span className="peract-font-color-accent">Histórico</span></nav>
       </div>
 
@@ -77,7 +77,7 @@ export function SalesHistoryView({
       </div>
 
       {/* Filters */}
-      <PeractCard className="peract-bg-card rounded-xl border peract-border-color p-3 mb-4 flex flex-col sm:flex-row sm:items-center gap-3 shadow-sm flex-wrap">
+      <PeractCard data-tour="tour-history-filters" className="peract-bg-card rounded-xl border peract-border-color p-3 mb-4 flex flex-col sm:flex-row sm:items-center gap-3 shadow-sm flex-wrap">
         <div className="flex h-12 items-center gap-2 flex-1 min-w-[180px] border peract-border-color rounded-lg px-3 py-1">
           <Search size={15} className="peract-font-color-muted shrink-0" />
           <PeractInputControl type="text" placeholder="Buscar venda ou cliente..." value={search} onChange={e => setSearch(e.target.value)} className="text-sm outline-none flex-1 peract-font-color-default placeholder:text-gray-400" />
@@ -123,6 +123,7 @@ export function SalesHistoryView({
       </PeractCard>
 
       {/* Table desktop */}
+      <div data-tour="tour-history-results">
       <PeractCard className="hidden md:block peract-bg-card rounded-xl border peract-border-color shadow-sm">
         <div className="overflow-auto max-h-[520px]">
           <PeractTableRoot className="w-full">
@@ -199,6 +200,7 @@ export function SalesHistoryView({
           <p className="text-xs peract-font-color-muted">Exibindo {firstSaleOnPage} a {lastSaleOnPage} de {filtered.length} venda(s)</p>
           <PeractPagination currentPage={currentPage} onPageChange={setCurrentPage} totalPages={totalPages} />
         </div>
+      </div>
       </div>
     </div>;
 }

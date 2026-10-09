@@ -1,10 +1,36 @@
 import type { Cliente, ClienteModalFormValues, Endereco, Fornecedor, FornecedorModalFormValues, Funcionario, FuncionarioModalFormValues, PeopleListParams, StatusFiltro } from "../models/people.models";
 import { onlyDigits } from "../../../shared/utils/digits";
+import axios from "axios";
 
 const CNPJ_DIGITS = 14;
 const CEP_DIGITS = 8;
 const TELEFONE_DIGITS = [10, 11];
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+export function peopleErrorMessage(error: unknown, fallback: string) {
+  const message = error instanceof Error ? error.message : "";
+  const technicalError = message.match(/^([A-Z][A-Z0-9_]*):(\d{3}|unknown)(?:\|(.+))?$/);
+  const response = axios.isAxiosError(error) ? error.response : undefined;
+  const status = response?.status ?? (technicalError?.[2] && technicalError[2] !== "unknown" ? Number(technicalError[2]) : undefined);
+  const operation = technicalError?.[1] ?? "";
+  const responseMessage = (response?.data as { message?: unknown } | undefined)?.message;
+  const detail = typeof responseMessage === "string" ? responseMessage : technicalError?.[3];
+
+  if (status === 409 && (operation.includes("EMPLOYEES") || /e-?mail.*(cadastrad|exist)|email.*(cadastrad|exist)/i.test(detail ?? ""))) {
+    return "Este e-mail já está cadastrado. Informe outro e-mail.";
+  }
+  if ((status === 400 || status === 422) && detail) return detail;
+  if (status === 400 || status === 422) return "Confira os dados informados e corrija os campos destacados.";
+  if (status === 401) return "Sua sessão expirou. Entre novamente para continuar.";
+  if (status === 403) return "Você não tem permissão para realizar esta operação.";
+  if (status === 404) return "O registro não foi encontrado. Atualize a lista e tente novamente.";
+  if (status === 409) return "Já existe um cadastro com esses dados. Confira as informações e tente novamente.";
+  if (status !== undefined && status >= 500) return "O servidor está temporariamente indisponível. Tente novamente em instantes.";
+  if (axios.isAxiosError(error) && !error.response) return "Não foi possível conectar ao servidor. Verifique sua conexão e tente novamente.";
+  if (detail && !/exception|error|failed|\b\d{3}\b/i.test(detail)) return detail;
+  if (message && !technicalError) return message;
+  return fallback;
+}
 
 function validateOptionalTelefone(telefone: string) {
   const digits = onlyDigits(telefone);

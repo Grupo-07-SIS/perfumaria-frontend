@@ -6,13 +6,17 @@ const {
   createBodySplashMock,
   fetchBodySplashCatalogMock,
   removeBodySplashMock,
+  useAppMock,
   updateBodySplashMock,
 } = vi.hoisted(() => ({
   createBodySplashMock: vi.fn(),
   fetchBodySplashCatalogMock: vi.fn(),
   removeBodySplashMock: vi.fn(),
+  useAppMock: vi.fn(),
   updateBodySplashMock: vi.fn(),
 }));
+
+vi.mock("../../core/store/AppContext", () => ({ useApp: useAppMock }));
 
 vi.mock("./services/body-splash.service", async importOriginal => ({
   ...await importOriginal<typeof import("./services/body-splash.service")>(),
@@ -87,6 +91,7 @@ function productRow(name: string) {
 describe("BodySplash: caracterizacao do catalogo", () => {
   beforeEach(() => {
     vi.resetAllMocks();
+    useAppMock.mockReturnValue({ currentUser: { cargo: "Administrador" } });
     fetchBodySplashCatalogMock.mockResolvedValue({
       page: {
         content: initialItems.map(item => ({ ...item })),
@@ -146,6 +151,15 @@ describe("BodySplash: caracterizacao do catalogo", () => {
     expect(within(productRow("Coco & Baunilha")).getAllByRole("cell").slice(0, 6).map(cell => cell.textContent)).toEqual([
       "Coco & Baunilha", "R$ 7,50", "R$ 10,00", "R$ 12,50", "R$ 15,00", "R$ 17,50",
     ]);
+  });
+
+  it("hides price creation and maintenance controls for employees", async () => {
+    useAppMock.mockReturnValue({ currentUser: { cargo: "Funcionário" } });
+    await renderLoadedPage();
+
+    expect(screen.queryByRole("button", { name: "Cadastrar Body Splash" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Editar" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Excluir" })).not.toBeInTheDocument();
   });
 
   it("descarta uma edicao cancelada e salva apenas o preco alterado sem duplicar produto", async () => {

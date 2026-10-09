@@ -6,14 +6,30 @@ import { sessionService } from "../../core/auth/session.service";
 import { apiClient } from "../../core/services/http-client";
 import { SettingsPage } from "./SettingsPage";
 import { useSettingsFacade } from "./facade/useSettingsFacade";
+import { changeAccountPassword } from "./services/settings.service";
 
-vi.mock("../../core/auth/session.service", () => ({
-  sessionService: { restore: vi.fn(() => null) },
-}));
+vi.mock("../../core/auth/session.service", async importOriginal => {
+  const original = await importOriginal<typeof import("../../core/auth/session.service")>();
+  return {
+    ...original,
+    sessionService: { ...original.sessionService, restore: vi.fn(() => null) },
+  };
+});
 vi.mock("../../core/services/http-client", () => ({ apiClient: { get: vi.fn(), patch: vi.fn() } }));
 
 function StockValue() {
   return <span data-testid="stock-limit">{useApp().stockThresholds.critico}</span>;
+}
+
+function AccountSessionResponse(email = "admin@example.test") {
+  return {
+    data: {
+      accessToken: "updated-session-token",
+      expiresIn: 3600,
+      tokenType: "Bearer",
+      usuario: { id: "user-1", nome: "Admin", email, tipoUsuario: "Admin", idOrganizacao: 7 },
+    },
+  };
 }
 
 beforeEach(() => {
@@ -27,6 +43,16 @@ beforeEach(() => {
 });
 
 describe("Settings: caracterizacao das validacoes", () => {
+  it("converte resposta da API em uma sessão autenticada persistida", async () => {
+    vi.mocked(apiClient.patch).mockResolvedValueOnce(AccountSessionResponse());
+
+    const session = await changeAccountPassword("senha-atual", "senha-nova");
+
+    expect(session.accessToken).toBe("updated-session-token");
+    expect(session.user).toMatchObject({ email: "admin@example.test", cargo: "Administrador", idOrganizacao: 7 });
+    expect(apiClient.patch).toHaveBeenCalledWith("/auth/alterar-senha", { senhaAtual: "senha-atual", novaSenha: "senha-nova" });
+  });
+
   it("cancels success timers on unmount and replaces an earlier notification timer", async () => {
     const { result, unmount } = renderHook(() => useSettingsFacade(), { wrapper: AppProvider });
     await waitFor(() => expect(result.current.stockDisabled).toBe(false));
@@ -120,7 +146,7 @@ describe("Settings: caracterizacao das validacoes", () => {
     expect(screen.getByRole("button", { name: "Salvar configurações" })).toBeDisabled();
   });
 
-  it("validates password fields but never claims success without a backend operation", async () => {
+  it("validates and changes password through the backend, applying the renewed session", async () => {
     const user = userEvent.setup();
     render(<AppProvider><SettingsPage /></AppProvider>);
     await user.click(screen.getByRole("button", { name: "Segurança" }));
@@ -137,14 +163,29 @@ describe("Settings: caracterizacao das validacoes", () => {
     await user.type(screen.getByLabelText("Nova senha", { exact: true }), "6");
     await user.clear(screen.getByLabelText("Confirmar nova senha"));
     await user.type(screen.getByLabelText("Confirmar nova senha"), "123456");
+    vi.mocked(apiClient.patch).mockResolvedValueOnce(AccountSessionResponse());
     await user.click(screen.getByRole("button", { name: "Alterar senha", exact: true }));
-    expect(screen.getByRole("alert")).toHaveTextContent("essa operação ainda não está disponível no servidor");
-    expect(screen.queryByRole("status")).not.toBeInTheDocument();
-    expect(screen.getByLabelText("Nova senha", { exact: true })).toHaveValue("123456");
-    expect(apiClient.patch).not.toHaveBeenCalled();
+    expect(await screen.findByText("Senha alterada com sucesso.")).toBeInTheDocument();
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    expect(screen.getByLabelText("Nova senha", { exact: true })).toHaveValue("");
+    expect(apiClient.patch).toHaveBeenCalledWith("/auth/alterar-senha", { senhaAtual: "senha-teste", novaSenha: "123456" });
   });
 
-  it("validates email fields but never claims success without a backend operation", async () => {
+  it("explica quando a senha atual está incorreta", async () => {
+    const user = userEvent.setup();
+    vi.mocked(apiClient.patch).mockRejectedValueOnce({ isAxiosError: true, response: { status: 401 } });
+    render(<AppProvider><SettingsPage /></AppProvider>);
+    await user.click(screen.getByRole("button", { name: "Segurança" }));
+    await user.type(screen.getByLabelText("Senha atual", { exact: true }), "senha-incorreta");
+    await user.type(screen.getByLabelText("Nova senha", { exact: true }), "senha-nova");
+    await user.type(screen.getByLabelText("Confirmar nova senha"), "senha-nova");
+    await user.click(screen.getByRole("button", { name: "Alterar senha", exact: true }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("A senha atual está incorreta. Confira e tente novamente.");
+    expect(screen.queryByRole("status")).not.toBeInTheDocument();
+  });
+
+  it("validates and changes email through the backend, applying the renewed session", async () => {
     const user = userEvent.setup();
     render(<AppProvider><SettingsPage /></AppProvider>);
     await user.click(screen.getByRole("button", { name: "Segurança" }));
@@ -161,10 +202,26 @@ describe("Settings: caracterizacao das validacoes", () => {
     await user.clear(screen.getByPlaceholderText("novo@canalperfumado.com.br"));
     await user.type(screen.getByPlaceholderText("novo@canalperfumado.com.br"), "outro@example.test");
     await user.type(screen.getByLabelText(/Senha atual \(confirmação\)/), "senha-teste");
+    vi.mocked(apiClient.patch).mockResolvedValueOnce(AccountSessionResponse("outro@example.test"));
     await user.click(save);
-    expect(screen.getByRole("alert")).toHaveTextContent("essa operação ainda não está disponível no servidor");
+    expect(await screen.findByText("E-mail de acesso alterado com sucesso.")).toBeInTheDocument();
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    expect(screen.getByText("outro@example.test")).toBeInTheDocument();
+    expect(screen.getByPlaceholderText("novo@canalperfumado.com.br")).toHaveValue("");
+    expect(apiClient.patch).toHaveBeenCalledWith("/auth/alterar-email", { senhaAtual: "senha-teste", novoEmail: "outro@example.test" });
+  });
+
+  it("explica quando o novo e-mail já está cadastrado", async () => {
+    const user = userEvent.setup();
+    vi.mocked(apiClient.patch).mockRejectedValueOnce({ isAxiosError: true, response: { status: 409 } });
+    render(<AppProvider><SettingsPage /></AppProvider>);
+    await user.click(screen.getByRole("button", { name: "Segurança" }));
+    await user.type(screen.getByPlaceholderText("novo@canalperfumado.com.br"), "carlos@perfumaria.com");
+    await user.type(screen.getByPlaceholderText("Repita o novo e-mail"), "carlos@perfumaria.com");
+    await user.type(screen.getByLabelText(/Senha atual \(confirmação\)/), "senha-teste");
+    await user.click(screen.getByRole("button", { name: /Alterar e-mail/ }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("Este e-mail já está cadastrado. Informe outro e-mail.");
     expect(screen.queryByRole("status")).not.toBeInTheDocument();
-    expect(screen.getByPlaceholderText("novo@canalperfumado.com.br")).toHaveValue("outro@example.test");
-    expect(apiClient.patch).not.toHaveBeenCalled();
   });
 });

@@ -39,7 +39,7 @@ export function OnlineOrdersView({
       {rastreioVenda && <RastreioModal venda={rastreioVenda} onClose={() => setRastreioVenda(null)} onConfirm={confirmarRastreio} />}
 
       <div className="mb-5">
-        <h1 className="peract-font-color-default">Pedidos Online</h1>
+        <h1 data-tour="tour-orders-heading" className="peract-font-color-default">Pedidos Online</h1>
         <nav className="text-xs peract-font-color-muted mt-0.5">
           Vendas &rsaquo; <span className="peract-font-color-accent">Pedidos Online</span>
         </nav>
@@ -90,7 +90,7 @@ export function OnlineOrdersView({
       </div>
 
       {/* Filters */}
-      <PeractCard className="peract-bg-card rounded-xl border peract-border-color p-3 mb-4 flex flex-col xl:flex-row xl:items-center gap-3 shadow-sm">
+      <PeractCard data-tour="tour-orders-filters" className="peract-bg-card rounded-xl border peract-border-color p-3 mb-4 flex flex-col xl:flex-row xl:items-center gap-3 shadow-sm">
         <div className="flex items-center gap-2 flex-1 border peract-border-color rounded-lg px-3 py-2">
           <Search size={15} className="peract-font-color-muted shrink-0" />
           <PeractInputControl type="text" placeholder="Buscar pedido ou cliente..." value={search} onChange={e => setSearch(e.target.value)} className="text-sm outline-none flex-1 peract-font-color-default placeholder:text-gray-400" />
@@ -146,6 +146,7 @@ export function OnlineOrdersView({
       </PeractCard>
 
       {/* Table desktop */}
+      <div data-tour="tour-orders-results">
       <PeractCard className="hidden lg:block peract-bg-card rounded-xl border peract-border-color shadow-sm">
         <div className="overflow-auto max-h-[520px]">
           <PeractTableRoot className="w-full">
@@ -278,6 +279,7 @@ export function OnlineOrdersView({
         {filtered.length === 0 && <div className="text-center py-12 peract-font-color-muted text-sm">
             Nenhum pedido online encontrado.
           </div>}
+      </div>
       </div>
     </div>;
 }

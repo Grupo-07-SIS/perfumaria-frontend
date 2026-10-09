@@ -61,7 +61,7 @@ export function PeopleView({
 
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
         <div>
-          <h1 className="peract-font-color-default">Gestão de Pessoas</h1>
+          <h1 data-tour="tour-people-heading" className="peract-font-color-default">Gestão de Pessoas</h1>
           <p className="text-xs peract-font-color-muted mt-0.5">Clientes, fornecedores e equipe</p>
         </div>
         <PeractButtonPrimitive onClick={openNew} className="hidden sm:flex items-center gap-2 px-4 py-2 rounded-lg text-white text-sm hover:opacity-90 self-start peract-bg-accent" variant="plain" size="plain">
@@ -73,8 +73,8 @@ export function PeopleView({
       {isLoading && <p className="text-sm peract-font-color-muted mb-4">Carregando pessoas...</p>}
 
       {/* Tabs */}
-      <div className="flex overflow-x-auto border-b peract-border-color mb-4">
-        {tabs.map(t => <PeractButtonPrimitive key={t.key} onClick={() => selectTab(t.key)} className={`flex items-center gap-1.5 px-4 py-2.5 text-sm border-b-2 transition-all ${aba === t.key ? "font-medium" : "border-transparent peract-font-color-muted hover:text-gray-700"}`} style={aba === t.key ? {
+      <div data-tour="tour-people-tabs" className="flex overflow-x-auto border-b peract-border-color mb-4">
+        {tabs.map(t => <PeractButtonPrimitive key={t.key} data-tour={t.key === "fornecedores" ? "tour-people-tab-suppliers" : t.key === "funcionarios" ? "tour-people-tab-employees" : undefined} onClick={() => selectTab(t.key)} className={`flex items-center gap-1.5 px-4 py-2.5 text-sm border-b-2 transition-all ${aba === t.key ? "font-medium" : "border-transparent peract-font-color-muted hover:text-gray-700"}`} style={aba === t.key ? {
         borderColor: ACC,
         color: ACC
       } : {}} variant="plain" size="plain">
@@ -88,7 +88,7 @@ export function PeopleView({
       </div>
 
       {/* Search + filter row */}
-      <PeractCard className="peract-bg-card rounded-xl border peract-border-color p-3 mb-4 flex flex-col sm:flex-row gap-3 shadow-sm">
+      <PeractCard data-tour="tour-people-search" className="peract-bg-card rounded-xl border peract-border-color p-3 mb-4 flex flex-col sm:flex-row gap-3 shadow-sm">
         <div className="flex items-center gap-2 flex-1 border peract-border-color rounded-lg px-3 py-2">
           <Search size={15} className="peract-font-color-muted shrink-0" />
           <PeractInputControl type="text" placeholder={`Buscar ${aba === "clientes" ? "cliente" : aba === "fornecedores" ? "fornecedor" : "funcionário"}...`} value={search} onChange={e => setSearch(e.target.value)} onKeyDown={event => {
@@ -136,7 +136,7 @@ export function PeopleView({
               <span>Mostrando <strong>{filtClientes.length}</strong> cliente(s) inativo(s). Clique em <strong>"Reativar"</strong> para restaurar um cliente.</span>
             </div>}
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          <div data-tour="tour-people-results" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {filtClientes.length === 0 ? <PeractCard className="col-span-full text-center py-16 peract-font-color-muted text-sm peract-bg-card rounded-xl border peract-border-color">
                 <div className="flex flex-col items-center gap-2">
                   {statusFiltro === "inativos" ? <><UserX size={32} className="text-gray-200" /><p>Nenhum cliente inativo.</p></> : <><Users size={32} className="text-gray-200" /><p>Nenhum cliente encontrado.</p><PeractButtonPrimitive onClick={openNew} className="mt-2 px-3 py-1.5 rounded-lg text-xs text-white hover:opacity-90 peract-bg-accent" variant="plain" size="plain">Cadastrar cliente</PeractButtonPrimitive></>}
@@ -187,7 +187,7 @@ export function PeopleView({
         </>}
 
       {/* ─── FORNECEDORES ─── */}
-      {aba === "fornecedores" && <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+      {aba === "fornecedores" && <div data-tour="tour-people-supplier-results" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {filtFornecedores.map(f => <PeractCard key={f.id} className="peract-bg-card rounded-xl border peract-border-color p-4 shadow-sm hover:shadow-md transition-shadow">
               <div className="flex items-start gap-3 mb-3">
                 <div className="w-10 h-10 rounded-full flex items-center justify-center text-white shrink-0 peract-bg-primary">
@@ -215,7 +215,7 @@ export function PeopleView({
         </div>}
 
       {/* ─── FUNCIONÁRIOS ─── */}
-      {aba === "funcionarios" && <>
+      {aba === "funcionarios" && <div data-tour="tour-people-employee-results" className="flex flex-col gap-3">
           <PeractCard className="hidden md:block peract-bg-card rounded-xl border peract-border-color shadow-sm">
             <div className="overflow-auto max-h-[520px]">
               <PeractTableRoot className="w-full">
@@ -284,6 +284,6 @@ export function PeopleView({
                 </div>
               </PeractCard>)}
           </div>
-        </>}
+        </div>}
     </div>;
 }

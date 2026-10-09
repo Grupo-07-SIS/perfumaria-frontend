@@ -1,5 +1,5 @@
 import { settingsSections } from "../config/settings.presentation";
-import { validateEmailChange, validatePasswordChange } from "../services/settings.service";
+import { accountSettingsError, changeAccountEmail, changeAccountPassword, validateEmailChange, validatePasswordChange } from "../services/settings.service";
 import { useForm } from "react-hook-form";
 import type { SetStateAction } from "react";
 import type { SettingsFormValues, Section } from "../models/settings.models";
@@ -9,6 +9,7 @@ import { useEffect, useRef, useState } from "react";
 export function useSettingsFacade() {
   const {
     currentUser,
+    applyAuthSession,
     stockThresholds,
     setStockThresholds
   } = useApp();
@@ -102,6 +103,7 @@ export function useSettingsFacade() {
   });
   const [errosEmail, setErrosEmail] = useState<Record<string, string>>({});
   const [accountError, setAccountError] = useState("");
+  const [isAccountSaving, setIsAccountSaving] = useState(false);
   const showSuccess = (msg: string) => {
     if (successTimer.current !== null) clearTimeout(successTimer.current);
     setSavedMsg(msg);
@@ -137,9 +139,10 @@ export function useSettingsFacade() {
       }
     }
   };
-  const handleSaveSenha = () => {
+  const handleSaveSenha = async () => {
     setSaved(false);
     setAccountError("");
+    if (isAccountSaving) return;
     const e = validatePasswordChange({
       senhaAtual,
       novaSenha,
@@ -150,11 +153,24 @@ export function useSettingsFacade() {
       return;
     }
     setErrosSenha({});
-    setAccountError("Não foi possível alterar a senha: essa operação ainda não está disponível no servidor.");
+    setIsAccountSaving(true);
+    try {
+      const session = await changeAccountPassword(senhaAtual, novaSenha);
+      applyAuthSession(session);
+      setSenhaAtual("");
+      setNovaSenha("");
+      setConfirmSenha("");
+      showSuccess("Senha alterada com sucesso.");
+    } catch (error) {
+      setAccountError(accountSettingsError(error, "Não foi possível alterar a senha. Tente novamente."));
+    } finally {
+      setIsAccountSaving(false);
+    }
   };
-  const handleSaveEmail = () => {
+  const handleSaveEmail = async () => {
     setSaved(false);
     setAccountError("");
+    if (isAccountSaving) return;
     const e = validateEmailChange({
       novoEmail,
       confirmEmail,
@@ -165,11 +181,26 @@ export function useSettingsFacade() {
       return;
     }
     setErrosEmail({});
-    setAccountError("Não foi possível alterar o e-mail: essa operação ainda não está disponível no servidor.");
+    setIsAccountSaving(true);
+    try {
+      const normalizedEmail = novoEmail.trim().toLowerCase();
+      const session = await changeAccountEmail(senhaConfEmail, normalizedEmail);
+      applyAuthSession(session);
+      setNovoEmail("");
+      setConfirmEmail("");
+      setSenhaConfEmail("");
+      showSuccess("E-mail de acesso alterado com sucesso.");
+    } catch (error) {
+      setAccountError(accountSettingsError(error, "Não foi possível alterar o e-mail. Tente novamente."));
+    } finally {
+      setIsAccountSaving(false);
+    }
   };
   const sections = settingsSections;
   return {
     accountError,
+    currentUser,
+    isAccountSaving,
     stockError,
     isStockLoading,
     isStockSaving,

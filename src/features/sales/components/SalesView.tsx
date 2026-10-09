@@ -75,7 +75,7 @@ export function SalesView({
 }: ReturnType<typeof useSalesFacade>) {
   return <div className="p-4 lg:p-6 max-w-[1200px] mx-auto">
       <div className="mb-5">
-        <h1 className="peract-font-color-default">Registrar Venda</h1>
+        <h1 data-tour="tour-sales-header" className="peract-font-color-default">Registrar Venda</h1>
         <nav className="text-xs peract-font-color-muted mt-0.5">
           Vendas &rsaquo;{" "}
           <span className="text-[#A67449]">Registrar Venda</span>
@@ -101,7 +101,7 @@ export function SalesView({
         <PeractButtonPrimitive onClick={reload} variant="plain" size="plain" className="flex items-center gap-2"><RefreshCw size={16} /> Atualizar dados</PeractButtonPrimitive>
       </div>}
       <fieldset disabled={loading || saving || !!loadError || !!saleReview} aria-busy={loading || saving} className="min-w-0">
-      <PeractCard className="peract-bg-card rounded-xl border peract-border-color shadow-sm p-4 mb-4">
+      <PeractCard data-tour="tour-sales-channel" className="peract-bg-card rounded-xl border peract-border-color shadow-sm p-4 mb-4">
         <p className="peract-font-color-default text-sm mb-3">Canal da venda</p>
         <div className="flex gap-3 mb-3">
           <PeractButtonPrimitive onClick={() => {
@@ -145,7 +145,7 @@ export function SalesView({
         {/* Left col */}
         <div className="lg:col-span-3 flex flex-col gap-4">
           {/* Cliente */}
-          <PeractCard className="peract-bg-card rounded-xl border peract-border-color shadow-sm p-4">
+          <PeractCard data-tour="tour-sales-customer" className="peract-bg-card rounded-xl border peract-border-color shadow-sm p-4">
             <div className="flex items-center justify-between mb-3">
               <h2 className="peract-font-color-default text-sm">
                 Cliente <span className="text-red-500">*</span>
@@ -207,7 +207,7 @@ export function SalesView({
           </PeractCard>
 
           {/* Adicionar item */}
-          <PeractCard className="peract-bg-card rounded-xl border peract-border-color shadow-sm p-4">
+          <PeractCard data-tour="tour-sales-items" className="peract-bg-card rounded-xl border peract-border-color shadow-sm p-4">
             <h2 className="peract-font-color-default text-sm mb-3">
               Adicionar item ao carrinho
             </h2>
@@ -276,7 +276,7 @@ export function SalesView({
           </PeractCard>
 
           {/* Cart */}
-          <PeractCard className="peract-bg-card rounded-xl border peract-border-color shadow-sm overflow-hidden">
+          <PeractCard data-tour="tour-sales-cart" className="peract-bg-card rounded-xl border peract-border-color shadow-sm overflow-hidden">
             <div className="flex items-center gap-2 px-4 py-3 border-b border-gray-50">
               <ShoppingCart size={16} style={{
               color: "#A67449"
@@ -339,7 +339,7 @@ export function SalesView({
 
         {/* Right col */}
         <div className="lg:col-span-2">
-          <PeractCard className="peract-bg-card rounded-xl border peract-border-color shadow-sm p-4 sticky top-4">
+          <PeractCard data-tour="tour-sales-summary" className="peract-bg-card rounded-xl border peract-border-color shadow-sm p-4 sticky top-4">
             <h2 className="peract-font-color-default text-sm mb-4">Resumo da venda</h2>
 
             {/* Canal */}

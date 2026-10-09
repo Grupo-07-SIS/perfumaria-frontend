@@ -7,6 +7,8 @@ import { PeractField } from "../../../shared/components/peract-field";
 import { PeractLabel } from "../../../shared/components/peract-label";
 export function SettingsView({
   accountError,
+  currentUser,
+  isAccountSaving,
   stockError,
   isStockLoading,
   isStockSaving,
@@ -45,17 +47,17 @@ export function SettingsView({
 }: ReturnType<typeof useSettingsFacade>) {
   return <div className="p-4 lg:p-6 max-w-[1400px] mx-auto">
       <div className="mb-5">
-        <h1 className="peract-font-color-default">Configurações</h1>
+        <h1 data-tour="tour-settings-heading" className="peract-font-color-default">Configurações</h1>
         <p className="text-xs peract-font-color-muted mt-0.5">Gerencie as configurações do sistema</p>
       </div>
 
       <div className="flex flex-col lg:flex-row gap-4">
         {/* Sidebar */}
         <div className="lg:w-56 shrink-0">
-          <PeractCard className="peract-bg-card rounded-xl border peract-border-color shadow-sm overflow-hidden">
-            {sections.map(s => <PeractButtonPrimitive key={s.key} onClick={() => setActiveSection(s.key)} className={`w-full flex items-center gap-3 px-4 py-3 text-sm text-left transition-all border-l-2 ${activeSection === s.key ? "border-[#A67449] text-[#A67449] bg-amber-50" : "border-transparent text-gray-600 hover:bg-gray-50"}`} variant="plain" size="plain">
-                {s.icon}
-                {s.label}
+          <PeractCard data-tour="tour-settings-sections" className="peract-bg-card rounded-xl border peract-border-color shadow-sm overflow-hidden">
+            {sections.map(s => <PeractButtonPrimitive key={s.key} data-tour={s.key === "seguranca" ? "tour-settings-security-tab" : undefined} onClick={() => setActiveSection(s.key)} className={`w-full min-w-0 flex items-center justify-start gap-3 whitespace-normal px-4 py-3 text-sm text-left transition-all border-l-2 ${activeSection === s.key ? "border-[#A67449] text-[#A67449] bg-amber-50" : "border-transparent text-gray-600 hover:bg-gray-50"}`} variant="plain" size="plain">
+              <span className="shrink-0">{s.icon}</span>
+              <span className="min-w-0 flex-1 whitespace-normal break-words">{s.label}</span>
               </PeractButtonPrimitive>)}
           </PeractCard>
         </div>
@@ -63,12 +65,12 @@ export function SettingsView({
         {/* Content */}
         <div className="flex-1 flex flex-col gap-4">
           {activeSection === "seguranca" && accountError && <p role="alert" className="text-sm text-red-600">{accountError}</p>}
-          {saved && <div className="flex items-center gap-2 px-4 py-3 rounded-xl text-sm text-green-700 bg-green-50 border border-green-200" role="status" aria-live="polite">
+          {saved && <div className="peract-feedback-enter flex items-center gap-2 px-4 py-3 rounded-xl text-sm text-green-700 bg-green-50 border border-green-200" role="status" aria-live="polite">
               <CheckCircle size={16} /> {savedMsg}
             </div>}
 
           {/* ─── Estoque ─── */}
-          {activeSection === "estoque" && <PeractCard className="peract-bg-card rounded-xl border peract-border-color shadow-sm p-4 lg:p-6">
+          {activeSection === "estoque" && <PeractCard data-tour="tour-settings-stock" className="peract-bg-card rounded-xl border peract-border-color shadow-sm p-4 lg:p-6">
               <h2 className="peract-font-color-default mb-1">Configurações de estoque</h2>
               <p className="text-xs peract-font-color-muted mb-5">Defina os limites numéricos para cada status de estoque</p>
 
@@ -133,7 +135,7 @@ export function SettingsView({
           {/* ─── Segurança ─── */}
           {activeSection === "seguranca" && <div className="flex flex-col gap-4">
               {/* Troca de senha */}
-              <PeractCard className="peract-bg-card rounded-xl border peract-border-color shadow-sm p-4 lg:p-6">
+              <PeractCard data-tour="tour-settings-password" className="peract-bg-card rounded-xl border peract-border-color shadow-sm p-4 lg:p-6">
                 <div className="flex items-center gap-2 mb-4">
                   <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{
                 background: "#F9F5F1"
@@ -188,16 +190,16 @@ export function SettingsView({
                 </div>
 
                 <div className="flex justify-start mt-5">
-                  <PeractButtonPrimitive onClick={handleSaveSenha} className="flex items-center gap-2 px-5 py-2 rounded-lg text-white text-sm hover:opacity-90 transition-opacity" style={{
+                  <PeractButtonPrimitive onClick={() => void handleSaveSenha()} disabled={isAccountSaving} className="flex items-center gap-2 px-5 py-2 rounded-lg text-white text-sm hover:opacity-90 transition-opacity disabled:opacity-60" style={{
                 background: "#A67449"
               }} variant="plain" size="plain">
-                    <Save size={15} /> Alterar senha
+                    <Save size={15} /> {isAccountSaving ? "Salvando..." : "Alterar senha"}
                   </PeractButtonPrimitive>
                 </div>
               </PeractCard>
 
               {/* Troca de e-mail */}
-              <PeractCard className="peract-bg-card rounded-xl border peract-border-color shadow-sm p-4 lg:p-6">
+              <PeractCard data-tour="tour-settings-email" className="peract-bg-card rounded-xl border peract-border-color shadow-sm p-4 lg:p-6">
                 <div className="flex items-center gap-2 mb-4">
                   <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{
                 background: "#F9F5F1"
@@ -216,14 +218,14 @@ export function SettingsView({
                   <Mail size={13} className="peract-font-color-muted shrink-0" />
                   <div>
                     <p className="text-xs peract-font-color-muted">E-mail atual</p>
-                    <p className="text-sm text-gray-700">admin@canalperfumado.com.br</p>
+                    <p className="text-sm text-gray-700">{currentUser?.email ?? "—"}</p>
                   </div>
                 </div>
 
                 <div className="flex flex-col gap-4 max-w-sm">
                   <PeractField>
                     <PeractLabel className="text-sm text-gray-700 block mb-1.5">Novo e-mail <span className="text-red-500">*</span></PeractLabel>
-                    <PeractInputControl type="email" value={novoEmail} onChange={e => {
+                    <PeractInputControl type="email" maxLength={45} value={novoEmail} onChange={e => {
                   setNovoEmail(e.target.value);
                   setErrosEmail(p => ({
                     ...p,
@@ -234,7 +236,7 @@ export function SettingsView({
                   </PeractField>
                   <PeractField>
                     <PeractLabel className="text-sm text-gray-700 block mb-1.5">Confirmar novo e-mail <span className="text-red-500">*</span></PeractLabel>
-                    <PeractInputControl type="email" value={confirmEmail} onChange={e => {
+                    <PeractInputControl type="email" maxLength={45} value={confirmEmail} onChange={e => {
                   setConfirmEmail(e.target.value);
                   setErrosEmail(p => ({
                     ...p,
@@ -257,10 +259,10 @@ export function SettingsView({
                 </div>
 
                 <div className="flex justify-start mt-5">
-                  <PeractButtonPrimitive onClick={handleSaveEmail} className="flex items-center gap-2 px-5 py-2 rounded-lg text-white text-sm hover:opacity-90 transition-opacity" style={{
+                  <PeractButtonPrimitive onClick={() => void handleSaveEmail()} disabled={isAccountSaving} className="flex items-center gap-2 px-5 py-2 rounded-lg text-white text-sm hover:opacity-90 transition-opacity disabled:opacity-60" style={{
                 background: "#A67449"
               }} variant="plain" size="plain">
-                    <Save size={15} /> Alterar e-mail
+                    <Save size={15} /> {isAccountSaving ? "Salvando..." : "Alterar e-mail"}
                   </PeractButtonPrimitive>
                 </div>
               </PeractCard>

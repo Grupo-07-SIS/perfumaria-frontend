@@ -75,7 +75,7 @@ describe("useLoginFacade", () => {
     expect(result.current.authError).toBe("E-mail ou senha incorretos.");
   });
 
-  it("shows backend error feedback when the request throws", async () => {
+  it("shows clear login guidance when the request throws", async () => {
     useAppMock.mockReturnValue({
       applyAuthSession: vi.fn(),
     });
@@ -87,6 +87,6 @@ describe("useLoginFacade", () => {
       await result.current.onSubmit();
     });
 
-    expect(result.current.authError).toBe("Não foi possível autenticar com o backend.");
+    expect(result.current.authError).toBe("Não foi possível entrar agora. Verifique sua conexão e tente novamente.");
   });
 });

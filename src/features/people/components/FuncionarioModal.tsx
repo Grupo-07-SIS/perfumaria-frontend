@@ -44,6 +44,7 @@ export function FuncionarioModal({
         </div>
         <div className="p-4 flex flex-col gap-3">
           {success && <div className="flex items-center gap-2 px-3 py-2 bg-green-50 border border-green-200 rounded-lg text-green-700 text-sm"><CheckCircle size={16} /> Salvo!</div>}
+          {errors.form && <p role="alert" className="text-sm text-red-600">{errors.form}</p>}
           <PeractField>
             <PeractLabel className="text-sm text-gray-700 block mb-1.5">Nome completo <span className="text-red-500">*</span></PeractLabel>
             <PeractInputControl type="text" value={nome} onChange={e => {
@@ -71,7 +72,7 @@ export function FuncionarioModal({
             email: ""
           });
         }} placeholder="usuario@canalperfumado.com.br" className={`w-full border rounded-lg px-3 py-2 text-sm focus:outline-none transition-colors ${errors.email ? "border-red-400" : "peract-border-color"}`} onFocus={e => e.target.style.borderColor = ACC} onBlur={e => e.target.style.borderColor = errors.email ? "#f87171" : ""} />
-            {errors.email && <p className="text-xs text-red-600 mt-1">{errors.email}</p>}
+            {errors.email && <p role="alert" className="text-xs text-red-600 mt-1">{errors.email}</p>}
           </PeractField>
           <div className="border peract-border-color rounded-xl overflow-hidden">
             <div className="px-3 py-2 border-b peract-border-color flex items-center gap-1.5" style={{

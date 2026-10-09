@@ -6,6 +6,7 @@ import { LayoutDashboard, Package, ChevronDown, ChevronRight, Menu, X, User, Che
 import { useApp } from "../store/AppContext";
 import { PeractButton } from "../../shared/components/peract-button";
 import { PeractTag } from "../../shared/components/peract-tag";
+import { GuidedSystemTour } from "./GuidedSystemTour";
 const C = {
   accent: "var(--color-sidebar-primary)",
   border: "var(--color-sidebar-border)",
@@ -21,6 +22,7 @@ interface NavItem {
   children?: {
     label: string;
     path: string;
+    adminOnly?: boolean;
   }[];
 }
 const ALL_NAV_ITEMS: NavItem[] = [{
@@ -54,10 +56,12 @@ const ALL_NAV_ITEMS: NavItem[] = [{
     path: "/vendas/registrar"
   }, {
     label: "Histórico de Vendas",
-    path: "/vendas/historico"
+    path: "/vendas/historico",
+    adminOnly: true
   }, {
     label: "Pedidos Online",
-    path: "/vendas/pedidos"
+    path: "/vendas/pedidos",
+    adminOnly: true
   }]
 }, {
   label: "Gestão de Pessoas",
@@ -117,7 +121,7 @@ function SidebarItem({
             {item.label}
           </div> : null}
       </PeractButton>
-      {!collapsed && open ? <div className="mt-1 ml-8 flex flex-col gap-1">
+      {!collapsed && open ? <div className="animate-in fade-in-0 slide-in-from-top-1 duration-150 mt-1 ml-8 flex flex-col gap-1">
           {item.children?.map(child => <NavLink key={child.path} className="rounded-lg px-3 py-2 text-sm transition-all duration-150" onClick={onMobileClose} style={({
         isActive
       }) => isActive ? {
@@ -158,7 +162,7 @@ function NotificationPanel({
     if (diff < 86400000) return `${Math.floor(diff / 3600000)}h atrás`;
     return new Date(timestamp).toLocaleDateString("pt-BR");
   };
-  return <div ref={ref} className="peract-bg-card peract-border-default peract-radius-xl absolute right-0 top-full z-50 mt-2 w-80 overflow-hidden shadow-2xl">
+  return <div ref={ref} className="animate-in fade-in-0 zoom-in-95 slide-in-from-top-1 duration-150 peract-bg-card peract-border-default peract-radius-xl absolute right-0 top-full z-50 mt-2 w-80 overflow-hidden shadow-2xl">
       <div className="flex items-center justify-between border-b peract-border-color px-4 py-3">
         <div>
           <p className="text-sm font-medium peract-font-color-default">Notificações</p>
@@ -201,10 +205,19 @@ export function AppLayout() {
   const [notifOpen, setNotifOpen] = useState(false);
   const location = useLocation();
   const isAdmin = currentUser?.cargo === "Administrador";
-  const navItems = ALL_NAV_ITEMS.filter(item => isAdmin || !item.adminOnly);
-  const isAdminRoute = ALL_NAV_ITEMS.some(item => item.adminOnly &&
-    [item.path, ...(item.children?.map(child => child.path) ?? [])].some(path =>
-      path && (location.pathname === path || location.pathname.startsWith(`${path}/`))));
+  const navItems = ALL_NAV_ITEMS
+    .filter(item => isAdmin || !item.adminOnly)
+    .map(item => ({
+      ...item,
+      children: item.children?.filter(child => isAdmin || !child.adminOnly),
+    }));
+  const isAdminRoute = ALL_NAV_ITEMS.some(item => {
+    const protectedPaths = item.adminOnly
+      ? [item.path, ...(item.children?.map(child => child.path) ?? [])]
+      : item.children?.filter(child => child.adminOnly).map(child => child.path) ?? [];
+    return protectedPaths.some(path =>
+      path && (location.pathname === path || location.pathname.startsWith(`${path}/`)));
+  });
   const unread = notifications.filter(notification => !notification.read).length;
   const getPageTitle = () => {
     const path = location.pathname;
@@ -273,6 +286,8 @@ export function AppLayout() {
           {navItems.map(item => <SidebarItem key={item.label} collapsed={sidebarCollapsed} item={item} onMobileClose={() => setMobileMenuOpen(false)} />)}
         </nav>
 
+        <GuidedSystemTour collapsed={sidebarCollapsed} isAdmin={isAdmin} />
+
         <div className="hidden shrink-0 border-t p-2 lg:block" style={{
         borderColor: C.border
       }}>
@@ -315,14 +330,13 @@ export function AppLayout() {
             }}>
                 <User size={16} />
               </div>
-              <div className="hidden md:block">
-                <p className="max-w-[120px] truncate text-xs font-medium leading-tight" style={{
+              <div className="hidden min-w-0 flex-col justify-center md:flex">
+                <p className="max-w-[150px] truncate text-xs font-medium leading-tight" style={{
                 color: C.dark
               }}>{currentUser?.nome ?? "Usuário"}</p>
-                <PeractTag className="mt-1 w-fit border-0 px-0" icon={isAdmin ? <ShieldCheck size={10} /> : <UserCheck size={10} />} style={{
-                background: "transparent",
-                color: isAdmin ? C.accent : "#6366f1"
-              }}>{currentUser?.cargo ?? ""}</PeractTag>
+                <p className="mt-0.5 text-[10px] leading-none" style={{
+                color: C.textMid
+              }}>{currentUser?.cargo ?? ""}</p>
               </div>
               <PeractButton action={() => void logout()} aria-label="Sair" className="ml-1 gap-2 rounded-lg hover:bg-gray-100" icon={<LogOut size={15} />} size="sm" style={{
               color: C.textMid

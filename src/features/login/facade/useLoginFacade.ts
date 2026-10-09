@@ -39,7 +39,7 @@ export function useLoginFacade(): LoginFormFacade {
       applyAuthSession(hasLoggedIn);
       setLoading(false);
     } catch {
-      setAuthError("Não foi possível autenticar com o backend.");
+      setAuthError("Não foi possível entrar agora. Verifique sua conexão e tente novamente.");
       setLoading(false);
     }
   });

@@ -1,4 +1,4 @@
-import { validateCliente } from "../services/people.service";
+import { peopleErrorMessage, validateCliente } from "../services/people.service";
 import { useForm } from "react-hook-form";
 import type { SetStateAction } from "react";
 import type { ClienteModalFormValues, ClienteModalProps } from "../models/people.models";
@@ -63,8 +63,8 @@ export function useClienteModalForm({
         endereco
       });
       setSuccess(true);
-    } catch {
-      setErrors({ form: "Não foi possível salvar o cliente." });
+    } catch (error) {
+      setErrors({ form: peopleErrorMessage(error, "Não foi possível salvar o cliente. Tente novamente.") });
     }
   };
   return {

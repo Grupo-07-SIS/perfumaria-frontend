@@ -1,4 +1,4 @@
-import { validateFornecedor } from "../services/people.service";
+import { peopleErrorMessage, validateFornecedor } from "../services/people.service";
 import { useForm } from "react-hook-form";
 import type { SetStateAction } from "react";
 import type { FornecedorModalFormValues, FornecedorModalProps } from "../models/people.models";
@@ -70,8 +70,8 @@ export function useFornecedorModalForm({
         endereco
       });
       setSuccess(true);
-    } catch {
-      setErrors({ form: "Não foi possível salvar o fornecedor." });
+    } catch (error) {
+      setErrors({ form: peopleErrorMessage(error, "Não foi possível salvar o fornecedor. Tente novamente.") });
     }
   };
   return {

@@ -1,4 +1,4 @@
-import { validateFuncionario } from "../services/people.service";
+import { peopleErrorMessage, validateFuncionario } from "../services/people.service";
 import { useForm } from "react-hook-form";
 import type { SetStateAction } from "react";
 import type { FuncionarioModalFormValues, FuncionarioModalProps } from "../models/people.models";
@@ -63,8 +63,9 @@ export function useFuncionarioModalForm({
         senha: senha || data?.senha
       });
       setSuccess(true);
-    } catch {
-      setErrors({ form: "Não foi possível salvar o funcionário." });
+    } catch (error) {
+      const message = peopleErrorMessage(error, "Não foi possível salvar o funcionário. Tente novamente.");
+      setErrors(message.startsWith("Este e-mail já está cadastrado") ? { email: message } : { form: message });
     }
   };
   return {

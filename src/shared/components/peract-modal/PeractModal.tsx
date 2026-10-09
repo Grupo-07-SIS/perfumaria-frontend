@@ -18,8 +18,9 @@ export function PeractModal({
     if (!nextOpen) onClose();
   }}>
       <Dialog.Portal>
-        <Dialog.Overlay className="peract-modal-overlay" />
+        <Dialog.Overlay data-slot="dialog-overlay" className="peract-modal-overlay" />
         <Dialog.Content
+          data-slot="dialog-content"
           aria-describedby={undefined}
           className={cn("peract-modal-surface peract-bg-card peract-border-default", className)}
           onOpenAutoFocus={event => {

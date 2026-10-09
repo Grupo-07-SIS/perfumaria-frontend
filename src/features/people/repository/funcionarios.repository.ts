@@ -7,7 +7,11 @@ async function requestData<T>(request: Promise<AxiosResponse<T>>, errorCode: str
   try {
     return (await request).data;
   } catch (error) {
-    if (axios.isAxiosError(error)) throw new Error(`${errorCode}:${error.response?.status ?? "unknown"}`);
+    if (axios.isAxiosError(error)) {
+      const data = error.response?.data as { message?: unknown } | undefined;
+      const detail = typeof data?.message === "string" ? `|${data.message}` : "";
+      throw new Error(`${errorCode}:${error.response?.status ?? "unknown"}${detail}`);
+    }
     throw error;
   }
 }

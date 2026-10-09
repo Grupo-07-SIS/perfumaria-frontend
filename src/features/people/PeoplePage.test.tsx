@@ -282,7 +282,7 @@ describe("People: caracterizacao de filtros e permissoes", () => {
 
     createFornecedorMock.mockRejectedValueOnce(new Error("PEOPLE_SUPPLIERS_CREATE_FAILED:500"));
     await user.click(dialog.getByRole("button", { name: "Salvar" }));
-    expect(await screen.findByText("PEOPLE_SUPPLIERS_CREATE_FAILED:500")).toBeInTheDocument();
+    expect(await dialog.findByRole("alert")).toHaveTextContent("O servidor está temporariamente indisponível. Tente novamente em instantes.");
     expect(screen.getByRole("dialog", { name: "Novo Fornecedor" })).toBeInTheDocument();
     expect(screen.queryByText("Essencias Ltda")).not.toBeInTheDocument();
 
@@ -306,6 +306,53 @@ describe("People: caracterizacao de filtros e permissoes", () => {
     expect(table.getAllByLabelText("Senha protegida")).toHaveLength(funcionariosRemotos.length);
     expect(table.getAllByText("••••••")).toHaveLength(funcionariosRemotos.length);
     expect(screen.queryByText("Não definida")).not.toBeInTheDocument();
+  });
+
+  it("oculta o administrador autenticado da lista de funcionarios", async () => {
+    const user = userEvent.setup();
+    const session = sessionService.restore()!;
+    vi.mocked(sessionService.restore).mockReturnValue({
+      ...session,
+      user: { ...session.user, id: "1", email: "admin@canalperfumado.com.br" },
+    });
+    await renderPeople();
+    await user.click(screen.getByRole("button", { name: /^Funcionários/ }));
+
+    const table = within(screen.getByRole("table"));
+    expect(table.queryByText("Administrador")).not.toBeInTheDocument();
+    expect(table.getByText("Beatriz Oliveira")).toBeInTheDocument();
+    expect(screen.getByText("1 funcionário(s)")).toBeInTheDocument();
+  });
+
+  it("mostra mensagem legivel quando a exclusao de funcionario falha", async () => {
+    const user = userEvent.setup();
+    vi.mocked(removeFuncionario).mockRejectedValueOnce(new Error("PEOPLE_EMPLOYEES_DELETE_FAILED:400"));
+    await renderPeople();
+    await user.click(screen.getByRole("button", { name: /^Funcionários/ }));
+    await user.click(within(screen.getByRole("table")).getAllByRole("button", { name: "Excluir" })[0]);
+    await user.click(within(screen.getByRole("dialog", { name: "Confirmar exclusão" })).getByRole("button", { name: "Excluir" }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("Confira os dados informados e corrija os campos destacados.");
+    expect(screen.queryByText("PEOPLE_EMPLOYEES_DELETE_FAILED:400")).not.toBeInTheDocument();
+  });
+
+  it("mostra conflito de e-mail duplicado no campo do novo funcionário", async () => {
+    const user = userEvent.setup();
+    vi.mocked(createFuncionario).mockRejectedValueOnce(new Error("PEOPLE_EMPLOYEES_CREATE_FAILED:409"));
+    await renderPeople();
+    await user.click(screen.getByRole("button", { name: /^Funcionários/ }));
+    await user.click(screen.getAllByRole("button", { name: "Novo funcionário" })[0]);
+    const dialog = within(screen.getByRole("dialog", { name: "Novo Funcionário" }));
+    await user.type(dialog.getByPlaceholderText("Ex: Beatriz Oliveira"), "Beatriz Oliveira");
+    await user.type(dialog.getByPlaceholderText("usuario@canalperfumado.com.br"), "duplicado@example.com");
+    await user.type(dialog.getByPlaceholderText("Mínimo 6 caracteres"), "senha123");
+    await user.type(dialog.getByPlaceholderText("Repita a senha"), "senha123");
+    await user.click(dialog.getByRole("button", { name: "Salvar" }));
+
+    expect(await dialog.findByText("Este e-mail já está cadastrado. Informe outro e-mail.")).toBeInTheDocument();
+    expect(dialog.queryByText("PEOPLE_EMPLOYEES_CREATE_FAILED:409")).not.toBeInTheDocument();
+    expect(screen.getAllByRole("alert")).toHaveLength(1);
+    expect(dialog.getByPlaceholderText("usuario@canalperfumado.com.br")).toHaveValue("duplicado@example.com");
   });
 
   it("aplica mascara no telefone do cliente e valida telefone e e-mail no campo", async () => {
@@ -405,7 +452,7 @@ describe("People: caracterizacao de filtros e permissoes", () => {
     await user.type(within(dialog).getByPlaceholderText("Ex: Ana Lima"), "Ana com falha");
     await user.click(within(dialog).getByRole("button", { name: "Salvar" }));
 
-    expect(await screen.findByText("PEOPLE_CLIENTS_UPDATE_FAILED:500")).toBeInTheDocument();
+    expect(await within(screen.getByRole("dialog", { name: "Editar Cliente" })).findByRole("alert")).toHaveTextContent("O servidor está temporariamente indisponível. Tente novamente em instantes.");
     expect(screen.getByText("Ana Lima")).toBeInTheDocument();
     expect(screen.getByRole("dialog", { name: "Editar Cliente" })).toBeInTheDocument();
     expect(screen.getByPlaceholderText("Ex: Ana Lima")).toHaveValue("Ana com falha");
