@@ -105,6 +105,17 @@ describe("sessionService", () => {
     expect(removeCookieMock).toHaveBeenCalledWith("authUser");
   });
 
+  it("notifies subscribers when clearing and stops after unsubscribe", () => {
+    const listener = vi.fn();
+    const unsubscribe = sessionService.subscribeToClear(listener);
+
+    sessionService.clear();
+    expect(listener).toHaveBeenCalledOnce();
+    unsubscribe();
+    sessionService.clear();
+    expect(listener).toHaveBeenCalledOnce();
+  });
+
   it("preserves the organization when saving and restoring the authenticated user", () => {
     const user = {
       cargo: "Administrador" as const,

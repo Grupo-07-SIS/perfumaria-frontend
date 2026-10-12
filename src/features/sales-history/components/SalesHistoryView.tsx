@@ -45,14 +45,14 @@ export function SalesHistoryView({
 }: ReturnType<typeof useSalesHistoryFacade>) {
   return <div className="p-4 lg:p-6 max-w-[1400px] mx-auto" id="sales-history-section">
       {viewVenda && <ReciboModal venda={viewVenda} onClose={() => setViewVenda(null)} />}
-      {editVenda && <EditModal venda={editVenda} onClose={() => setEditVenda(null)} onSave={handleSaveEdit} />}
+      {editVenda && <EditModal venda={editVenda} error={error} onClose={() => setEditVenda(null)} onSave={handleSaveEdit} />}
 
       <div className="mb-5">
         <h1 data-tour="tour-history-heading" className="peract-font-color-default">Histórico de Vendas</h1>
         <nav className="text-xs peract-font-color-muted mt-0.5">Vendas &rsaquo; <span className="peract-font-color-accent">Histórico</span></nav>
       </div>
 
-      {error ? <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700" role="alert">{error}</div> : null}
+      {error && !editVenda ? <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700" role="alert">{error}</div> : null}
       {isLoading ? <p className="mb-4 text-sm peract-font-color-muted">Carregando histórico de vendas...</p> : null}
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">

@@ -18,9 +18,9 @@ export function usePeopleFacade() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
   const isAdmin = currentUser?.cargo === "Administrador";
-  const funcionariosVisiveis = currentUser
-    ? funcionarios.filter(funcionario => funcionario.id !== currentUser.id && funcionario.email.toLowerCase() !== currentUser.email.toLowerCase())
-    : funcionarios;
+  const funcionariosVisiveis = currentUser?.donoOrganizacao === true
+    ? funcionarios
+    : funcionarios.filter(funcionario => funcionario.cargo === "Funcionário");
   const [aba, setAba] = useState<Aba>("clientes");
   const [search, setSearch] = useState("");
   const [submittedSearch, setSubmittedSearch] = useState("");
@@ -195,7 +195,12 @@ export function usePeopleFacade() {
       }
     }
   });
-  const requestEmployeeDeletion = (target: Funcionario) => setDeleteTarget({
+  const requestEmployeeDeletion = (target: Funcionario) => {
+    if (target.donoOrganizacao) {
+      setError("O dono da organização não pode ser excluído.");
+      return;
+    }
+    setDeleteTarget({
     nome: target.nome,
     fn: async () => {
       setError("");
@@ -208,7 +213,8 @@ export function usePeopleFacade() {
         setDeleteTarget(null);
       }
     }
-  });
+    });
+  };
   const confirmClientReactivation = async () => {
     if (!reactivateTarget) return;
     setError("");

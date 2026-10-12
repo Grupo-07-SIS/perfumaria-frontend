@@ -52,7 +52,7 @@ export function BodySplashView({
           <PeractButtonPrimitive onClick={() => exportCSV(filtered)} className="flex items-center gap-2 px-4 py-2 rounded-lg border peract-border-color text-sm text-gray-700 hover:bg-gray-50 transition-colors" variant="plain" size="plain">
             <Download size={15} /> Exportar Tabela
           </PeractButtonPrimitive>
-          {canManagePrices && <PeractButtonPrimitive onClick={() => setShowModal(true)} className="flex items-center gap-2 px-4 py-2 rounded-lg text-white text-sm hover:opacity-90 peract-bg-accent" variant="plain" size="plain">
+          {canManagePrices && <PeractButtonPrimitive onClick={() => setShowModal(true)} className="flex items-center gap-2 px-4 py-2 rounded-lg text-white text-sm hover:opacity-90 peract-bg-primary" variant="plain" size="plain">
             <Plus size={16} /> Cadastrar Body Splash
           </PeractButtonPrimitive>}
         </div>

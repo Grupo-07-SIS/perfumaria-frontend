@@ -5,6 +5,7 @@ import type { FornecedorModalFormValues, FornecedorModalProps } from "../models/
 import { useState } from "react";
 import { EMPTY_ENDERECO } from "../config/people.config";
 import { formatCnpj, formatTelefone } from "../../../shared/utils/masks";
+import { useCepAutofill } from "./useCepAutofill";
 export function useFornecedorModalForm({
   data,
   onSave
@@ -48,6 +49,7 @@ export function useFornecedorModalForm({
     ...p,
     [key]: ""
   }));
+  const cepLookup = useCepAutofill(endereco, setEndereco, clearError);
   const handleSave = async () => {
     const e = validateFornecedor({
       razaoSocial,
@@ -88,6 +90,7 @@ export function useFornecedorModalForm({
     errors,
     success,
     clearError,
+    cepLookup,
     handleSave
   };
 }

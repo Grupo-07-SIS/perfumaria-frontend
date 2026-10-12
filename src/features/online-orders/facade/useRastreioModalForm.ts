@@ -10,11 +10,25 @@ export function useRastreioModalForm() {
   const {
     codigo
   } = form.watch();
-  const setCodigo = (value: SetStateAction<RastreioModalFormValues["codigo"]>) => form.setValue("codigo", typeof value === "function" ? value(form.getValues("codigo")) : value, {
-    shouldDirty: true
-  });
+  const error = form.formState.errors.codigo?.message;
+  const setCodigo = (value: SetStateAction<RastreioModalFormValues["codigo"]>) => {
+    form.setValue("codigo", typeof value === "function" ? value(form.getValues("codigo")) : value, {
+      shouldDirty: true
+    });
+    form.clearErrors("codigo");
+  };
+  const confirmar = (onConfirm: (codigo: string) => void) => {
+    const normalizedCode = form.getValues("codigo").trim();
+    if (!normalizedCode) {
+      form.setError("codigo", { type: "required", message: "Informe o código de rastreio para finalizar." });
+      return;
+    }
+    onConfirm(normalizedCode);
+  };
   return {
     codigo,
-    setCodigo
+    setCodigo,
+    error,
+    confirmar
   };
 }

@@ -1,11 +1,12 @@
 import { apiClient } from "../../../core/services/http-client";
 import { useApp } from "../../../core/store/AppContext";
+import { formatPaymentLabel } from "../../../shared/utils/payment";
 
 export interface SaleResponseDto {
   canalVendaOnline?: "WHATSAPP" | "SITE" | null;
   clienteNome?: string | null;
-  dataHora?: string | null;
-  dataVenda?: string | null;
+  codigoRastreio?: string | null;
+  dataHoraVenda: string;
   desconto?: number | null;
   frete?: number | null;
   forma?: string | null;
@@ -20,6 +21,7 @@ export interface SaleResponseDto {
 
 export interface SaleItemResponseDto {
   produtoNome: string;
+  categoriaNome?: string | null;
   quantidade: number;
   tipoItem?: "PRODUTO" | "DECANT" | "BODY_SPLASH_FRACIONADO" | null;
   valorUnitario: number;
@@ -33,30 +35,15 @@ interface SalesPageDto {
 
 type SalesListResponse = SaleResponseDto[] | SalesPageDto;
 
-const paymentLabels: Record<string, string> = {
-  CARTAO_CREDITO: "Cartão de crédito",
-  CARTAO_DEBITO: "Cartão de débito",
-  DINHEIRO: "Dinheiro",
-  PIX: "Pix",
-  TRANSFERENCIA_BANCARIA: "Transferência bancária",
-};
-
 function normalizedPayment(value: string) {
   return value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase().replace(/[^A-Z0-9]+/g, "_").replace(/^_|_$/g, "");
 }
 
-function paymentLabel(value?: string | null) {
-  if (!value) return "";
-  const normalized = normalizedPayment(value);
-  const compact = normalized.replace("_DE_", "_");
-  return paymentLabels[normalized] ?? paymentLabels[compact] ?? value;
-}
-
-function formatSaleDate(dataHora?: string | null, dataVenda?: string | null) {
-  const value = dataHora || dataVenda;
+function formatSaleDate(dataHoraVenda: string) {
+  const value = dataHoraVenda;
   if (!value) return "";
 
-  const [datePart, timePart] = value.split("T");
+  const [datePart, timePart] = value.split(/[T ]/);
   const datePieces = datePart.split("-");
   if (datePieces.length !== 3) return value;
 
@@ -67,9 +54,10 @@ function formatSaleDate(dataHora?: string | null, dataVenda?: string | null) {
 function toVenda(dto: SaleResponseDto) {
   return {
     id: `V-${dto.id}`,
-    data: formatSaleDate(dto.dataHora, dto.dataVenda),
+    data: formatSaleDate(dto.dataHoraVenda),
     cliente: dto.clienteNome ?? "",
-    pagamento: paymentLabel(dto.forma),
+    codigoRastreio: dto.codigoRastreio ?? undefined,
+    pagamento: formatPaymentLabel(dto.forma),
     total: dto.valorFinal ?? dto.valorTotal ?? dto.subtotal ?? 0,
     tipoVenda: dto.tipoVenda === "PRESENCIAL" ? "presencial" as const : "online" as const,
     canalOnline: dto.canalVendaOnline?.toLowerCase() as "whatsapp" | "site" | undefined,
@@ -77,6 +65,7 @@ function toVenda(dto: SaleResponseDto) {
     desconto: dto.desconto ?? undefined,
     itens: (dto.itens ?? []).map((item) => ({
       nome: item.produtoNome,
+      categoria: item.categoriaNome ?? undefined,
       volume: item.volumeMl ? `${item.volumeMl}ml` : undefined,
       quantidade: item.quantidade,
       valorUnitario: item.valorUnitario,
@@ -130,11 +119,18 @@ export const salesHistoryRepository = {
     const tipoPagamento = normalizedPayment(venda.pagamento)
       .replace("CARTAO_DE_CREDITO", "CARTAO_CREDITO")
       .replace("CARTAO_DE_DEBITO", "CARTAO_DEBITO");
+    const clearWhatsappTracking = status !== "FINALIZADA" && venda.canalOnline === "whatsapp";
+    if (clearWhatsappTracking) {
+      await apiClient.delete<void>(`/vendas/${getNumericSaleId(venda.id)}/codigo-rastreio`);
+    }
     const { data } = await apiClient.patch<SaleResponseDto>(`/vendas/${getNumericSaleId(venda.id)}`, {
       status,
       tipoPagamento,
     });
-    return toVenda(data);
+    return {
+      ...toVenda(data),
+      ...(clearWhatsappTracking ? { codigoRastreio: undefined } : {}),
+    };
   },
 };
 

@@ -8,7 +8,7 @@ import { HomePage } from "./HomePage";
 import { dashboardRepository } from "./repository/dashboard.repository";
 
 vi.mock("../../core/auth/session.service", () => ({
-  sessionService: { restore: vi.fn() },
+  sessionService: { restore: vi.fn(), subscribeToClear: vi.fn(() => () => {}) },
 }));
 vi.mock("./repository/dashboard.repository", async importOriginal => {
   const original = await importOriginal<typeof import("./repository/dashboard.repository")>();

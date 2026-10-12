@@ -2,6 +2,7 @@ export type AuthUserRole = "Administrador" | "Funcionário";
 
 export interface AuthenticatedUser {
   cargo: AuthUserRole;
+  donoOrganizacao?: boolean;
   email: string;
   id: string;
   idOrganizacao?: number | null;

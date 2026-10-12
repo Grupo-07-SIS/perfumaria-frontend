@@ -22,7 +22,7 @@ export function toSaleProduct(dto: SaleProductDto, baseProduct?: CatalogItem): C
     apresentacao,
     volumetria: volume ? `${volume}ml` : undefined,
     preco: dto.precoVenda,
-    estoqueAtual: dto.estoqueAtual ?? baseProduct?.estoqueAtual,
+    estoqueAtual: tipo === "produto" ? dto.estoqueAtual ?? baseProduct?.estoqueAtual : undefined,
     tipo,
   };
 }

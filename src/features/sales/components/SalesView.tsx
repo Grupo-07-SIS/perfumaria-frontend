@@ -35,6 +35,7 @@ export function SalesView({
   itemGroups,
   selectedGroup,
   selectedItem,
+  canAddSelectedItem,
   selectItemGroup,
   itemPresentation,
   setItemPresentation,
@@ -58,6 +59,7 @@ export function SalesView({
   desconto,
   setDesconto,
   success,
+  registeredStatus,
   errors,
   showNovoCliente,
   setShowNovoCliente,
@@ -85,7 +87,7 @@ export function SalesView({
       {success && <div className="flex items-center gap-3 px-4 py-3 mb-4 bg-green-50 border border-green-200 rounded-xl text-green-700 text-sm" role="status">
           <CheckCircle size={18} />
           <div>
-            <p className="font-medium">Venda registrada como pendente.</p>
+            <p className="font-medium">{registeredStatus === "PENDENTE" ? "Venda registrada como pendente." : "Venda registrada como finalizada."}</p>
           </div>
         </div>}
 
@@ -270,7 +272,7 @@ export function SalesView({
               </PeractField>}
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <p className="text-sm font-medium peract-font-color-default">{selectedItem ? `R$ ${selectedItem.preco.toFixed(2)}` : ""}</p>
-                <PeractButtonPrimitive onClick={confirmItemSelection} disabled={!selectedItem || (selectedItem.estoqueAtual !== undefined && selectedItem.estoqueAtual <= 0)} variant="plain" size="plain" className="flex items-center justify-center gap-2 min-h-10 px-3 py-2 rounded-lg peract-bg-accent text-white text-sm disabled:opacity-40"><Plus size={16} /> Adicionar ao carrinho</PeractButtonPrimitive>
+                <PeractButtonPrimitive onClick={confirmItemSelection} disabled={!canAddSelectedItem} variant="plain" size="plain" className="flex items-center justify-center gap-2 min-h-10 px-3 py-2 rounded-lg peract-bg-accent text-white text-sm disabled:opacity-40"><Plus size={16} /> Adicionar ao carrinho</PeractButtonPrimitive>
               </div>
             </div>}
           </PeractCard>

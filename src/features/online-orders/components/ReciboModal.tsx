@@ -3,7 +3,7 @@ import { PeractModal, PeractModalTitle } from "../../../shared/components/peract
 import { StatusBadge } from "./StatusBadge";
 import { CanalBadge } from "./CanalBadge";
 import { PeractButtonPrimitive } from "../../../shared/components/peract-button";
-import { X, Truck, CheckCircle, Package } from "lucide-react";
+import { X, Truck, Package } from "lucide-react";
 export function ReciboModal({
   venda,
   onClose
@@ -62,6 +62,7 @@ export function ReciboModal({
                       <p className="text-xs font-medium peract-font-color-default leading-tight">
                         {item.nome}
                       </p>
+                      {item.categoria && <p className="mt-0.5 text-xs peract-font-color-muted break-words">{item.categoria}</p>}
                       {item.volume && <span className="text-xs peract-font-color-muted">
                           {item.volume}
                         </span>}
@@ -103,18 +104,15 @@ export function ReciboModal({
             </div>
           </div>
 
-          {venda.enviado && venda.dataEnvio && <div className="mt-3 flex flex-col gap-1.5 px-3 py-2 rounded-lg bg-green-50 text-green-700 text-xs">
+          {venda.enviado && venda.codigoRastreio && <div className="mt-3 flex flex-col gap-1.5 px-3 py-2 rounded-lg bg-green-50 text-green-700 text-xs">
               <div className="flex items-center gap-2">
-                <CheckCircle size={13} /> Finalizado em {venda.dataEnvio}
-              </div>
-              {venda.codigoRastreio && <div className="flex items-center gap-2 mt-0.5">
                   <Package size={13} className="shrink-0" /><span className="min-w-0 break-all">
                     Rastreio:{" "}
                     <span className="font-mono font-medium">
                       {venda.codigoRastreio}
                     </span>
                   </span>
-                </div>}
+              </div>
             </div>}
         </div>
 

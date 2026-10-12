@@ -47,7 +47,7 @@ export function FuncionarioModal({
           {errors.form && <p role="alert" className="text-sm text-red-600">{errors.form}</p>}
           <PeractField>
             <PeractLabel className="text-sm text-gray-700 block mb-1.5">Nome completo <span className="text-red-500">*</span></PeractLabel>
-            <PeractInputControl type="text" value={nome} onChange={e => {
+            <PeractInputControl type="text" maxLength={45} value={nome} onChange={e => {
           setNome(e.target.value);
           setErrors({
             ...errors,
@@ -65,7 +65,7 @@ export function FuncionarioModal({
           </PeractField>
           <PeractField>
             <PeractLabel className="text-sm text-gray-700 block mb-1.5">E-mail de acesso <span className="text-red-500">*</span></PeractLabel>
-            <PeractInputControl type="email" value={email} onChange={e => {
+            <PeractInputControl type="email" maxLength={45} value={email} onChange={e => {
           setEmail(e.target.value);
           setErrors({
             ...errors,
@@ -88,7 +88,7 @@ export function FuncionarioModal({
               <PeractField>
                 <PeractLabel className="text-xs text-gray-600 block mb-1">{isNew ? "Senha" : "Nova senha"} {isNew && <span className="text-red-500">*</span>}</PeractLabel>
                 <div className="relative">
-                  <PeractInputControl type={showSenha ? "text" : "password"} value={senha} onChange={e => {
+                  <PeractInputControl type={showSenha ? "text" : "password"} maxLength={100} value={senha} onChange={e => {
                 setSenha(e.target.value);
                 setErrors({
                   ...errors,
@@ -103,7 +103,7 @@ export function FuncionarioModal({
               </PeractField>
               <PeractField>
                 <PeractLabel className="text-xs text-gray-600 block mb-1">Confirmar senha {isNew && <span className="text-red-500">*</span>}</PeractLabel>
-                <PeractInputControl type={showSenha ? "text" : "password"} value={confirmSenha} onChange={e => {
+                <PeractInputControl type={showSenha ? "text" : "password"} maxLength={100} value={confirmSenha} onChange={e => {
               setConfirmSenha(e.target.value);
               setErrors({
                 ...errors,

@@ -2,7 +2,7 @@ import { useState } from "react";
 import { ptBR } from "date-fns/locale";
 import type { useHomeFacade } from "../facade/useHomeFacade";
 import { PeractButtonPrimitive } from "../../../shared/components/peract-button";
-import { Eye, AlertTriangle, ShoppingBag, DollarSign, TrendingUp, TrendingDown, BarChart2, Droplets, Package, ArrowRight, ShoppingCart, FlaskConical, CalendarDays, Check, Receipt } from "lucide-react";
+import { Eye, AlertTriangle, ShoppingBag, DollarSign, TrendingUp, TrendingDown, BarChart2, Droplets, Package, ArrowRight, ShoppingCart, CalendarDays, Check, Receipt } from "lucide-react";
 import { PERIOD_LABELS, DARK, ACC, CAT_COLORS, WARM } from "../config/home.config";
 import type { Period } from "../models/home.models";
 import { Link } from "react-router";
@@ -223,7 +223,7 @@ export function HomeView({
       </div>}
 
       {/* ── Charts row 2: Top 5 + Distribuição por Categoria ── */}
-      {isAdmin && <div data-tour="tour-home-products" className="grid grid-cols-1 xl:grid-cols-2 gap-4 mb-4">
+      {isAdmin && <div data-tour="tour-home-products" className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
         {/* Top 5 Produtos */}
         <PeractCard className="peract-bg-card rounded-xl border peract-border-color p-4 shadow-sm">
           <h2 className="text-sm mb-4 peract-font-color-default">Top 5 Produtos Mais Vendidos</h2>
@@ -369,7 +369,7 @@ export function HomeView({
               </div>}
 
             <Link to="/vendas/pedidos" className="flex items-center justify-center gap-2 w-full py-2 rounded-lg text-xs border peract-border-color text-gray-600 hover:bg-gray-50 transition-colors mt-3">
-              <FlaskConical size={13} /> Ver pedidos online
+              <Package size={13} /> Ver pedidos online
             </Link>
           </PeractCard>
         </div>}

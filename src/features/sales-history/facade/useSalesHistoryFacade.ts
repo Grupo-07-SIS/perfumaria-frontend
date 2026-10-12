@@ -1,4 +1,4 @@
-import { selectSalesHistory } from "../services/sales-history.service";
+import { saleUpdateErrorMessage, selectSalesHistory } from "../services/sales-history.service";
 import { salesHistoryRepository, useSalesHistoryRepository } from "../repository/sales-history.repository";
 import { useEffect, useState } from "react";
 import type { StatusFilter } from "../models/sales-history.models";
@@ -83,12 +83,13 @@ export function useSalesHistoryFacade() {
   };
   const handleSaveEdit = async (updated: Venda) => {
     setError("");
+    const reactivating = !!editVenda?.cancelada && !updated.cancelada;
     try {
       const savedSale = await salesHistoryRepository.updateSale(updated);
       setVendas((current) => current.map((sale) => sale.id === savedSale.id ? { ...sale, ...savedSale } : sale));
       setEditVenda(null);
-    } catch {
-      setError("Não foi possível atualizar a venda.");
+    } catch (error) {
+      setError(saleUpdateErrorMessage(error, reactivating));
     }
   };
   return {
@@ -114,7 +115,10 @@ export function useSalesHistoryFacade() {
     viewVenda,
     setViewVenda: openSaleDetails,
     editVenda,
-    setEditVenda,
+    setEditVenda: (sale: Venda | null) => {
+      setError("");
+      setEditVenda(sale);
+    },
     vendasExibidas,
     finalizadas,
     canceladas,

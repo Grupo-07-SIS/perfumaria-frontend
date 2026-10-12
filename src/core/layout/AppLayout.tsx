@@ -1,8 +1,8 @@
 import { PeractButtonPrimitive } from "../../shared/components/peract-button";
-import { useState, useRef, useEffect } from "react";
+import { useState } from "react";
 import { Navigate, Outlet, NavLink, useLocation } from "react-router";
 import logoImg from "figma:asset/19603bc35fe7f283ff1a83c590f928c9d0bfe9cf.png";
-import { LayoutDashboard, Package, ChevronDown, ChevronRight, Menu, X, User, ChevronLeft, Droplets, ShoppingBag, Users, Settings, Bell, LogOut, ShieldCheck, UserCheck, Sparkles } from "lucide-react";
+import { LayoutDashboard, Package, ChevronDown, ChevronRight, Menu, X, ChevronLeft, Droplets, ShoppingBag, Users, Settings, LogOut, ShieldCheck, UserCheck, Sparkles } from "lucide-react";
 import { useApp } from "../store/AppContext";
 import { PeractButton } from "../../shared/components/peract-button";
 import { PeractTag } from "../../shared/components/peract-tag";
@@ -60,8 +60,7 @@ const ALL_NAV_ITEMS: NavItem[] = [{
     adminOnly: true
   }, {
     label: "Pedidos Online",
-    path: "/vendas/pedidos",
-    adminOnly: true
+    path: "/vendas/pedidos"
   }]
 }, {
   label: "Gestão de Pessoas",
@@ -136,73 +135,13 @@ function SidebarItem({
         </div> : null}
     </div>;
 }
-function NotificationPanel({
-  onClose
-}: {
-  onClose: () => void;
-}) {
-  const {
-    notifications,
-    dismissNotification,
-    markAllRead
-  } = useApp();
-  const ref = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    const handleClick = (event: MouseEvent) => {
-      if (ref.current && !ref.current.contains(event.target as Node)) onClose();
-    };
-    document.addEventListener("mousedown", handleClick);
-    return () => document.removeEventListener("mousedown", handleClick);
-  }, [onClose]);
-  const unreadCount = notifications.filter(notification => !notification.read).length;
-  const formatTime = (timestamp: number) => {
-    const diff = Date.now() - timestamp;
-    if (diff < 60000) return "Agora";
-    if (diff < 3600000) return `${Math.floor(diff / 60000)}min atrás`;
-    if (diff < 86400000) return `${Math.floor(diff / 3600000)}h atrás`;
-    return new Date(timestamp).toLocaleDateString("pt-BR");
-  };
-  return <div ref={ref} className="animate-in fade-in-0 zoom-in-95 slide-in-from-top-1 duration-150 peract-bg-card peract-border-default peract-radius-xl absolute right-0 top-full z-50 mt-2 w-80 overflow-hidden shadow-2xl">
-      <div className="flex items-center justify-between border-b peract-border-color px-4 py-3">
-        <div>
-          <p className="text-sm font-medium peract-font-color-default">Notificações</p>
-          {unreadCount > 0 ? <p className="text-xs peract-font-color-accent">{unreadCount} não lida(s)</p> : null}
-        </div>
-        {notifications.length > 0 ? <PeractButtonPrimitive className="text-xs peract-font-color-muted transition-colors hover:text-gray-600" onClick={markAllRead} variant="plain" size="plain">Marcar todas lidas</PeractButtonPrimitive> : null}
-      </div>
-      <div className="max-h-72 overflow-y-auto">
-        {notifications.length === 0 ? <div className="flex flex-col items-center justify-center py-10 peract-font-color-muted">
-            <Bell size={28} className="mb-2 text-gray-300" />
-            <p className="text-sm">Nenhuma notificação</p>
-            <p className="mt-0.5 text-xs">Alertas de estoque aparecem aqui</p>
-          </div> : notifications.map(notification => <div key={notification.id} className={`flex items-start gap-3 border-b border-gray-50 px-4 py-3 last:border-0 ${!notification.read ? "bg-amber-50/40" : "peract-bg-card"}`}>
-            <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full" style={{
-          background: notification.type === "out_of_stock" ? "#fee2e2" : "#fef3c7"
-        }}>
-              <Package size={14} style={{
-            color: notification.type === "out_of_stock" ? "#dc2626" : "#92400e"
-          }} />
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="text-xs leading-snug peract-font-color-default">{notification.message}</p>
-              <p className="mt-0.5 text-xs peract-font-color-muted">{formatTime(notification.timestamp)}</p>
-            </div>
-            <PeractButtonPrimitive aria-label="Dispensar" className="mt-0.5 shrink-0 text-gray-300 transition-colors hover:text-gray-500" onClick={() => dismissNotification(notification.id)} variant="plain" size="plain">
-              <X size={13} />
-            </PeractButtonPrimitive>
-          </div>)}
-      </div>
-    </div>;
-}
 export function AppLayout() {
   const {
-    notifications,
     logout,
     currentUser
   } = useApp();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [notifOpen, setNotifOpen] = useState(false);
   const location = useLocation();
   const isAdmin = currentUser?.cargo === "Administrador";
   const navItems = ALL_NAV_ITEMS
@@ -218,7 +157,6 @@ export function AppLayout() {
     return protectedPaths.some(path =>
       path && (location.pathname === path || location.pathname.startsWith(`${path}/`)));
   });
-  const unread = notifications.filter(notification => !notification.read).length;
   const getPageTitle = () => {
     const path = location.pathname;
     if (path === "/") return "Início";
@@ -241,6 +179,10 @@ export function AppLayout() {
     </div>;
   }
   if (!isAdmin && isAdminRoute) return <Navigate to="/" replace />;
+  const pageTitle = getPageTitle();
+  const pageNavItem = ALL_NAV_ITEMS.find(item => item.path === location.pathname || item.children?.some(child => child.path === location.pathname));
+  const userName = currentUser.nome?.trim() || "Usuário";
+  const userInitials = userName.split(/\s+/).slice(0, 2).map(part => part[0]).join("").toUpperCase();
   return <div className="peract-bg-page flex h-screen overflow-hidden">
       {mobileMenuOpen ? <div className="fixed inset-0 z-40 bg-black/40 lg:hidden" onClick={() => setMobileMenuOpen(false)} /> : null}
 
@@ -286,7 +228,7 @@ export function AppLayout() {
           {navItems.map(item => <SidebarItem key={item.label} collapsed={sidebarCollapsed} item={item} onMobileClose={() => setMobileMenuOpen(false)} />)}
         </nav>
 
-        <GuidedSystemTour collapsed={sidebarCollapsed} isAdmin={isAdmin} />
+        <GuidedSystemTour collapsed={sidebarCollapsed} isAdmin={isAdmin} onStart={() => setMobileMenuOpen(false)} />
 
         <div className="hidden shrink-0 border-t p-2 lg:block" style={{
         borderColor: C.border
@@ -301,61 +243,32 @@ export function AppLayout() {
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
-        <header className="peract-header-shell flex h-14 shrink-0 items-center gap-3 px-4">
-          <PeractButton action={() => setMobileMenuOpen(true)} className="h-9 w-9 rounded-lg hover:bg-gray-100 lg:hidden" size="icon" style={{
-          color: C.textMid
-        }} theme="secondary"><Menu size={22} /></PeractButton>
-          <span className="truncate text-sm font-medium" style={{
-          color: C.dark
-        }}>{getPageTitle()}</span>
+        <header className="peract-header-shell flex h-14 sm:h-16 shrink-0 items-center gap-3 px-3 sm:px-6">
+          <PeractButtonPrimitive onClick={() => setMobileMenuOpen(true)} className="h-9 w-9 shrink-0 rounded-md peract-font-color-muted hover:bg-gray-100 lg:hidden" variant="plain" size="plain" aria-label="Abrir menu" title="Abrir menu">
+            <Menu size={20} />
+          </PeractButtonPrimitive>
+          <div className="flex min-w-0 flex-1 items-center gap-3">
+            <span aria-hidden="true" className="hidden h-9 w-9 shrink-0 items-center justify-center rounded-md peract-bg-accent-soft peract-font-color-accent sm:flex">
+              {pageNavItem?.icon ?? <LayoutDashboard size={20} />}
+            </span>
+            <span className="truncate text-sm font-semibold peract-font-color-default" title={pageTitle}>{pageTitle}</span>
+          </div>
 
-          <div className="ml-auto flex items-center gap-1">
-            <div className="relative">
-              <PeractButton action={() => setNotifOpen(!notifOpen)} aria-label="Notificações" className="relative h-9 w-9 rounded-lg hover:bg-gray-100" size="icon" style={{
-              color: C.textMid
-            }} theme="secondary">
-                <Bell size={18} />
-                {unread > 0 ? <span className="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full text-[10px] font-medium text-white" style={{
-                background: "#dc2626"
-              }}>{unread > 9 ? "9+" : unread}</span> : null}
-              </PeractButton>
-              {notifOpen ? <NotificationPanel onClose={() => setNotifOpen(false)} /> : null}
-            </div>
-
-            <div className="ml-1 flex items-center gap-2 border-l pl-2" style={{
-            borderColor: C.border
-          }}>
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm text-white" style={{
-              background: isAdmin ? C.accent : "#6366f1"
-            }}>
-                <User size={16} />
+          <div className="flex shrink-0 items-center gap-3 border-l peract-border-color pl-3 sm:gap-4 sm:pl-4">
+            <div className="flex min-w-0 items-center gap-2.5" title={`${userName} (${currentUser.cargo})`}>
+              <span role="img" aria-label={`Perfil de ${userName}`} className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border peract-border-color peract-bg-accent-soft text-xs font-semibold peract-font-color-accent">
+                {userInitials}
+              </span>
+              <div className="hidden min-w-0 sm:block">
+                <p className="max-w-[160px] truncate text-xs font-medium peract-font-color-default">{userName}</p>
+                {userName !== currentUser.cargo && <p className="mt-0.5 text-[11px] leading-tight peract-font-color-muted">{currentUser.cargo}</p>}
               </div>
-              <div className="hidden min-w-0 flex-col justify-center md:flex">
-                <p className="max-w-[150px] truncate text-xs font-medium leading-tight" style={{
-                color: C.dark
-              }}>{currentUser?.nome ?? "Usuário"}</p>
-                <p className="mt-0.5 text-[10px] leading-none" style={{
-                color: C.textMid
-              }}>{currentUser?.cargo ?? ""}</p>
-              </div>
-              <PeractButton action={() => void logout()} aria-label="Sair" className="ml-1 gap-2 rounded-lg hover:bg-gray-100" icon={<LogOut size={15} />} size="sm" style={{
-              color: C.textMid
-            }} theme="secondary" title="Sair">
-                <span className="hidden md:inline">Sair</span>
-              </PeractButton>
             </div>
+            <PeractButtonPrimitive onClick={() => void logout()} aria-label="Sair" className="h-9 w-9 shrink-0 rounded-md border peract-border-color peract-font-color-muted transition-colors hover:border-red-200 hover:bg-red-50 hover:text-red-700" variant="plain" size="plain" title="Sair">
+              <LogOut size={17} />
+            </PeractButtonPrimitive>
           </div>
         </header>
-
-        {!isAdmin ? <div className="shrink-0 border-b px-4 py-1.5 text-xs text-[#4f46e5]" style={{
-        background: "rgba(99,102,241,0.07)",
-        borderColor: "rgba(99,102,241,0.15)"
-      }}>
-            <div className="flex items-center gap-2">
-              <UserCheck size={12} />
-              <span>Você está logado como <strong>Funcionário</strong>. Algumas funcionalidades administrativas estão ocultas.</span>
-            </div>
-          </div> : null}
 
         <main className="flex-1 overflow-y-auto">
           <Outlet />

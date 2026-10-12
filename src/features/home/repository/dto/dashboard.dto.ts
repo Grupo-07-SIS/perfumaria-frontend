@@ -43,7 +43,7 @@ export interface DashboardRecentSalesResponseDto {
     vendaId: number;
     cliente: string;
     valor: number;
-    dataVenda: string;
+    dataHoraVenda: string;
     formaPagamento: string;
     status: "PENDENTE" | "FINALIZADA" | "CANCELADA";
   }>;

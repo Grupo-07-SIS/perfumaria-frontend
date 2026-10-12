@@ -6,6 +6,7 @@ const USER_TYPE_IDS = { Administrador: 1, Funcionário: 2 } as const;
 export function toFuncionarioModel(dto: FuncionarioResponseDto): Funcionario {
   return {
     id: dto.id,
+    donoOrganizacao: dto.donoOrganizacao === true,
     nome: dto.nome,
     email: dto.email,
     cargo: dto.fkTipoUsuario === USER_TYPE_IDS.Administrador ? "Administrador" : "Funcionário",

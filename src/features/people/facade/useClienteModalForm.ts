@@ -5,6 +5,7 @@ import type { ClienteModalFormValues, ClienteModalProps } from "../models/people
 import { useState } from "react";
 import { EMPTY_ENDERECO } from "../config/people.config";
 import { formatTelefone } from "../../../shared/utils/masks";
+import { useCepAutofill } from "./useCepAutofill";
 export function useClienteModalForm({
   data,
   onSave
@@ -43,6 +44,7 @@ export function useClienteModalForm({
     ...p,
     [key]: ""
   }));
+  const cepLookup = useCepAutofill(endereco, setEndereco, clearError);
   const handleSave = async () => {
     const e = validateCliente({
       nome,
@@ -79,6 +81,7 @@ export function useClienteModalForm({
     errors,
     success,
     clearError,
+    cepLookup,
     handleSave
   };
 }

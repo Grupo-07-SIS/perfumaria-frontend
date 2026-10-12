@@ -93,6 +93,15 @@ export function groupSaleItems(items: CatalogItem[], products: CatalogItem[]): S
   return [...groups.values()];
 }
 
+export function cartQuantityError(item: CatalogItem, quantity: number): string | null {
+  if (!Number.isInteger(quantity) || quantity < 1 || quantity > 2147483647) return "Informe uma quantidade inteira válida.";
+  if (item.tipo === "produto") {
+    if (item.estoqueAtual === undefined || !Number.isInteger(item.estoqueAtual)) return `Não foi possível verificar o estoque de ${item.nome}.`;
+    if (quantity > item.estoqueAtual) return `Estoque insuficiente para ${item.nome}.`;
+  }
+  return null;
+}
+
 export function validateSale(cart: CartItem[], customer: SaleCustomer | null, form: SalesFormValues): string[] {
   const errors: string[] = [];
   if (cart.length === 0) errors.push("Adicione pelo menos um item ao carrinho.");
@@ -108,8 +117,8 @@ export function validateSale(cart: CartItem[], customer: SaleCustomer | null, fo
     const quantity = (quantities.get(catalogItem.id) ?? 0) + quantidade;
     quantities.set(catalogItem.id, quantity);
     if (!Number.isSafeInteger(catalogItem.id) || catalogItem.id <= 0 || !Number.isFinite(catalogItem.preco) || catalogItem.preco < 0) errors.push("Selecione um produto válido do catálogo.");
-    if (!Number.isInteger(quantidade) || quantidade < 1 || quantity > 2147483647) errors.push("Informe uma quantidade inteira válida.");
-    if (catalogItem.estoqueAtual !== undefined && (!Number.isInteger(catalogItem.estoqueAtual) || quantity > catalogItem.estoqueAtual)) errors.push(`Estoque insuficiente para ${catalogItem.nome}.`);
+    const quantityError = cartQuantityError(catalogItem, quantidade) ?? cartQuantityError(catalogItem, quantity);
+    if (quantityError) errors.push(quantityError);
   }
   return errors;
 }
@@ -131,6 +140,10 @@ export async function createSaleCustomer(values: NovoClienteModalFormValues): Pr
 
 export function salesErrorMessage(error: unknown, fallback: string): string {
   if (!axios.isAxiosError(error)) return fallback;
+  const responseMessage = (error.response?.data as { message?: unknown } | undefined)?.message;
+  if (error.response?.status === 400 && typeof responseMessage === "string" && responseMessage.startsWith("Estoque insuficiente")) {
+    return `${responseMessage}. Atualize os produtos e confira as quantidades antes de tentar novamente.`;
+  }
   const messages: Record<number, string> = {
     400: "Dados inválidos. Confira o cliente, os itens e os valores informados.",
     401: "Sessão expirada. Entre novamente.",

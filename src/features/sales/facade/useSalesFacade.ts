@@ -1,4 +1,4 @@
-import { calculateSaleTotals, createSaleCustomer, fetchSalesData, groupSaleItems, registerSale, salesErrorMessage, searchSaleItems, validateSale } from "../services/sales.service";
+import { calculateSaleTotals, cartQuantityError, createSaleCustomer, fetchSalesData, groupSaleItems, registerSale, salesErrorMessage, searchSaleItems, validateSale } from "../services/sales.service";
 import { useForm } from "react-hook-form";
 import type { SalesFormValues, CatalogItem, CartItem, SaleItemGroup, SaleCustomer, SaleReview, NovoClienteModalFormValues } from "../models/sales.models";
 import { useEffect, useRef, useState } from "react";
@@ -86,6 +86,7 @@ export function useSalesFacade() {
   const setDesconto = (value: string) => form.setValue("desconto", value, { shouldDirty: true });
   const setFrete = (value: string) => form.setValue("frete", value, { shouldDirty: true });
   const [success, setSuccess] = useState(false);
+  const [registeredStatus, setRegisteredStatus] = useState<"FINALIZADA" | "PENDENTE">("FINALIZADA");
   const [errors, setErrors] = useState<string[]>([]);
   const [showNovoCliente, setShowNovoCliente] = useState(false);
   const clientesFiltrados = clientes.filter(c => {
@@ -100,6 +101,8 @@ export function useSalesFacade() {
   const selectedItem = itemPresentation === "completo"
     ? selectedGroup?.items.find(item => item.tipo === "produto")
     : selectedGroup?.items.find(item => item.tipo !== "produto" && String(item.id) === selectedVariantId);
+  const canAddSelectedItem = !!selectedItem && !cartQuantityError(selectedItem,
+    (cart.find(item => item.catalogItem.id === selectedItem.id)?.quantidade ?? 0) + 1);
   const selectItemGroup = (group: SaleItemGroup) => {
     setSelectedBase(group);
     setItemSearch(group.nome);
@@ -122,9 +125,17 @@ export function useSalesFacade() {
     setItemSearch(value);
   };
   const addToCart = (item: CatalogItem) => {
+    const quantity = (cart.find(entry => entry.catalogItem.id === item.id)?.quantidade ?? 0) + 1;
+    const quantityError = cartQuantityError(item, quantity);
+    if (quantityError) {
+      setErrors([quantityError]);
+      return;
+    }
+    setErrors([]);
     setSuccess(false);
     setCart(prev => {
       const existing = prev.find(i => i.catalogItem.id === item.id);
+      if (cartQuantityError(item, (existing?.quantidade ?? 0) + 1)) return prev;
       if (existing) return prev.map(i => i.catalogItem.id === item.id ? {
         ...i,
         quantidade: i.quantidade + 1
@@ -140,10 +151,18 @@ export function useSalesFacade() {
     itemForm.reset();
   };
   const confirmItemSelection = () => {
-    if (!selectedItem || (selectedItem.estoqueAtual !== undefined && selectedItem.estoqueAtual <= 0)) return;
+    if (!selectedItem || !canAddSelectedItem) return;
     addToCart(selectedItem);
   };
   const updateQty = (id: number, qty: number) => {
+    const item = cart.find(entry => entry.catalogItem.id === id);
+    if (!item) return;
+    const quantityError = cartQuantityError(item.catalogItem, qty);
+    if (quantityError) {
+      setErrors([quantityError]);
+      return;
+    }
+    setErrors([]);
     setCart(prev => prev.map(i => i.catalogItem.id === id ? {
       ...i,
       quantidade: qty
@@ -194,6 +213,7 @@ export function useSalesFacade() {
     setConfirmationError("");
     try {
       await registerSale(saleReview.cart, saleReview.customer, saleReview.form);
+      setRegisteredStatus(saleReview.form.isOnline ? "PENDENTE" : "FINALIZADA");
       setSaleReview(null);
       setSuccess(true);
       setCart([]);
@@ -205,6 +225,7 @@ export function useSalesFacade() {
       itemForm.reset();
       setClienteOpen(false);
       form.reset();
+      setReloadKey(previous => previous + 1);
     } catch (error) {
       setConfirmationError(salesErrorMessage(error, "Não foi possível confirmar o registro. Verifique as vendas antes de tentar novamente."));
     } finally {
@@ -244,6 +265,7 @@ export function useSalesFacade() {
     itemGroups,
     selectedGroup,
     selectedItem,
+    canAddSelectedItem,
     selectItemGroup,
     itemPresentation,
     setItemPresentation,
@@ -270,6 +292,7 @@ export function useSalesFacade() {
     desconto,
     setDesconto,
     success,
+    registeredStatus,
     setSuccess,
     errors,
     setErrors,

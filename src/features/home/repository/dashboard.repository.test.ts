@@ -102,8 +102,8 @@ describe("dashboardRepository", () => {
         produtosCriticos: 2,
       } } as never)
       .mockResolvedValueOnce({ data: { vendas: [
-        { vendaId: 7, cliente: "Cliente", dataVenda: "2026-10-06T14:30:00", formaPagamento: "PIX", valor: 80, status: "FINALIZADA" },
-        { vendaId: 8, cliente: "Outro cliente", dataVenda: "2026-10-05T00:00:00", formaPagamento: "DINHEIRO", valor: 40, status: "PENDENTE" },
+        { vendaId: 7, cliente: "Cliente", dataHoraVenda: "2026-10-06T14:30:00", formaPagamento: "PIX", valor: 80, status: "FINALIZADA" },
+        { vendaId: 8, cliente: "Outro cliente", dataHoraVenda: "2026-10-05T00:00:00", formaPagamento: "DINHEIRO", valor: 40, status: "PENDENTE" },
       ] } } as never);
 
     const result = await dashboardRepository.listSalesOverview("7dias");
@@ -113,10 +113,58 @@ describe("dashboardRepository", () => {
     expect(result.kpis?.vendasPeriodo.vendas).toBe(2);
     expect(result.failedSections).toEqual([]);
     expect(result.sales).toMatchObject([
-      { id: "V-7", data: "06/10/2026 14:30", pagamento: "PIX", total: 80, status: "FINALIZADA" },
-      { id: "V-8", data: "05/10/2026", pagamento: "DINHEIRO", total: 40, status: "PENDENTE" },
+      { id: "V-7", data: "06/10/2026 14:30", pagamento: "Pix", total: 80, status: "FINALIZADA" },
+      { id: "V-8", data: "05/10/2026 00:00", pagamento: "Dinheiro", total: 40, status: "PENDENTE" },
     ]);
     expect(apiClient.get).toHaveBeenNthCalledWith(1, "/dashboard/kpis", { params: { dataInicio: expect.any(String), dataFim: expect.any(String) } });
     expect(apiClient.get).toHaveBeenNthCalledWith(2, "/dashboard/vendas-recentes");
+  });
+
+  it.each([
+    ["PIX", "Pix"],
+    ["pix", "Pix"],
+    ["DINHEIRO", "Dinheiro"],
+    ["CARTAO_CREDITO", "Cartão de crédito"],
+    ["CARTAO_DE_DEBITO", "Cartão de débito"],
+    ["Cartão de crédito", "Cartão de crédito"],
+    ["  cartão de débito  ", "Cartão de débito"],
+    ["TRANSFERENCIA_BANCARIA", "Transferência bancária"],
+    ["Transferência bancária", "Transferência bancária"],
+    [null, ""],
+    [undefined, ""],
+    ["   ", ""],
+    ["Outro pagamento", "Outro pagamento"],
+  ])("standardizes recent sale payment %s as %s", async (formaPagamento, pagamento) => {
+    vi.mocked(apiClient.get)
+      .mockResolvedValueOnce({ data: null } as never)
+      .mockResolvedValueOnce({ data: { vendas: [
+        { vendaId: 9, dataHoraVenda: "2026-10-06T14:30:00", formaPagamento, status: "FINALIZADA" },
+      ] } } as never);
+
+    const result = await dashboardRepository.listSalesOverview("7dias");
+
+    expect(result.failedSections).toEqual([]);
+    expect(result.sales[0].pagamento).toBe(pagamento);
+  });
+
+  it("isolates malformed recent sales from successful KPI results", async () => {
+    vi.mocked(apiClient.get)
+      .mockResolvedValueOnce({ data: {
+        vendasPeriodo: { vendas: 3, comparacaoPeriodoAnterior: 50 },
+        faturamentoPeriodo: { valor: 150, comparacaoAnterior: 20 },
+        margemLucro: { valor: 25, comparacaoAnterior: 2 },
+        ticketMedio: { valor: 50, comparacaoAnterior: 10 },
+        clientesCadastrados: 4,
+        produtosCriticos: 1,
+      } } as never)
+      .mockResolvedValueOnce({ data: { vendas: [
+        { vendaId: 9, cliente: "Cliente", formaPagamento: "PIX", valor: 50, status: "FINALIZADA" },
+      ] } } as never);
+
+    const result = await dashboardRepository.listSalesOverview("7dias");
+
+    expect(result.kpis?.vendasPeriodo.vendas).toBe(3);
+    expect(result.sales).toEqual([]);
+    expect(result.failedSections).toEqual(["recentSales"]);
   });
 });

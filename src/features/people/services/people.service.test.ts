@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildSearchParams, peopleErrorMessage, selectPeople, validateCliente, validateFornecedor } from "./people.service";
+import { buildSearchParams, peopleErrorMessage, selectPeople, validateCliente, validateFornecedor, validateFuncionario } from "./people.service";
 
 const endereco = { logradouro: "", numero: "", cep: "", bairro: "", cidade: "", uf: "" };
 
@@ -79,6 +79,19 @@ describe("people.service", () => {
     it("rejeita CEP incompleto", () => {
       expect(validateFornecedor({ ...valido, endereco: { ...endereco, cep: "01001-00" } })).toEqual({ cep: "O CEP deve conter 8 dígitos." });
     });
+
+    it("rejeita nome, e-mail e endereço acima dos limites da API", () => {
+      expect(validateFornecedor({
+        ...valido,
+        razaoSocial: "x".repeat(46),
+        email: `${"x".repeat(36)}@example.test`,
+        endereco: { ...endereco, logradouro: "x".repeat(46) },
+      })).toEqual({
+        razaoSocial: "Máximo de 45 caracteres.",
+        email: "Máximo de 45 caracteres.",
+        logradouro: "Máximo de 45 caracteres.",
+      });
+    });
   });
 
   describe("validateCliente", () => {
@@ -105,6 +118,32 @@ describe("people.service", () => {
         .toEqual({ cep: "O CEP deve conter 8 dígitos." });
       expect(validateCliente({ nome: "Ana", telefone: "11999990000", endereco: { ...endereco, cep: "01001-000" } }))
         .toEqual({});
+    });
+
+    it("rejeita nome, e-mail e endereço acima dos limites da API", () => {
+      expect(validateCliente({
+        ...valido,
+        nome: "x".repeat(46),
+        email: `${"x".repeat(90)}@example.test`,
+        endereco: { ...endereco, cidade: "x".repeat(46) },
+      })).toEqual({
+        nome: "Máximo de 45 caracteres.",
+        email: "Máximo de 100 caracteres.",
+        cidade: "Máximo de 45 caracteres.",
+      });
+    });
+  });
+
+  describe("validateFuncionario", () => {
+    const valid = { nome: "Ana", email: "ana@example.test", senha: "senha123", confirmSenha: "senha123", isNew: true };
+
+    it("rejeita campos acima dos limites da API", () => {
+      const oversizedPassword = "x".repeat(101);
+      expect(validateFuncionario({ ...valid, nome: "x".repeat(46), email: `${"x".repeat(34)}@example.test`, senha: oversizedPassword, confirmSenha: oversizedPassword })).toEqual({
+        nome: "Máximo de 45 caracteres.",
+        email: "Máximo de 45 caracteres.",
+        senha: "Máximo de 100 caracteres.",
+      });
     });
   });
 });

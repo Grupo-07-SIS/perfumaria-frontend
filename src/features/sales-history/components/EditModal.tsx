@@ -10,10 +10,12 @@ import { PeractNativeSelect } from "../../../shared/components/peract-select";
 import { ACC, pagamentosOpcoes } from "../config/sales-history.config";
 export function EditModal({
   venda,
+  error,
   onClose,
   onSave
 }: {
   venda: Venda;
+  error?: string;
   onClose: () => void;
   onSave: (v: Venda) => void;
 }) {
@@ -39,6 +41,7 @@ export function EditModal({
         </div>
 
         <div className="p-4 flex flex-col gap-5">
+          {error && <div role="alert" className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}
           {/* ── Dados exibidos (read-only) ── */}
           <div className="rounded-xl border peract-border-color overflow-hidden">
             <div className="px-3 py-2 border-b border-gray-50" style={{
@@ -51,7 +54,7 @@ export function EditModal({
               <div className="p-2.5 rounded-lg peract-bg-accent-soft">
                 <p className="text-xs peract-font-color-muted mb-1">Canal</p>
                 <div className="flex items-center gap-1.5">
-                  <CanalBadge venda={venda} />
+                  <CanalBadge venda={venda} neutral />
                 </div>
               </div>
               {/* Cliente */}
@@ -75,6 +78,10 @@ export function EditModal({
               {venda.desconto != null && venda.desconto > 0 && <div className="p-2.5 rounded-lg bg-green-50">
                   <p className="text-xs peract-font-color-muted mb-1">Desconto aplicado</p>
                   <p className="text-sm font-medium text-green-700">- R$ {venda.desconto.toFixed(2).replace(".", ",")}</p>
+                </div>}
+              {venda.tipoVenda === "online" && venda.canalOnline === "whatsapp" && venda.codigoRastreio && <div className="col-span-2 min-w-0 p-2.5 rounded-lg peract-bg-accent-soft">
+                  <p className="text-xs peract-font-color-muted mb-1">Código de rastreio</p>
+                  <p className="text-sm font-mono font-medium peract-font-color-default break-all">{venda.codigoRastreio}</p>
                 </div>}
             </div>
 

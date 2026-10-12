@@ -48,6 +48,11 @@ export function ReciboModal({
             </div>
           </div>
 
+          {venda.codigoRastreio && <div className="mb-4 rounded-lg border border-green-200 bg-green-50 px-3 py-2">
+            <p className="text-xs text-green-700">Código de rastreio</p>
+            <p className="font-mono text-sm font-medium text-green-800">{venda.codigoRastreio}</p>
+          </div>}
+
           <div className="mb-4">
             <p className="text-xs peract-font-color-muted font-medium mb-2 uppercase tracking-wide">Itens comprados</p>
             <div className="border peract-border-color rounded-xl overflow-hidden">
@@ -62,6 +67,7 @@ export function ReciboModal({
               {venda.itens.filter(i => i.quantidade > 0).map((item, idx) => <div key={idx} className="grid grid-cols-12 gap-2 px-3 py-2.5 border-b border-gray-50 last:border-0">
                   <div className="col-span-6 min-w-0">
                     <p className="text-xs font-medium peract-font-color-default leading-tight">{item.nome}</p>
+                    {item.categoria && <p className="mt-0.5 text-xs peract-font-color-muted break-words">{item.categoria}</p>}
                     {item.volume && <span className="text-xs peract-font-color-muted">{item.volume}</span>}
                   </div>
                   <div className="col-span-2 text-xs text-gray-600 text-center">{item.quantidade}</div>

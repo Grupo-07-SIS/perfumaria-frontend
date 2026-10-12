@@ -22,7 +22,7 @@ export const onlineOrdersRepository = {
     let page = 0;
     let hasMore = true;
     while (hasMore) {
-      const { data } = await apiClient.get<OnlineOrderDto[] | OrdersPageDto>("/vendas", { params: { page, size: PAGE_SIZE } });
+      const { data } = await apiClient.get<OnlineOrderDto[] | OrdersPageDto>("/vendas/pedidos-online", { params: { page, size: PAGE_SIZE } });
       const content = Array.isArray(data) ? data : data.content;
       const previousCount = orders.size;
       content.forEach(order => orders.set(order.id, order));
@@ -33,12 +33,21 @@ export const onlineOrdersRepository = {
   },
 
   async getOrder(id: string): Promise<Venda> {
-    const { data } = await apiClient.get<OnlineOrderDto>(`/vendas/${getNumericId(id)}`);
+    const { data } = await apiClient.get<OnlineOrderDto>(`/vendas/pedidos-online/${getNumericId(id)}`);
     return toVenda(data);
   },
 
-  async updateStatus(id: string, status: OnlineOrderStatus): Promise<Venda> {
-    const { data } = await apiClient.patch<OnlineOrderDto>(`/vendas/${getNumericId(id)}`, { status });
+  async deleteTrackingCode(id: string): Promise<void> {
+    await apiClient.delete<void>(`/vendas/${getNumericId(id)}/codigo-rastreio`);
+  },
+
+  async updateStatus(id: string, status: OnlineOrderStatus, codigoRastreio?: string): Promise<Venda> {
+    const finalizing = status === "FINALIZADA";
+    const path = finalizing ? `/vendas/pedidos-online/${getNumericId(id)}/finalizar` : `/vendas/${getNumericId(id)}`;
+    const { data } = await apiClient.patch<OnlineOrderDto>(path, {
+      ...(!finalizing ? { status } : {}),
+      ...(codigoRastreio !== undefined ? { codigoRastreio } : {}),
+    });
     return toVenda(data);
   },
 };

@@ -2,6 +2,7 @@ export type OnlineOrderStatus = "PENDENTE" | "FINALIZADA" | "CANCELADA";
 
 export interface OnlineOrderItemDto {
   produtoNome: string;
+  categoriaNome?: string | null;
   quantidade: number;
   tipoItem?: "PRODUTO" | "DECANT" | "BODY_SPLASH_FRACIONADO" | null;
   valorUnitario: number;
@@ -11,8 +12,8 @@ export interface OnlineOrderItemDto {
 export interface OnlineOrderDto {
   canalVendaOnline?: "WHATSAPP" | "SITE" | null;
   clienteNome?: string | null;
-  dataHora?: string | null;
-  dataVenda?: string | null;
+  codigoRastreio?: string | null;
+  dataHoraVenda: string;
   desconto?: number | null;
   forma?: string | null;
   frete?: number | null;

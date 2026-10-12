@@ -2,13 +2,15 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router";
 
-const { useAppMock } = vi.hoisted(() => ({
+const { useAppMock, useIsMobileMock } = vi.hoisted(() => ({
   useAppMock: vi.fn(),
+  useIsMobileMock: vi.fn(),
 }));
 
 vi.mock("../store/AppContext", () => ({
   useApp: useAppMock,
 }));
+vi.mock("../../shared/hooks/useIsMobile", () => ({ useIsMobile: useIsMobileMock }));
 
 import { AppLayout } from "./AppLayout";
 
@@ -43,6 +45,7 @@ function renderLayout(path: string) {
 describe("AppLayout", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    useIsMobileMock.mockReturnValue(false);
   });
 
   it.each([
@@ -70,7 +73,7 @@ describe("AppLayout", () => {
     expect(within(screen.getByRole("banner")).getByText(title)).toBeInTheDocument();
   });
 
-  it("hides admin-only navigation for employees and shows the access banner", () => {
+  it("hides admin-only navigation for employees without showing the access banner", () => {
     useAppMock.mockReturnValue({
       currentUser: { cargo: "Funcionário", email: "func@canalperfumado.com.br", nome: "Beatriz", id: 2 },
       dismissNotification: vi.fn(),
@@ -85,11 +88,11 @@ describe("AppLayout", () => {
     expect(screen.queryByText("Configurações")).not.toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Registrar Venda" })).toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "Histórico de Vendas" })).not.toBeInTheDocument();
-    expect(screen.queryByRole("link", { name: "Pedidos Online" })).not.toBeInTheDocument();
-    expect(screen.getByText(/Você está logado como/)).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Pedidos Online" })).toBeInTheDocument();
+    expect(screen.queryByText(/Você está logado como/)).not.toBeInTheDocument();
   });
 
-      it.each(["/clientes", "/clientes/", "/configuracoes", "/estoque/produtos", "/estoque/categorias", "/vendas/historico", "/vendas/pedidos"]) ("redirects employees away from %s without mounting the protected page", async path => {
+      it.each(["/clientes", "/clientes/", "/configuracoes", "/estoque/produtos", "/estoque/categorias", "/vendas/historico"]) ("redirects employees away from %s without mounting the protected page", async path => {
     useAppMock.mockReturnValue({
       currentUser: { cargo: "Funcionário", nome: "Funcionário", id: "employee" },
       notifications: [], logout: vi.fn(),
@@ -99,7 +102,7 @@ describe("AppLayout", () => {
     expect(protectedPageRender).not.toHaveBeenCalled();
   });
 
-    it.each(["/decants", "/bodysplash", "/vendas/registrar"])("keeps the permitted employee route %s available", path => {
+    it.each(["/decants", "/bodysplash", "/vendas/registrar", "/vendas/pedidos"])("keeps the permitted employee route %s available", path => {
     useAppMock.mockReturnValue({
       currentUser: { cargo: "Funcionário", nome: "Funcionário", id: "employee" },
       notifications: [], logout: vi.fn(),
@@ -132,7 +135,7 @@ describe("AppLayout", () => {
     expect(protectedPageRender).not.toHaveBeenCalled();
   });
 
-  it("shows admin navigation and handles notification actions and logout", () => {
+  it("shows admin navigation without notifications and preserves logout", () => {
     const dismissNotification = vi.fn();
     const logout = vi.fn();
     const markAllRead = vi.fn();
@@ -160,16 +163,38 @@ describe("AppLayout", () => {
     expect(screen.getByRole("link", { name: "Configurações" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Produtos" })).toBeInTheDocument();
 
-    fireEvent.click(screen.getByLabelText("Notificações"));
-
-    expect(screen.getByText("Notificações")).toBeInTheDocument();
-    fireEvent.click(screen.getByText("Marcar todas lidas"));
-    fireEvent.click(screen.getByLabelText("Dispensar"));
+    expect(screen.queryByRole("button", { name: "Notificações" })).not.toBeInTheDocument();
+    expect(screen.queryByText("Produto em estoque baixo")).not.toBeInTheDocument();
+    const header = within(screen.getByRole("banner"));
+    expect(header.getByRole("img", { name: "Perfil de Admin" })).toHaveTextContent("A");
+    expect(header.getByRole("button", { name: "Abrir menu" })).toHaveAttribute("title", "Abrir menu");
+    expect(header.getByRole("button", { name: "Sair" })).toHaveAttribute("title", "Sair");
     fireEvent.click(screen.getByTitle("Sair"));
 
-    expect(markAllRead).toHaveBeenCalled();
-    expect(dismissNotification).toHaveBeenCalledWith(1);
+    expect(markAllRead).not.toHaveBeenCalled();
+    expect(dismissNotification).not.toHaveBeenCalled();
     expect(logout).toHaveBeenCalled();
+  });
+
+  it("keeps the mobile tour menu bounded and closes the sidebar when starting", async () => {
+    useIsMobileMock.mockReturnValue(true);
+    useAppMock.mockReturnValue({
+      currentUser: { cargo: "Administrador", nome: "Admin", id: "admin" },
+      logout: vi.fn(),
+    });
+    renderLayout("/vendas/registrar");
+    fireEvent.click(screen.getByRole("button", { name: "Abrir menu" }));
+    expect(screen.getByRole("complementary")).toHaveClass("translate-x-0");
+    fireEvent.click(screen.getByRole("button", { name: "Escolher tour do sistema" }));
+    const menu = screen.getByRole("dialog", { name: "Seções do tour" });
+    expect(menu).toHaveClass("w-[calc(100vw-2rem)]", "max-w-80", "overflow-y-auto", "overscroll-contain");
+    expect(menu).toHaveClass("max-h-[min(70dvh,var(--radix-popover-content-available-height))]");
+    fireEvent.click(within(menu).getByRole("button", { name: "Fechar menu do tour" }));
+    await waitFor(() => expect(screen.queryByRole("dialog", { name: "Seções do tour" })).not.toBeInTheDocument());
+    fireEvent.click(screen.getByRole("button", { name: "Escolher tour do sistema" }));
+    fireEvent.click(within(screen.getByRole("dialog", { name: "Seções do tour" })).getByRole("button", { name: "Tour completo", exact: true }));
+    expect(screen.getByRole("complementary")).toHaveClass("-translate-x-full");
+    expect(await screen.findByText("Este é o ponto de partida. A navegação lateral permite acessar as áreas liberadas para seu perfil.", {}, { timeout: 5000 })).toBeInTheDocument();
   });
 
   it.each(["Administrador", "Funcionário"] as const)("offers the guided tour to %s", async cargo => {
@@ -196,7 +221,7 @@ describe("AppLayout", () => {
     }
     fireEvent.click(tourMenu.getByRole("button", { name: "Tour completo" }));
 
-    expect(await screen.findByText("Este é o ponto de partida. A navegação lateral permite acessar as áreas liberadas para seu perfil.")).toBeInTheDocument();
+    expect(await screen.findByText("Este é o ponto de partida. A navegação lateral permite acessar as áreas liberadas para seu perfil.", {}, { timeout: 5000 })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Finalizar tour" })).toBeInTheDocument();
     await waitFor(() => expect(within(screen.getByRole("banner")).getByText("Início")).toBeInTheDocument());
   });

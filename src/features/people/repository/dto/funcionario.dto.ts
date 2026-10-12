@@ -7,6 +7,7 @@ export interface FuncionarioRequestDto {
 
 export interface FuncionarioResponseDto {
   id: string;
+  donoOrganizacao?: boolean;
   nome: string;
   email: string;
   fkTipoUsuario: number;

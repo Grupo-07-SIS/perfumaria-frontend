@@ -11,6 +11,7 @@ import { PeractTableRoot, PeractTableHeader, PeractTableRow, PeractTableHead, Pe
 import { CanalBadge } from "./CanalBadge";
 import { StatusBadge } from "./StatusBadge";
 export function OnlineOrdersView({
+  canManageOrders,
   pedidosOnline,
   isLoading,
   error,
@@ -35,7 +36,7 @@ export function OnlineOrdersView({
 }: ReturnType<typeof useOnlineOrdersFacade>) {
   return <div className="p-4 lg:p-6 max-w-[1400px] mx-auto">
       {viewVenda && <ReciboModal venda={viewVenda} onClose={() => setViewVenda(null)} />}
-      {cancelVenda && <CancelModal venda={cancelVenda} onClose={() => setCancelVenda(null)} onConfirm={confirmarCancelamento} />}
+      {cancelVenda && <CancelModal venda={cancelVenda} error={error} onClose={() => setCancelVenda(null)} onConfirm={confirmarCancelamento} />}
       {rastreioVenda && <RastreioModal venda={rastreioVenda} onClose={() => setRastreioVenda(null)} onConfirm={confirmarRastreio} />}
 
       <div className="mb-5">
@@ -90,13 +91,13 @@ export function OnlineOrdersView({
       </div>
 
       {/* Filters */}
-      <PeractCard data-tour="tour-orders-filters" className="peract-bg-card rounded-xl border peract-border-color p-3 mb-4 flex flex-col xl:flex-row xl:items-center gap-3 shadow-sm">
-        <div className="flex items-center gap-2 flex-1 border peract-border-color rounded-lg px-3 py-2">
+      <PeractCard data-tour="tour-orders-filters" className="peract-bg-card rounded-xl border peract-border-color p-3 mb-4 flex flex-col sm:flex-row sm:items-center sm:flex-wrap gap-3 shadow-sm">
+        <div className="flex min-w-0 items-center gap-2 flex-1 border peract-border-color rounded-lg px-3 py-2 sm:h-12 sm:min-w-[180px] sm:py-1">
           <Search size={15} className="peract-font-color-muted shrink-0" />
           <PeractInputControl type="text" placeholder="Buscar pedido ou cliente..." value={search} onChange={e => setSearch(e.target.value)} className="text-sm outline-none flex-1 peract-font-color-default placeholder:text-gray-400" />
         </div>
-        <div className="flex gap-2 flex-wrap">
-          <div className="flex rounded-lg overflow-hidden border peract-border-color self-start">
+        <div className="grid w-full min-w-0 grid-cols-1 gap-2 sm:flex sm:w-auto sm:flex-wrap">
+          <div role="group" aria-label="Status dos pedidos" className="grid min-w-0 grid-cols-3 rounded-lg overflow-hidden border peract-border-color sm:flex sm:shrink-0">
             {[{
             key: "todos" as const,
             label: "Todos"
@@ -109,7 +110,7 @@ export function OnlineOrdersView({
           }].map(({
             key,
             label
-          }) => <PeractButtonPrimitive key={key} onClick={() => setFiltroStatus(key)} className="px-3 py-2 text-xs transition-all" style={filtroStatus === key ? {
+          }) => <PeractButtonPrimitive key={key} onClick={() => setFiltroStatus(key)} aria-pressed={filtroStatus === key} className="h-11 min-w-0 px-1.5 py-2 text-xs whitespace-nowrap transition-colors sm:h-auto sm:px-3 sm:py-1.5" style={filtroStatus === key ? {
             background: ACC,
             color: "white"
           } : {
@@ -119,7 +120,7 @@ export function OnlineOrdersView({
                 {label}
               </PeractButtonPrimitive>)}
           </div>
-          <div className="flex rounded-lg overflow-hidden border peract-border-color self-start">
+          <div role="group" aria-label="Canal dos pedidos" className="grid min-w-0 grid-cols-3 rounded-lg overflow-hidden border peract-border-color sm:flex sm:shrink-0">
             {[{
             key: "todos" as const,
             label: "Todos canais"
@@ -132,7 +133,7 @@ export function OnlineOrdersView({
           }].map(({
             key,
             label
-          }) => <PeractButtonPrimitive key={key} onClick={() => setFiltroCanal(key)} className="px-3 py-2 text-xs transition-all" style={filtroCanal === key ? {
+          }) => <PeractButtonPrimitive key={key} onClick={() => setFiltroCanal(key)} aria-pressed={filtroCanal === key} className="h-11 min-w-0 px-1.5 py-2 text-xs whitespace-nowrap transition-colors sm:h-auto sm:px-3 sm:py-1.5" style={filtroCanal === key ? {
             background: ACC,
             color: "white"
           } : {
@@ -190,12 +191,6 @@ export function OnlineOrdersView({
                     <PeractTableCell className="px-4 py-3">
                       <div>
                         <StatusBadge finalizado={!!pedido.enviado} />
-                        {pedido.enviado && pedido.dataEnvio && <p className="text-xs peract-font-color-muted mt-0.5">
-                            {pedido.dataEnvio}
-                          </p>}
-                        {pedido.codigoRastreio && <p className="text-xs text-green-600 font-mono mt-0.5 max-w-[12rem] truncate">
-                            {pedido.codigoRastreio}
-                          </p>}
                       </div>
                     </PeractTableCell>
                     <PeractTableCell className="px-4 py-3">
@@ -208,12 +203,12 @@ export function OnlineOrdersView({
                   }} variant="plain" size="plain">
                             {pedido.canalOnline === "whatsapp" ? <MessageCircle size={13} /> : <CheckCircle size={13} />}
                             <span className="sr-only 2xl:not-sr-only">Finalizar</span>
-                          </PeractButtonPrimitive> : <PeractButtonPrimitive onClick={() => handleFinalizar(pedido)} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium border transition-all hover:bg-gray-50 peract-border-color-accent peract-font-color-accent" title="Desfazer" variant="plain" size="plain">
+                          </PeractButtonPrimitive> : canManageOrders ? <PeractButtonPrimitive onClick={() => handleFinalizar(pedido)} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium border transition-all hover:bg-gray-50 peract-border-color-accent peract-font-color-accent" title="Desfazer" variant="plain" size="plain">
                             <RotateCcw size={13} /> <span className="sr-only 2xl:not-sr-only">Desfazer</span>
-                          </PeractButtonPrimitive>}
-                        <PeractButtonPrimitive onClick={() => setCancelVenda(pedido)} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium border border-red-200 text-red-600 hover:bg-red-50 transition-all" title="Cancelar pedido" variant="plain" size="plain" aria-label="Cancelar pedido">
+                          </PeractButtonPrimitive> : null}
+                        {canManageOrders && <PeractButtonPrimitive onClick={() => setCancelVenda(pedido)} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium border border-red-200 text-red-600 hover:bg-red-50 transition-all" title="Cancelar pedido" variant="plain" size="plain" aria-label="Cancelar pedido">
                           <XCircle size={13} /> <span className="sr-only 2xl:not-sr-only">Cancelar</span>
-                        </PeractButtonPrimitive>
+                        </PeractButtonPrimitive>}
                       </div>
                     </PeractTableCell>
                   </PeractTableRow>)}
@@ -230,7 +225,7 @@ export function OnlineOrdersView({
       {/* Mobile cards */}
       <div className="lg:hidden grid grid-cols-1 md:grid-cols-2 gap-3">
         {filtered.map(pedido => <div key={pedido.id} className={`bg-white rounded-xl border border-gray-100 p-4 shadow-sm ${pedido.enviado ? "opacity-80" : ""}`}>
-            <div className="flex items-center justify-between mb-2">
+            <div className="grid grid-cols-[minmax(0,1fr)_2.25rem] items-start gap-2 mb-2">
               <div className="min-w-0">
                 <span className="text-xs font-mono peract-font-color-muted">
                   {pedido.id}
@@ -239,10 +234,10 @@ export function OnlineOrdersView({
                   <span className="block truncate" title={pedido.cliente}>{pedido.cliente || "—"}</span>
                 </p>
               </div>
-              <div className="flex items-center gap-1.5 flex-wrap justify-end">
-                <PeractButtonPrimitive onClick={() => setViewVenda(pedido)} className="p-1 rounded-lg peract-font-color-muted hover:bg-gray-100" variant="plain" size="plain" aria-label="Ver detalhes">
-                  <Eye size={15} />
-                </PeractButtonPrimitive>
+              <PeractButtonPrimitive onClick={() => setViewVenda(pedido)} className="h-9 w-9 shrink-0 rounded-md border peract-border-color peract-font-color-muted hover:bg-gray-100" variant="plain" size="plain" title="Ver detalhes" aria-label="Ver detalhes">
+                <Eye size={15} />
+              </PeractButtonPrimitive>
+              <div className="col-span-2 flex items-center gap-1.5 flex-wrap">
                 <CanalBadge canal={pedido.canalOnline} />
                 <StatusBadge finalizado={!!pedido.enviado} />
               </div>
@@ -253,9 +248,6 @@ export function OnlineOrdersView({
                 {pedido.frete !== undefined && pedido.frete > 0 && <p className="text-xs text-blue-500 flex items-center gap-1 mt-0.5">
                     <Truck size={11} /> Frete: R${" "}
                     {pedido.frete.toFixed(2).replace(".", ",")}
-                  </p>}
-                {pedido.codigoRastreio && <p className="text-xs text-green-600 font-mono mt-0.5 max-w-[12rem] truncate">
-                    Rastreio: {pedido.codigoRastreio}
                   </p>}
               </div>
               <span className="text-sm font-medium peract-font-color-default">
@@ -268,12 +260,12 @@ export function OnlineOrdersView({
           }} variant="plain" size="plain">
                   {pedido.canalOnline === "whatsapp" ? <MessageCircle size={14} /> : <CheckCircle size={14} />}
                   Finalizar
-                </PeractButtonPrimitive> : <PeractButtonPrimitive onClick={() => handleFinalizar(pedido)} className="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-medium border hover:bg-gray-50 peract-border-color-accent peract-font-color-accent" variant="plain" size="plain">
+                </PeractButtonPrimitive> : canManageOrders ? <PeractButtonPrimitive onClick={() => handleFinalizar(pedido)} className="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-medium border hover:bg-gray-50 peract-border-color-accent peract-font-color-accent" variant="plain" size="plain">
                   <RotateCcw size={14} /> Desfazer
-                </PeractButtonPrimitive>}
-              <PeractButtonPrimitive onClick={() => setCancelVenda(pedido)} className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-sm border border-red-200 text-red-600 hover:bg-red-50" variant="plain" size="plain">
+                </PeractButtonPrimitive> : null}
+              {canManageOrders && <PeractButtonPrimitive onClick={() => setCancelVenda(pedido)} className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-sm border border-red-200 text-red-600 hover:bg-red-50" variant="plain" size="plain">
                 <XCircle size={14} /> Cancelar
-              </PeractButtonPrimitive>
+              </PeractButtonPrimitive>}
             </div>
           </div>)}
         {filtered.length === 0 && <div className="text-center py-12 peract-font-color-muted text-sm">

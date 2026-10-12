@@ -27,6 +27,7 @@ export function FornecedorModal({
     errors,
     success,
     clearError,
+    cepLookup,
     handleSave
   } = useFornecedorModalForm({
     data,
@@ -49,7 +50,7 @@ export function FornecedorModal({
           set: setRazaoSocial,
           ph: "Ex: Empresa Ltda",
           req: true,
-          inputProps: { type: "text", autoComplete: "organization" }
+          inputProps: { type: "text", autoComplete: "organization", maxLength: 45 }
         }, {
           label: "CNPJ",
           key: "cnpj",
@@ -73,7 +74,7 @@ export function FornecedorModal({
           set: setEmail,
           ph: "contato@empresa.com.br",
           req: true,
-          inputProps: { type: "email", inputMode: "email", autoComplete: "email", maxLength: 254 }
+          inputProps: { type: "email", inputMode: "email", autoComplete: "email", maxLength: 45 }
         }].map(({
           label,
           key,
@@ -91,7 +92,7 @@ export function FornecedorModal({
                 {errors[key] && <p className="text-xs text-red-600 mt-1">{errors[key]}</p>}
               </PeractField>)}
           </div>
-          <EnderecoFields endereco={endereco} onChange={setEndereco} errors={errors} onClearError={clearError} />
+          <EnderecoFields endereco={endereco} onChange={setEndereco} errors={errors} onClearError={clearError} cepLookup={cepLookup} />
         </div>
         <div className="flex gap-2 p-4 border-t peract-border-color sticky bottom-0 peract-bg-card">
           <PeractButtonPrimitive onClick={onClose} className="flex-1 px-4 py-2 border peract-border-color rounded-lg text-sm text-gray-600 hover:bg-gray-50" variant="plain" size="plain">Cancelar</PeractButtonPrimitive>

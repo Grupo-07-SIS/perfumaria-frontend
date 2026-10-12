@@ -2,6 +2,7 @@ import {
   createContext,
   useContext,
   useState,
+  useEffect,
   ReactNode,
   useCallback,
   Dispatch,
@@ -89,6 +90,7 @@ export interface StockThresholds {
 /* ─── Vendas ─── */
 export interface VendaItem {
   nome: string;
+  categoria?: string;
   volume?: string;
   quantidade: number;
   valorUnitario: number;
@@ -644,7 +646,7 @@ interface AppContextType {
 const AppContext = createContext<AppContextType | null>(null);
 
 export function AppProvider({ children }: { children: ReactNode }) {
-  const restoredSession = sessionService.restore();
+  const [restoredSession] = useState(() => sessionService.restore());
 
   const [isLoggedIn, setIsLoggedIn] = useState(Boolean(restoredSession));
   const [currentUser, setCurrentUser] = useState<AuthenticatedUser | null>(
@@ -666,6 +668,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [vendas, setVendas] = useState<Venda[]>(INITIAL_VENDAS);
   const [vendaIdCounter, setVendaIdCounter] = useState(1043);
 
+  useEffect(() => sessionService.subscribeToClear(() => {
+    setIsLoggedIn(false);
+    setCurrentUser(null);
+  }), []);
+
   const applyAuthSession = useCallback((session: AuthSession) => {
     setIsLoggedIn(true);
     setCurrentUser(session.user);
@@ -673,9 +680,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const logout = useCallback(async () => {
-    await authService.logout();
-    setIsLoggedIn(false);
-    setCurrentUser(null);
+    try {
+      await authService.logout();
+    } catch {
+      logger.warn("Nao foi possivel encerrar a sessao no servidor");
+    } finally {
+      setIsLoggedIn(false);
+      setCurrentUser(null);
+    }
     logger.info("Sessão encerrada");
   }, []);
 

@@ -12,7 +12,7 @@ const { getSaleDetailsMock, listSalesMock, updateSaleMock } = vi.hoisted(() => (
 }));
 
 vi.mock("../../core/auth/session.service", () => ({
-  sessionService: { restore: vi.fn() },
+  sessionService: { restore: vi.fn(), subscribeToClear: vi.fn(() => () => {}) },
 }));
 
 vi.mock("./repository/sales-history.repository", async (importOriginal) => {
@@ -31,7 +31,7 @@ vi.mock("./repository/sales-history.repository", async (importOriginal) => {
 const sales = [
   { id: "V-1042", data: "24/03/2026 14:32", cliente: "Ana Lima", pagamento: "Pix", total: 104, tipoVenda: "online" as const, frete: 15, enviado: false, itens: [] },
   { id: "V-1041", data: "24/03/2026 11:15", cliente: "Carlos Mendes", pagamento: "Cartão de crédito", total: 156, tipoVenda: "presencial" as const, desconto: 0, itens: [] },
-  { id: "V-1040", data: "23/03/2026 16:45", cliente: "Mariana Costa", pagamento: "Pix", total: 232, tipoVenda: "online" as const, frete: 20, enviado: true, itens: [] },
+  { id: "V-1040", data: "23/03/2026 16:45", cliente: "Mariana Costa", pagamento: "Pix", total: 232, tipoVenda: "online" as const, canalOnline: "whatsapp" as const, codigoRastreio: "BR123456789XX", frete: 20, enviado: true, itens: [] },
   { id: "V-1039", data: "23/03/2026 10:20", cliente: "Pedro Alves", pagamento: "Dinheiro", total: 67.5, tipoVenda: "presencial" as const, itens: [] },
   { id: "V-1038", data: "22/03/2026 15:00", cliente: "Juliana Santos", pagamento: "Cartão de débito", total: 345, tipoVenda: "presencial" as const, itens: [] },
 ];
@@ -47,7 +47,7 @@ describe("SalesHistory: caracterizacao do historico", () => {
     getSaleDetailsMock.mockImplementation(async (id: string) => ({
       ...sales.find((sale) => sale.id === id),
       ...(updateSaleMock.mock.calls.length > 0 && id === "V-1041" ? { cancelada: true, pagamento: "Pix" } : {}),
-      itens: [{ nome: "Decant Creed Aventus 3ml", volume: "3ml", quantidade: 3, valorUnitario: 28, tipoItem: "DECANT" as const }],
+      itens: [{ nome: "Decant Creed Aventus 3ml", categoria: "Perfume", volume: "3ml", quantidade: 3, valorUnitario: 28, tipoItem: "DECANT" as const }],
     }));
     updateSaleMock.mockImplementation(async (sale: (typeof sales)[number]) => sale);
     vi.mocked(sessionService.restore).mockReturnValue({
@@ -63,6 +63,14 @@ describe("SalesHistory: caracterizacao do historico", () => {
     expect(listSalesMock).toHaveBeenCalledOnce();
     expect(screen.queryByRole("cell", { name: "V-1042" })).not.toBeInTheDocument();
     expect(saleRow("V-1040")).toHaveTextContent("Finalizado");
+    expect(within(saleRow("V-1040")).getByText("WhatsApp")).toHaveClass("bg-green-100", "text-green-700");
+    expect(saleRow("V-1040")).not.toHaveTextContent("BR123456789XX");
+    expect(screen.queryByText("Rastreio: BR123456789XX")).not.toBeInTheDocument();
+    await user.click(within(saleRow("V-1040")).getByRole("button", { name: "Ver recibo" }));
+    expect(await screen.findByRole("dialog", { name: "Recibo da Venda" })).toHaveTextContent("BR123456789XX");
+    expect(screen.getByRole("dialog", { name: "Recibo da Venda" })).toHaveTextContent("23/03/2026 16:45");
+    expect(within(screen.getByRole("dialog", { name: "Recibo da Venda" })).getByText("Perfume", { exact: true })).toBeInTheDocument();
+    await user.click(within(screen.getByRole("dialog", { name: "Recibo da Venda" })).getAllByRole("button", { name: "Fechar" }).at(-1)!);
     await user.click(screen.getByRole("button", { name: "Presencial", exact: true }));
     await user.selectOptions(screen.getByRole("combobox"), "Dinheiro");
     expect(saleRow("V-1039")).toHaveTextContent("Pedro Alves");
@@ -90,6 +98,7 @@ describe("SalesHistory: caracterizacao do historico", () => {
     const initialRevenue = screen.getByText("Faturamento").parentElement?.textContent;
     await user.click(within(saleRow("V-1041")).getByRole("button", { name: "Editar" }));
     let dialog = within(screen.getByRole("dialog", { name: "Editar Venda" }));
+    expect(dialog.queryByText("Código de rastreio")).not.toBeInTheDocument();
     expect(dialog.queryByText("0", { exact: true })).not.toBeInTheDocument();
     expect(dialog.queryByRole("button", { name: "Pendente", exact: true })).not.toBeInTheDocument();
     await user.selectOptions(dialog.getByRole("combobox"), "Pix");
@@ -114,6 +123,73 @@ describe("SalesHistory: caracterizacao do historico", () => {
     expect(screen.getByRole("dialog", { name: "Recibo da Venda" })).toHaveTextContent("Carlos Mendes");
     expect(screen.getByRole("dialog", { name: "Recibo da Venda" })).toHaveTextContent("Decant Creed Aventus 3ml");
     expect(screen.getByRole("dialog", { name: "Recibo da Venda" })).toHaveTextContent("Cancelado");
+  });
+
+  it("exibe rastreio somente para WhatsApp com codigo e usa canal neutro na edicao", async () => {
+    const user = userEvent.setup();
+    render(<AppProvider><SalesHistoryPage /></AppProvider>);
+    await waitFor(() => expect(saleRow("V-1040")).toBeInTheDocument());
+    await user.click(within(saleRow("V-1040")).getByRole("button", { name: "Editar" }));
+    const dialog = within(screen.getByRole("dialog", { name: "Editar Venda" }));
+
+    expect(dialog.getByText("Código de rastreio")).toBeInTheDocument();
+    expect(dialog.getByText("BR123456789XX")).toHaveClass("break-all");
+    expect(dialog.getByText("WhatsApp")).toHaveClass("peract-font-color-default", "peract-bg-card");
+    expect(dialog.getByText("WhatsApp")).not.toHaveClass("bg-green-100", "text-green-700");
+    expect(dialog.queryByRole("textbox")).not.toBeInTheDocument();
+  });
+
+  it("preserva o azul do Site na lista do historico", async () => {
+    listSalesMock.mockResolvedValue([{ ...sales[2], canalOnline: "site" }]);
+    render(<AppProvider><SalesHistoryPage /></AppProvider>);
+    await waitFor(() => expect(saleRow("V-1040")).toBeInTheDocument());
+    expect(within(saleRow("V-1040")).getByText("Site")).toHaveClass("bg-blue-100", "text-blue-600");
+  });
+
+  it("omite rastreio de WhatsApp quando a venda nao tem codigo", async () => {
+    listSalesMock.mockResolvedValue([{ ...sales[2], codigoRastreio: undefined }]);
+    const user = userEvent.setup();
+    render(<AppProvider><SalesHistoryPage /></AppProvider>);
+    await waitFor(() => expect(saleRow("V-1040")).toBeInTheDocument());
+    await user.click(within(saleRow("V-1040")).getByRole("button", { name: "Editar" }));
+    expect(within(screen.getByRole("dialog", { name: "Editar Venda" })).queryByText("Código de rastreio")).not.toBeInTheDocument();
+  });
+
+  it("avisa sobre estoque insuficiente ao reativar e mantem a venda cancelada", async () => {
+    listSalesMock.mockResolvedValue([{ ...sales[1], cancelada: true }]);
+    updateSaleMock.mockRejectedValueOnce({ isAxiosError: true, response: { status: 400, data: { message: "Estoque insuficiente para o produto 42" } } });
+    const user = userEvent.setup();
+    render(<AppProvider><SalesHistoryPage /></AppProvider>);
+    await waitFor(() => expect(saleRow("V-1041")).toBeInTheDocument());
+    await user.click(within(saleRow("V-1041")).getByRole("button", { name: "Editar" }));
+    const dialog = within(screen.getByRole("dialog", { name: "Editar Venda" }));
+    await user.click(dialog.getByRole("button", { name: "Finalizado", exact: true }));
+    await user.click(dialog.getByRole("button", { name: "Salvar alterações" }));
+
+    expect(await dialog.findByRole("alert")).toHaveTextContent("um ou mais produtos estão sem estoque ou com quantidade insuficiente");
+    expect(dialog.getByRole("alert")).toHaveTextContent("A venda permanece cancelada.");
+    expect(screen.getByRole("dialog", { name: "Editar Venda" })).toBeInTheDocument();
+    await user.click(dialog.getAllByRole("button", { name: "Fechar", exact: true })[0]);
+    expect(saleRow("V-1041")).toHaveTextContent("Cancelado");
+    await user.click(within(saleRow("V-1041")).getByRole("button", { name: "Editar" }));
+    expect(within(screen.getByRole("dialog", { name: "Editar Venda" })).queryByRole("alert")).not.toBeInTheDocument();
+  });
+
+  it("permite repetir a reativacao depois de uma falha de estoque", async () => {
+    listSalesMock.mockResolvedValue([{ ...sales[1], cancelada: true }]);
+    updateSaleMock.mockRejectedValueOnce({ isAxiosError: true, response: { status: 400, data: { message: "Estoque insuficiente para o produto 42" } } });
+    const user = userEvent.setup();
+    render(<AppProvider><SalesHistoryPage /></AppProvider>);
+    await waitFor(() => expect(saleRow("V-1041")).toBeInTheDocument());
+    await user.click(within(saleRow("V-1041")).getByRole("button", { name: "Editar" }));
+    const dialog = within(screen.getByRole("dialog", { name: "Editar Venda" }));
+    await user.click(dialog.getByRole("button", { name: "Finalizado", exact: true }));
+    await user.click(dialog.getByRole("button", { name: "Salvar alterações" }));
+    await dialog.findByRole("alert");
+    await user.click(dialog.getByRole("button", { name: "Salvar alterações" }));
+    await waitFor(() => expect(screen.queryByRole("dialog", { name: "Editar Venda" })).not.toBeInTheDocument());
+    expect(saleRow("V-1041")).toHaveTextContent("Finalizado");
+    expect(updateSaleMock).toHaveBeenCalledTimes(2);
   });
 
   it("retirar a finalizacao de venda online remove a venda do historico", async () => {

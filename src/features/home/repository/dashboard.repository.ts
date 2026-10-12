@@ -1,4 +1,5 @@
 import { apiClient } from "../../../core/services/http-client";
+import { formatPaymentLabel } from "../../../shared/utils/payment";
 import type {
   CategoryDistributionResponseDto,
   CriticalStockResponseDto,
@@ -74,15 +75,17 @@ export interface DashboardRecentSale {
 }
 
 function mapRecentSale(sale: DashboardRecentSalesResponseDto["vendas"][number]): DashboardRecentSale {
-  const [date, time] = sale.dataVenda.split("T");
+  const timestamp = sale.dataHoraVenda;
+  if (!timestamp) throw new Error("DASHBOARD_RECENT_SALE_MISSING_TIMESTAMP");
+  const [date, time] = timestamp.split(/[T ]/);
   const [year, month, day] = date.split("-");
   const formattedDate = year && month && day ? `${day}/${month}/${year}` : date;
-  const formattedTime = time && time !== "00:00:00" ? ` ${time.slice(0, 5)}` : "";
+  const formattedTime = time ? ` ${time.slice(0, 5)}` : "";
   return {
     id: `V-${sale.vendaId}`,
     data: `${formattedDate}${formattedTime}`,
     cliente: sale.cliente ?? "",
-    pagamento: sale.formaPagamento ?? "",
+    pagamento: formatPaymentLabel(sale.formaPagamento),
     total: sale.valor ?? 0,
     status: sale.status,
   };
@@ -96,14 +99,23 @@ export const dashboardRepository = {
       apiClient.get<DashboardRecentSalesResponseDto>("/dashboard/vendas-recentes"),
     ]);
     const kpis = kpisResult.status === "fulfilled" ? kpisResult.value.data : null;
+    let sales: DashboardRecentSale[] = [];
+    let recentSalesFailed = recentSalesResult.status === "rejected";
+    if (recentSalesResult.status === "fulfilled") {
+      try {
+        sales = recentSalesResult.value.data.vendas.map(mapRecentSale);
+      } catch {
+        recentSalesFailed = true;
+      }
+    }
     return {
-      sales: recentSalesResult.status === "fulfilled" ? recentSalesResult.value.data.vendas.map(mapRecentSale) : [],
+      sales,
       customerCount: kpis?.clientesCadastrados ?? 0,
       criticalCount: kpis?.produtosCriticos ?? 0,
       kpis,
       failedSections: [
         ...(kpisResult.status === "rejected" ? ["salesOverview" as const, "customerCount" as const] : []),
-        ...(recentSalesResult.status === "rejected" ? ["recentSales" as const] : []),
+        ...(recentSalesFailed ? ["recentSales" as const] : []),
       ],
     };
   },

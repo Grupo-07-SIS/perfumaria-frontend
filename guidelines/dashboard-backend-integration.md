@@ -33,7 +33,7 @@ Os limites de data são calculados no fuso de negócio `America/Sao_Paulo` e env
 - Margem usa custo histórico gravado nos itens, não o custo atual do catálogo.
 - Clientes cadastrados no KPI são clientes ativos da organização, independentes do período.
 - A lista de estoque mostra até quatro itens, mas o alerta usa o total de `produtosCriticos` do KPI.
-- Vendas recentes expõem `dataVenda` como data, sem horário de compra inventado. A interface mostra hora somente se a resposta vier com hora real.
+- Vendas recentes expõem `dataHoraVenda`. A interface mostra a data e a hora retornadas pela API, sem inventar horário de compra.
 - Funcionários não disparam chamadas administrativas e recebem apenas atalhos operacionais na Home.
 
 ## Backend e migração

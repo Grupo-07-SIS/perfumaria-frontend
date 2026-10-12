@@ -17,7 +17,9 @@ export function RastreioModal({
 }) {
   const {
     codigo,
-    setCodigo
+    setCodigo,
+    error,
+    confirmar
   } = useRastreioModalForm();
   return <PeractModal className="peract-bg-card peract-radius-lg shadow-2xl max-w-sm" onClose={onClose}><PeractModalTitle className="sr-only">Detalhes</PeractModalTitle>
         <div className="flex items-center justify-between p-4 border-b peract-border-color">
@@ -40,22 +42,20 @@ export function RastreioModal({
         </div>
         <PeractField className="p-4">
           <p className="text-sm text-gray-600 mb-4">
-            Informe o código de rastreio para finalizar o pedido. Ele ficará
+            Informe um novo código de rastreio para finalizar o pedido. Ele ficará
             registrado e visível no recibo.
           </p>
           <PeractLabel className="block text-xs peract-font-color-muted mb-1.5 font-medium tracking-wide uppercase">
-            Código de rastreio
+            Código de rastreio <span className="text-red-500">*</span>
           </PeractLabel>
-          <PeractInputControl type="text" value={codigo} onChange={e => setCodigo(e.target.value)} placeholder="Ex: BR123456789BR" className="w-full border peract-border-color rounded-xl px-3 py-2.5 text-sm peract-font-color-default outline-none focus:border-green-400 transition-colors font-mono" autoFocus />
-          <p className="text-xs peract-font-color-muted mt-1.5">
-            Deixe em branco para finalizar sem código de rastreio.
-          </p>
+          <PeractInputControl type="text" value={codigo} onChange={e => setCodigo(e.target.value)} placeholder="Ex: BR123456789BR" maxLength={100} aria-invalid={!!error} required className={`w-full border rounded-xl px-3 py-2.5 text-sm peract-font-color-default outline-none focus:border-green-400 transition-colors font-mono ${error ? "border-red-400" : "peract-border-color"}`} autoFocus />
+          {error && <p role="alert" className="text-xs text-red-600 mt-1.5">{error}</p>}
         </PeractField>
         <div className="flex gap-2 p-4 border-t peract-border-color">
           <PeractButtonPrimitive onClick={onClose} className="flex-1 px-4 py-2 border peract-border-color rounded-lg text-sm text-gray-600 hover:bg-gray-50" variant="plain" size="plain">
             Cancelar
           </PeractButtonPrimitive>
-          <PeractButtonPrimitive onClick={() => onConfirm(codigo.trim())} className="flex-1 px-4 py-2 rounded-lg text-sm text-white font-medium flex items-center justify-center gap-1.5 hover:opacity-90" style={{
+          <PeractButtonPrimitive onClick={() => confirmar(onConfirm)} className="flex-1 px-4 py-2 rounded-lg text-sm text-white font-medium flex items-center justify-center gap-1.5 hover:opacity-90" style={{
         background: "#22c55e"
       }} variant="plain" size="plain">
             <Send size={14} /> Finalizar pedido
