@@ -20,7 +20,6 @@ export function SystemTourRunner({ steps, onFinish }: SystemTourRunnerProps) {
   const [stepIndex, setStepIndex] = useState(0);
   const [isRunning, setIsRunning] = useState(false);
   const [isActive, setIsActive] = useState(true);
-  const [mobileTooltipBoundary, setMobileTooltipBoundary] = useState<HTMLDivElement | null>(null);
   const originPath = useRef(location.pathname);
   const isLastStep = stepIndex === tourSteps.length - 1;
   const displayedSteps = useMemo(() => isMobile
@@ -29,20 +28,22 @@ export function SystemTourRunner({ steps, onFinish }: SystemTourRunnerProps) {
         placement: "top" as const,
         floaterProps: {
           ...step.floaterProps,
+          disableFlip: true,
           options: {
             ...step.floaterProps?.options,
             modifiers: {
               ...step.floaterProps?.options?.modifiers,
+              flip: { enabled: false },
               preventOverflow: {
                 enabled: true,
-                boundariesElement: mobileTooltipBoundary ?? "viewport",
+                boundariesElement: "window",
                 padding: 8,
               },
             },
           },
         },
       }))
-    : tourSteps, [isMobile, mobileTooltipBoundary, tourSteps]);
+    : tourSteps, [isMobile, tourSteps]);
 
   const finishTour = () => {
     setIsRunning(false);
@@ -149,16 +150,6 @@ export function SystemTourRunner({ steps, onFinish }: SystemTourRunnerProps) {
     />
     {isMobile && isActive && isRunning && typeof document !== "undefined" && createPortal(
         <>
-          <div
-            aria-hidden="true"
-            className="pointer-events-none invisible fixed"
-            data-testid="tour-tooltip-boundary"
-            ref={setMobileTooltipBoundary}
-            style={{
-              inset: "12px 12px calc(76px + env(safe-area-inset-bottom, 0px))",
-              position: "fixed",
-            }}
-          />
           {isRunning && <div
             aria-label="Controles do tour"
             className="fixed z-[10002] flex max-w-[calc(100vw-1.5rem)] items-center justify-between rounded-lg border border-black/10 bg-white p-1.5 shadow-xl"
