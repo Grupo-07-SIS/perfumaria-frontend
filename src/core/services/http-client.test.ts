@@ -57,7 +57,7 @@ describe("apiClient", () => {
     });
 
     expect(capturedConfig).toMatchObject({
-      baseURL: "http://localhost:8080",
+      baseURL: "https://perfumaria-backend-production.up.railway.app",
       method: "get",
       url: "/health",
       withCredentials: true,
