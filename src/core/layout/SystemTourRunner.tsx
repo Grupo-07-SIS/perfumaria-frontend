@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { ArrowLeft, ArrowRight, Check, X } from "lucide-react";
 import Joyride, { ACTIONS, EVENTS, STATUS, type CallBackProps, type Step } from "react-joyride";
@@ -20,8 +20,29 @@ export function SystemTourRunner({ steps, onFinish }: SystemTourRunnerProps) {
   const [stepIndex, setStepIndex] = useState(0);
   const [isRunning, setIsRunning] = useState(false);
   const [isActive, setIsActive] = useState(true);
+  const [mobileTooltipBoundary, setMobileTooltipBoundary] = useState<HTMLDivElement | null>(null);
   const originPath = useRef(location.pathname);
   const isLastStep = stepIndex === tourSteps.length - 1;
+  const displayedSteps = useMemo(() => isMobile
+    ? tourSteps.map(step => ({
+        ...step,
+        placement: "top" as const,
+        floaterProps: {
+          ...step.floaterProps,
+          options: {
+            ...step.floaterProps?.options,
+            modifiers: {
+              ...step.floaterProps?.options?.modifiers,
+              preventOverflow: {
+                enabled: true,
+                boundariesElement: mobileTooltipBoundary ?? "viewport",
+                padding: 8,
+              },
+            },
+          },
+        },
+      }))
+    : tourSteps, [isMobile, mobileTooltipBoundary, tourSteps]);
 
   const finishTour = () => {
     setIsRunning(false);
@@ -98,7 +119,7 @@ export function SystemTourRunner({ steps, onFinish }: SystemTourRunnerProps) {
       showSkipButton
       spotlightPadding={8}
       stepIndex={stepIndex}
-      steps={tourSteps as Step[]}
+      steps={displayedSteps as Step[]}
       styles={{
         options: {
           arrowColor: "#ffffff",
@@ -109,7 +130,15 @@ export function SystemTourRunner({ steps, onFinish }: SystemTourRunnerProps) {
           width: 320,
           zIndex: 10000,
         },
-        tooltip: { borderRadius: 10, padding: 14 },
+        tooltip: isMobile
+          ? {
+              borderRadius: 10,
+              padding: 14,
+              maxHeight: "max(80px, calc(100dvh - 150px))",
+              overflowY: "auto",
+              overscrollBehavior: "contain",
+            }
+          : { borderRadius: 10, padding: 14 },
         tooltipTitle: { fontSize: 17, lineHeight: 1.3, marginBottom: 4 },
         tooltipContent: { fontSize: 14, lineHeight: 1.45, padding: "4px 0" },
         tooltipFooter: isMobile ? { display: "none" } : { marginTop: 10 },
@@ -119,47 +148,63 @@ export function SystemTourRunner({ steps, onFinish }: SystemTourRunnerProps) {
       }}
     />
     {isMobile && isActive && isRunning && typeof document !== "undefined" && createPortal(
-        <div
-          aria-label="Controles do tour"
-          className="fixed z-[10002] flex max-w-[calc(100vw-1.5rem)] items-center gap-1 rounded-lg border border-black/10 bg-white p-1.5 shadow-xl"
-          role="group"
-          style={{
-            position: "fixed",
-            right: "max(12px, env(safe-area-inset-right, 0px))",
-            bottom: "max(12px, env(safe-area-inset-bottom, 0px))",
-            zIndex: 10002,
-          }}
-        >
+        <>
+          <div
+            aria-hidden="true"
+            className="pointer-events-none invisible fixed"
+            data-testid="tour-tooltip-boundary"
+            ref={setMobileTooltipBoundary}
+            style={{
+              inset: "12px 12px calc(76px + env(safe-area-inset-bottom, 0px))",
+              position: "fixed",
+            }}
+          />
+          {isRunning && <div
+            aria-label="Controles do tour"
+            className="fixed z-[10002] flex max-w-[calc(100vw-1.5rem)] items-center justify-between rounded-lg border border-black/10 bg-white p-1.5 shadow-xl"
+            role="group"
+            style={{
+              position: "fixed",
+              width: "min(420px, calc(100vw - 24px))",
+              right: "max(12px, env(safe-area-inset-right, 0px))",
+              bottom: "max(12px, env(safe-area-inset-bottom, 0px))",
+              zIndex: 10002,
+            }}
+          >
+          <PeractButtonPrimitive
+            aria-label="Finalizar tour"
+            title="Finalizar tour"
+            className="h-10 gap-1.5 border-stone-300 bg-white px-2.5 text-xs text-stone-700"
+            onClick={finishTour}
+            variant="outline"
+          >
+            <X aria-hidden="true" size={15} />
+            <span className="hidden min-[360px]:inline">Finalizar</span>
+          </PeractButtonPrimitive>
           <PeractButtonPrimitive
             aria-label="Voltar"
+            title="Voltar"
             className="h-10 gap-1.5 border-stone-300 bg-white px-2.5 text-xs text-stone-700"
             disabled={stepIndex === 0}
             onClick={() => advanceTourStep(stepIndex - 1)}
             variant="outline"
           >
             <ArrowLeft aria-hidden="true" size={15} />
-            Voltar
+            <span className="hidden min-[360px]:inline">Voltar</span>
           </PeractButtonPrimitive>
           <PeractButtonPrimitive
             aria-label={isLastStep ? "Concluir tour" : "Avançar"}
+            title={isLastStep ? "Concluir tour" : "Avançar"}
             className="h-10 gap-1.5 px-2.5 text-xs"
             onClick={() => advanceTourStep(stepIndex + 1)}
             variant="default"
           >
             {isLastStep ? <Check aria-hidden="true" size={15} /> : null}
-            {isLastStep ? "Concluir" : "Avançar"}
+            <span className="hidden min-[360px]:inline">{isLastStep ? "Concluir" : "Avançar"}</span>
             {!isLastStep ? <ArrowRight aria-hidden="true" size={15} /> : null}
           </PeractButtonPrimitive>
-          <PeractButtonPrimitive
-            aria-label="Finalizar tour"
-            className="h-10 gap-1.5 border-stone-300 bg-white px-2.5 text-xs text-stone-700"
-            onClick={finishTour}
-            variant="outline"
-          >
-            <X aria-hidden="true" size={15} />
-            Finalizar
-          </PeractButtonPrimitive>
-        </div>,
+          </div>}
+        </>,
         document.body,
     )}
   </>;
