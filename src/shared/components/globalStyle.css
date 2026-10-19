@@ -37,6 +37,13 @@
     z-index: var(--peract-layer-popup);
   }
 
+  @media (max-width: 767px) {
+    body:has([data-slot$="-overlay"][data-state="open"]) [vw],
+    body:has(.react-joyride__tooltip) [vw] {
+      display: none !important;
+    }
+  }
+
   .peract-bg-accent {
     background-color: var(--brand-accent);
   }

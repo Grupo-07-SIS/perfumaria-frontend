@@ -62,8 +62,20 @@ describe("SystemTourRunner controls", () => {
 
     expect(controls.parentElement).toBe(document.body);
     expect(controls).toHaveStyle({ position: "fixed" });
+    expect(screen.getAllByRole("button").map(button => button.getAttribute("aria-label"))).toEqual([
+      "Finalizar tour",
+      "Voltar",
+      "Concluir tour",
+    ]);
     expect(screen.getByRole("button", { name: "Voltar" })).toBeDisabled();
     expect((joyrideProps.current as { styles: { tooltipFooter: object } }).styles.tooltipFooter).toEqual({ display: "none" });
+    const mobileProps = joyrideProps.current as {
+      steps: Array<{ placement: string; floaterProps: { options: { modifiers: { preventOverflow: { boundariesElement: HTMLElement } } } } }>;
+      styles: { tooltip: { maxHeight: string } };
+    };
+    expect(mobileProps.steps[0].placement).toBe("top");
+    expect(mobileProps.steps[0].floaterProps.options.modifiers.preventOverflow.boundariesElement).toBe(screen.getByTestId("tour-tooltip-boundary"));
+    expect(mobileProps.styles.tooltip.maxHeight).toContain("100dvh");
 
     fireEvent.click(screen.getByRole("button", { name: "Finalizar tour" }));
     expect(onFinish).toHaveBeenCalledOnce();
