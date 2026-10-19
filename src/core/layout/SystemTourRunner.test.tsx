@@ -70,11 +70,24 @@ describe("SystemTourRunner controls", () => {
     expect(screen.getByRole("button", { name: "Voltar" })).toBeDisabled();
     expect((joyrideProps.current as { styles: { tooltipFooter: object } }).styles.tooltipFooter).toEqual({ display: "none" });
     const mobileProps = joyrideProps.current as {
-      steps: Array<{ placement: string; floaterProps: { options: { modifiers: { preventOverflow: { boundariesElement: HTMLElement } } } } }>;
+      steps: Array<{
+        placement: string;
+        floaterProps: {
+          disableFlip: boolean;
+          options: {
+            modifiers: {
+              flip: { enabled: boolean };
+              preventOverflow: { boundariesElement: string };
+            };
+          };
+        };
+      }>;
       styles: { tooltip: { maxHeight: string } };
     };
     expect(mobileProps.steps[0].placement).toBe("top");
-    expect(mobileProps.steps[0].floaterProps.options.modifiers.preventOverflow.boundariesElement).toBe(screen.getByTestId("tour-tooltip-boundary"));
+    expect(mobileProps.steps[0].floaterProps.disableFlip).toBe(true);
+    expect(mobileProps.steps[0].floaterProps.options.modifiers.flip.enabled).toBe(false);
+    expect(mobileProps.steps[0].floaterProps.options.modifiers.preventOverflow.boundariesElement).toBe("window");
     expect(mobileProps.styles.tooltip.maxHeight).toContain("100dvh");
 
     fireEvent.click(screen.getByRole("button", { name: "Finalizar tour" }));
