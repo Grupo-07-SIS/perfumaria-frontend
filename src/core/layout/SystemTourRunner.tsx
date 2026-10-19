@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import Joyride, { ACTIONS, EVENTS, STATUS, type CallBackProps, type Step } from "react-joyride";
 import { useLocation, useNavigate } from "react-router";
 import type { SystemTourStep } from "./systemTour";
+import { useIsMobile } from "../../shared/hooks/useIsMobile";
 
 interface SystemTourRunnerProps {
   steps: SystemTourStep[];
@@ -9,6 +10,7 @@ interface SystemTourRunnerProps {
 }
 
 export function SystemTourRunner({ steps, onFinish }: SystemTourRunnerProps) {
+  const isMobile = useIsMobile();
   const location = useLocation();
   const navigate = useNavigate();
   const [tourSteps] = useState<SystemTourStep[]>(steps);
@@ -105,7 +107,19 @@ export function SystemTourRunner({ steps, onFinish }: SystemTourRunnerProps) {
         tooltip: { borderRadius: 10, padding: 14 },
         tooltipTitle: { fontSize: 17, lineHeight: 1.3, marginBottom: 4 },
         tooltipContent: { fontSize: 14, lineHeight: 1.45, padding: "4px 0" },
-        tooltipFooter: { marginTop: 10 },
+        tooltipFooter: isMobile
+          ? {
+              marginTop: 10,
+              position: "fixed",
+              right: 12,
+              bottom: "calc(env(safe-area-inset-bottom, 0px) + 12px)",
+              zIndex: 10001,
+              borderRadius: 10,
+              backgroundColor: "#ffffff",
+              padding: 8,
+              boxShadow: "0 4px 16px rgba(0, 0, 0, 0.2)",
+            }
+          : { marginTop: 10 },
         buttonNext: { borderRadius: 7, fontSize: 13, padding: "7px 11px" },
         buttonBack: { color: "#57534e", fontSize: 13, padding: "7px 9px" },
         buttonSkip: { color: "#78716c", fontSize: 12, padding: "7px 8px" },
