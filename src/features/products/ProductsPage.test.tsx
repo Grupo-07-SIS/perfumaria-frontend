@@ -112,8 +112,15 @@ describe("ProductsPage", () => {
     rerender(<ProductsPage />);
     expect(screen.getByRole("dialog", { name: "Editar Produto" })).toBeInTheDocument();
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
-    useProductsFacadeMock.mockReturnValue({ ...facade, deleteTarget: { id: 1, nome: "Chance" } });
+    useProductsFacadeMock.mockReturnValue({ ...facade, deleteTarget: { id: 1, nome: "Chance", categoriaNome: "Perfumes" } });
     rerender(<ProductsPage />);
     expect(screen.getByText("Remover produto")).toBeInTheDocument();
+    expect(screen.getByText(/tabela de preços desses decantes/i)).toBeInTheDocument();
+    useProductsFacadeMock.mockReturnValue({ ...facade, deleteTarget: { id: 2, nome: "Lavanda", categoriaNome: "Body Splash" } });
+    rerender(<ProductsPage />);
+    expect(screen.getByText(/tabela de preços desses frascos/i)).toBeInTheDocument();
+    useProductsFacadeMock.mockReturnValue({ ...facade, deleteTarget: { id: 3, nome: "Hidratante", categoriaNome: "Hidratantes" } });
+    rerender(<ProductsPage />);
+    expect(screen.queryByText(/tabela de preços/i)).not.toBeInTheDocument();
   });
 });

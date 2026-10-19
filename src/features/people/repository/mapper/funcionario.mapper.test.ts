@@ -19,7 +19,13 @@ describe("funcionarioMapper", () => {
       nome: "Beatriz Oliveira",
       email: "beatriz@example.test",
       cargo,
+      donoOrganizacao: false,
     });
+  });
+
+  it("identifica o dono sem criar um cargo diferente de administrador", () => {
+    expect(toFuncionarioModel({ id: uuid, nome: "Dono", email: "admin@example.test", fkTipoUsuario: 1, tipoUsuarioNome: "ADMIN", donoOrganizacao: true }))
+      .toMatchObject({ cargo: "Administrador", donoOrganizacao: true });
   });
 
   it("converte cargos para IDs e inclui senha informada", () => {

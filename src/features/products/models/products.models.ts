@@ -43,6 +43,7 @@ export interface ProductListItem extends Product {
 }
 
 export interface ProductDeleteTarget {
+  categoriaNome: string;
   id: number;
   nome: string;
 }

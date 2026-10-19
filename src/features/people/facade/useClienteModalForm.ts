@@ -1,10 +1,11 @@
-import { validateCliente } from "../services/people.service";
+import { peopleErrorMessage, validateCliente } from "../services/people.service";
 import { useForm } from "react-hook-form";
 import type { SetStateAction } from "react";
 import type { ClienteModalFormValues, ClienteModalProps } from "../models/people.models";
 import { useState } from "react";
 import { EMPTY_ENDERECO } from "../config/people.config";
 import { formatTelefone } from "../../../shared/utils/masks";
+import { useCepAutofill } from "./useCepAutofill";
 export function useClienteModalForm({
   data,
   onSave
@@ -43,6 +44,7 @@ export function useClienteModalForm({
     ...p,
     [key]: ""
   }));
+  const cepLookup = useCepAutofill(endereco, setEndereco, clearError);
   const handleSave = async () => {
     const e = validateCliente({
       nome,
@@ -63,8 +65,8 @@ export function useClienteModalForm({
         endereco
       });
       setSuccess(true);
-    } catch {
-      setErrors({ form: "Não foi possível salvar o cliente." });
+    } catch (error) {
+      setErrors({ form: peopleErrorMessage(error, "Não foi possível salvar o cliente. Tente novamente.") });
     }
   };
   return {
@@ -79,6 +81,7 @@ export function useClienteModalForm({
     errors,
     success,
     clearError,
+    cepLookup,
     handleSave
   };
 }

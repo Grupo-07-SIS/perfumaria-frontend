@@ -32,33 +32,34 @@ export function BodySplashView({
   submitSearch,
   filtered,
   handleSave,
-  fmt
-}: ReturnType<typeof useBodySplashFacade>) {
+  fmt,
+  canManagePrices,
+}: ReturnType<typeof useBodySplashFacade> & { canManagePrices: boolean }) {
   return <div className="p-4 lg:p-6 max-w-[1400px] mx-auto">
-      {(showModal || editItem) && <BodySplashModal onClose={() => {
+      {canManagePrices && (showModal || editItem) && <BodySplashModal onClose={() => {
       setShowModal(false);
       setEditItem(null);
     }} onSave={handleSave} productOptions={productOptions} edit={editItem ?? undefined} />}
-      {deleteItem && <DeleteConfirm nome={deleteItem.produto} onClose={() => setDeleteItem(null)} onConfirm={confirmDelete} />}
+      {canManagePrices && deleteItem && <DeleteConfirm nome={deleteItem.produto} onClose={() => setDeleteItem(null)} onConfirm={confirmDelete} />}
 
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
         <div>
-          <h1 className="peract-font-color-default">Body Splash</h1>
+          <h1 data-tour="tour-body-splash-header" className="peract-font-color-default">Body Splash</h1>
           <p className="text-xs peract-font-color-muted mt-0.5">Precificação de frascos de body splash por volumetria</p>
         </div>
         <div className="flex items-center gap-2 self-start flex-wrap">
           <PeractButtonPrimitive onClick={() => exportCSV(filtered)} className="flex items-center gap-2 px-4 py-2 rounded-lg border peract-border-color text-sm text-gray-700 hover:bg-gray-50 transition-colors" variant="plain" size="plain">
             <Download size={15} /> Exportar Tabela
           </PeractButtonPrimitive>
-          <PeractButtonPrimitive onClick={() => setShowModal(true)} className="flex items-center gap-2 px-4 py-2 rounded-lg text-white text-sm hover:opacity-90 peract-bg-accent" variant="plain" size="plain">
+          {canManagePrices && <PeractButtonPrimitive onClick={() => setShowModal(true)} className="flex items-center gap-2 px-4 py-2 rounded-lg text-white text-sm hover:opacity-90 peract-bg-primary" variant="plain" size="plain">
             <Plus size={16} /> Cadastrar Body Splash
-          </PeractButtonPrimitive>
+          </PeractButtonPrimitive>}
         </div>
       </div>
 
       {/* Info banner */}
-      <div className="rounded-xl border px-4 py-3 mb-4 flex items-start gap-3" style={{
+      <div data-tour="tour-body-splash-table" className="rounded-xl border px-4 py-3 mb-4 flex items-start gap-3" style={{
       background: `${ACC}12`,
       borderColor: `${ACC}30`
     }}>
@@ -75,7 +76,7 @@ export function BodySplashView({
       {isLoading && <p className="text-sm peract-font-color-muted mb-4">Carregando preços de Body Splash...</p>}
 
       {/* Search */}
-      <PeractCard className="peract-bg-card rounded-xl border peract-border-color p-3 mb-4 shadow-sm">
+      <PeractCard data-tour="tour-body-splash-search" className="peract-bg-card rounded-xl border peract-border-color p-3 mb-4 shadow-sm">
         <div className="flex items-center gap-2 border peract-border-color rounded-lg px-3 py-2 max-w-sm">
           <Search size={15} className="peract-font-color-muted shrink-0" />
           <PeractInputControl type="search" placeholder="Buscar por nome do body splash..." value={search} onChange={e => setSearch(e.target.value)} onKeyDown={event => {
@@ -101,9 +102,9 @@ export function BodySplashView({
                     <div className="flex flex-col items-center gap-2">
                       <Sparkles size={32} className="text-gray-300" />
                       <p>Nenhum body splash cadastrado.</p>
-                      <PeractButtonPrimitive onClick={() => setShowModal(true)} className="mt-1 text-xs px-3 py-1.5 rounded-lg text-white hover:opacity-90 peract-bg-accent" variant="plain" size="plain">
+                      {canManagePrices && <PeractButtonPrimitive onClick={() => setShowModal(true)} className="mt-1 text-xs px-3 py-1.5 rounded-lg text-white hover:opacity-90 peract-bg-accent" variant="plain" size="plain">
                         Cadastrar primeiro body splash
-                      </PeractButtonPrimitive>
+                      </PeractButtonPrimitive>}
                     </div>
                   </PeractTableCell>
                 </PeractTableRow> : filtered.map(d => <PeractTableRow key={d.id} className="hover:bg-gray-50/50 transition-colors">
@@ -114,7 +115,7 @@ export function BodySplashView({
                   }}>
                         <Sparkles size={13} className="peract-font-color-accent" />
                       </div>
-                      <span className="text-sm font-medium peract-font-color-default">{d.produto}</span>
+                      <span className="max-w-[18rem] truncate text-sm font-medium peract-font-color-default" title={d.produto}>{d.produto}</span>
                     </div>
                   </PeractTableCell>
                   {/* Sem destaque de cor em nenhuma coluna de preço */}
@@ -124,7 +125,7 @@ export function BodySplashView({
                   <PeractTableCell className="px-4 py-3 text-sm text-gray-700">{fmt(d.preco25ml)}</PeractTableCell>
                   <PeractTableCell className="px-4 py-3 text-sm text-gray-700">{fmt(d.preco30ml)}</PeractTableCell>
                   <PeractTableCell className="px-4 py-3">
-                    <div className="flex items-center gap-1">
+                    {canManagePrices && <div className="flex items-center gap-1">
                       <PeractButtonPrimitive onClick={() => setEditItem(d)} className="p-1.5 rounded-lg peract-font-color-muted transition-colors" onMouseEnter={e => {
                     (e.currentTarget as HTMLElement).style.background = `${ACC}18`;
                     (e.currentTarget as HTMLElement).style.color = ACC;
@@ -137,7 +138,7 @@ export function BodySplashView({
                       <PeractButtonPrimitive onClick={() => setDeleteItem(d)} className="p-1.5 rounded-lg peract-font-color-muted transition-colors hover:bg-red-50 hover:text-red-600" title="Excluir" variant="plain" size="plain" aria-label="Excluir">
                         <Trash2 size={15} />
                       </PeractButtonPrimitive>
-                    </div>
+                    </div>}
                   </PeractTableCell>
                 </PeractTableRow>)}
             </PeractTableBody>
@@ -160,16 +161,16 @@ export function BodySplashView({
             }}>
                   <Sparkles size={15} className="peract-font-color-accent" />
                 </div>
-                <p className="text-sm font-medium peract-font-color-default">{d.produto}</p>
+                <p className="min-w-0 truncate text-sm font-medium peract-font-color-default" title={d.produto}>{d.produto}</p>
               </div>
-              <div className="flex items-center gap-1">
+              {canManagePrices && <div className="flex items-center gap-1">
                 <PeractButtonPrimitive onClick={() => setEditItem(d)} className="p-1.5 rounded-lg peract-font-color-muted hover:bg-gray-100" variant="plain" size="plain" aria-label="Editar">
                   <Pencil size={15} />
                 </PeractButtonPrimitive>
                 <PeractButtonPrimitive onClick={() => setDeleteItem(d)} className="p-1.5 rounded-lg peract-font-color-muted hover:bg-red-50 hover:text-red-600" variant="plain" size="plain" aria-label="Excluir">
                   <Trash2 size={15} />
                 </PeractButtonPrimitive>
-              </div>
+              </div>}
             </div>
             {/* Todas as colunas com a mesma cor */}
             <div className="grid grid-cols-5 gap-2 p-2 rounded-lg peract-bg-accent-soft">

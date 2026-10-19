@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { salesRepository } from "../repository/sales.repository";
-import { calculateSaleTotals, fetchSalesData, groupSaleItems, registerSale, createSaleCustomer, searchSaleItems, validateNovoCliente } from "./sales.service";
+import { calculateSaleTotals, cartQuantityError, fetchSalesData, groupSaleItems, registerSale, createSaleCustomer, searchSaleItems, validateNovoCliente } from "./sales.service";
 
 vi.mock("../repository/sales.repository", () => ({ salesRepository: { listProducts: vi.fn(), searchSaleItems: vi.fn(), listCustomers: vi.fn(), createSale: vi.fn(), createCustomer: vi.fn() } }));
 
@@ -102,6 +102,14 @@ describe("sales service", () => {
   it.each([0, -1, 1.5, NaN, Infinity, 5])("rejects invalid or unavailable quantity %s", async (quantidade) => {
     await expect(registerSale([{ catalogItem: product, quantidade }], customer, form)).rejects.toThrow();
     expect(salesRepository.createSale).not.toHaveBeenCalled();
+  });
+
+  it("limits full products but does not apply unit stock to fractions", () => {
+    expect(cartQuantityError(product, 4)).toBeNull();
+    expect(cartQuantityError(product, 5)).toContain("Estoque insuficiente");
+    expect(cartQuantityError({ ...product, estoqueAtual: undefined }, 1)).toContain("verificar o estoque");
+    expect(cartQuantityError({ ...product, tipo: "decant", estoqueAtual: 0 }, 20)).toBeNull();
+    expect(cartQuantityError({ ...product, tipo: "body-splash-fracionado", estoqueAtual: 0 }, 20)).toBeNull();
   });
 
   it.each(["-1", "101", "abc", "Infinity"])("rejects invalid percentage %s", async (desconto) => {

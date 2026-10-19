@@ -36,6 +36,7 @@ function renderDecantsView(overrides: Record<string, unknown> = {}) {
     showModal: false,
     totalElements: 23,
     totalPages: 3,
+    canManagePrices: true,
     ...overrides,
   } as unknown as ComponentProps<typeof DecantsView>;
 
@@ -49,5 +50,13 @@ describe("DecantsView", () => {
     fireEvent.click(screen.getByRole("button", { name: "3", exact: true }));
 
     expect(setCurrentPage).toHaveBeenCalledWith(3);
+  });
+
+  it("hides create, edit and delete controls for employees", () => {
+    renderDecantsView({ canManagePrices: false });
+
+    expect(screen.queryByRole("button", { name: "Cadastrar Decant" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Editar" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Excluir" })).not.toBeInTheDocument();
   });
 });

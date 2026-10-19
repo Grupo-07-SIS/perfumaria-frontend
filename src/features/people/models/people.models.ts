@@ -1,6 +1,7 @@
 import type { CargoFuncionario, Endereco, Fornecedor } from "../../../core/store/AppContext";
 
 export type { CargoFuncionario, Endereco, Fornecedor };
+export type CepAddress = Pick<Endereco, "logradouro" | "bairro" | "cidade" | "uf">;
 export interface Cliente {
   id: number;
   nome: string;
@@ -12,6 +13,7 @@ export interface Cliente {
 }
 export interface Funcionario {
   id: string;
+  donoOrganizacao?: boolean;
   nome: string;
   cargo: CargoFuncionario;
   email: string;
@@ -23,11 +25,17 @@ export interface PeopleListParams {
   busca?: string;
   status?: number;
 }
+export interface CepLookupState {
+  isLoading: boolean;
+  message: string;
+  retry: () => void;
+}
 export interface EnderecoFieldsProps {
   endereco: Endereco;
   onChange: (e: Endereco) => void;
   errors: Record<string, string>;
   onClearError: (key: string) => void;
+  cepLookup?: CepLookupState;
 }
 export interface ClienteModalProps {
   data?: Cliente;

@@ -1,9 +1,29 @@
 import { describe, expect, it } from "vitest";
-import { buildSearchParams, selectPeople, validateCliente, validateFornecedor } from "./people.service";
+import { buildSearchParams, peopleErrorMessage, selectPeople, validateCliente, validateFornecedor, validateFuncionario } from "./people.service";
 
 const endereco = { logradouro: "", numero: "", cep: "", bairro: "", cidade: "", uf: "" };
 
 describe("people.service", () => {
+  it("traduz conflito de e-mail do funcionário para orientação no campo", () => {
+    expect(peopleErrorMessage(new Error("PEOPLE_EMPLOYEES_CREATE_FAILED:409"), "Falha ao salvar.")).toBe(
+      "Este e-mail já está cadastrado. Informe outro e-mail."
+    );
+  });
+
+  it.each([
+    ["PEOPLE_CLIENTS_CREATE_FAILED:400", "Confira os dados informados e corrija os campos destacados."],
+    ["PEOPLE_CLIENTS_CREATE_FAILED:401", "Sua sessão expirou. Entre novamente para continuar."],
+    ["PEOPLE_CLIENTS_CREATE_FAILED:403", "Você não tem permissão para realizar esta operação."],
+    ["PEOPLE_CLIENTS_CREATE_FAILED:404", "O registro não foi encontrado. Atualize a lista e tente novamente."],
+    ["PEOPLE_CLIENTS_CREATE_FAILED:503", "O servidor está temporariamente indisponível. Tente novamente em instantes."],
+  ])("não mostra código HTTP para %s", (technicalError, expected) => {
+    expect(peopleErrorMessage(new Error(technicalError), "Falha ao salvar.")).toBe(expected);
+  });
+
+  it("preserva detalhe de validação fornecido pelo backend", () => {
+    expect(peopleErrorMessage(new Error("PEOPLE_CLIENTS_CREATE_FAILED:400|Telefone inválido"), "Falha ao salvar.")).toBe("Telefone inválido");
+  });
+
   it("monta params de busca omitindo texto vazio", () => {
     expect(buildSearchParams("Frascos")).toEqual({ busca: "Frascos" });
     expect(buildSearchParams("")).toEqual({});
@@ -59,6 +79,19 @@ describe("people.service", () => {
     it("rejeita CEP incompleto", () => {
       expect(validateFornecedor({ ...valido, endereco: { ...endereco, cep: "01001-00" } })).toEqual({ cep: "O CEP deve conter 8 dígitos." });
     });
+
+    it("rejeita nome, e-mail e endereço acima dos limites da API", () => {
+      expect(validateFornecedor({
+        ...valido,
+        razaoSocial: "x".repeat(46),
+        email: `${"x".repeat(36)}@example.test`,
+        endereco: { ...endereco, logradouro: "x".repeat(46) },
+      })).toEqual({
+        razaoSocial: "Máximo de 45 caracteres.",
+        email: "Máximo de 45 caracteres.",
+        logradouro: "Máximo de 45 caracteres.",
+      });
+    });
   });
 
   describe("validateCliente", () => {
@@ -85,6 +118,32 @@ describe("people.service", () => {
         .toEqual({ cep: "O CEP deve conter 8 dígitos." });
       expect(validateCliente({ nome: "Ana", telefone: "11999990000", endereco: { ...endereco, cep: "01001-000" } }))
         .toEqual({});
+    });
+
+    it("rejeita nome, e-mail e endereço acima dos limites da API", () => {
+      expect(validateCliente({
+        ...valido,
+        nome: "x".repeat(46),
+        email: `${"x".repeat(90)}@example.test`,
+        endereco: { ...endereco, cidade: "x".repeat(46) },
+      })).toEqual({
+        nome: "Máximo de 45 caracteres.",
+        email: "Máximo de 100 caracteres.",
+        cidade: "Máximo de 45 caracteres.",
+      });
+    });
+  });
+
+  describe("validateFuncionario", () => {
+    const valid = { nome: "Ana", email: "ana@example.test", senha: "senha123", confirmSenha: "senha123", isNew: true };
+
+    it("rejeita campos acima dos limites da API", () => {
+      const oversizedPassword = "x".repeat(101);
+      expect(validateFuncionario({ ...valid, nome: "x".repeat(46), email: `${"x".repeat(34)}@example.test`, senha: oversizedPassword, confirmSenha: oversizedPassword })).toEqual({
+        nome: "Máximo de 45 caracteres.",
+        email: "Máximo de 45 caracteres.",
+        senha: "Máximo de 100 caracteres.",
+      });
     });
   });
 });

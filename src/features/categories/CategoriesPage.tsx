@@ -2,7 +2,6 @@ import { Plus } from "lucide-react";
 import { PeractButton } from "../../shared/components/peract-button";
 import { CategoryFormModal } from "./components/CategoryFormModal";
 import { CategoriesTable } from "./components/CategoriesTable";
-import { CategorySummaryCards } from "./components/CategorySummaryCards";
 import { DeleteCategoryModal } from "./components/DeleteCategoryModal";
 import { useCategoriesFacade } from "./facade/useCategoriesFacade";
 export function CategoriesPage() {
@@ -16,7 +15,7 @@ export function CategoriesPage() {
 
       <div className="mb-5 flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
         <div>
-          <h1 className="peract-font-color-default">Categorias</h1>
+          <h1 data-tour="tour-categories-header" className="peract-font-color-default">Categorias</h1>
           <nav className="mt-0.5 text-xs peract-font-color-muted">Estoque &rsaquo; <span className="text-[#A67449]">Categorias</span></nav>
         </div>
         <PeractButton action={facade.openCreateForm} className="self-start" icon={<Plus size={16} />}>Nova Categoria</PeractButton>
@@ -26,9 +25,7 @@ export function CategoriesPage() {
           {facade.error}
         </div> : null}
 
-      <CategorySummaryCards categories={facade.categories} />
-
-      <CategoriesTable categories={facade.paginatedCategories} currentPage={facade.currentPage} onCreateCategory={facade.openCreateForm} onDeleteCategory={facade.openDeleteConfirm} onEditCategory={facade.openEditForm} onPageChange={facade.setCurrentPage} totalCategories={facade.categories.length} totalPages={facade.totalPages} />
+      <div data-tour="tour-categories-list"><CategoriesTable categories={facade.paginatedCategories} currentPage={facade.currentPage} onCreateCategory={facade.openCreateForm} onDeleteCategory={facade.openDeleteConfirm} onEditCategory={facade.openEditForm} onPageChange={facade.setCurrentPage} totalCategories={facade.categories.length} totalPages={facade.totalPages} /></div>
 
       {facade.isLoading ? <p className="mt-4 text-sm peract-font-color-muted">Carregando categorias...</p> : null}
     </div>;

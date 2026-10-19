@@ -27,6 +27,7 @@ export function FornecedorModal({
     errors,
     success,
     clearError,
+    cepLookup,
     handleSave
   } = useFornecedorModalForm({
     data,
@@ -40,6 +41,7 @@ export function FornecedorModal({
         </div>
         <div className="p-4 flex flex-col gap-4">
           {success && <div className="flex items-center gap-2 px-3 py-2 bg-green-50 border border-green-200 rounded-lg text-green-700 text-sm"><CheckCircle size={16} /> Salvo!</div>}
+          {errors.form && <p role="alert" className="text-sm text-red-600">{errors.form}</p>}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {[{
           label: "Razão Social",
@@ -48,7 +50,7 @@ export function FornecedorModal({
           set: setRazaoSocial,
           ph: "Ex: Empresa Ltda",
           req: true,
-          inputProps: { type: "text", autoComplete: "organization" }
+          inputProps: { type: "text", autoComplete: "organization", maxLength: 45 }
         }, {
           label: "CNPJ",
           key: "cnpj",
@@ -72,7 +74,7 @@ export function FornecedorModal({
           set: setEmail,
           ph: "contato@empresa.com.br",
           req: true,
-          inputProps: { type: "email", inputMode: "email", autoComplete: "email", maxLength: 254 }
+          inputProps: { type: "email", inputMode: "email", autoComplete: "email", maxLength: 45 }
         }].map(({
           label,
           key,
@@ -90,7 +92,7 @@ export function FornecedorModal({
                 {errors[key] && <p className="text-xs text-red-600 mt-1">{errors[key]}</p>}
               </PeractField>)}
           </div>
-          <EnderecoFields endereco={endereco} onChange={setEndereco} errors={errors} onClearError={clearError} />
+          <EnderecoFields endereco={endereco} onChange={setEndereco} errors={errors} onClearError={clearError} cepLookup={cepLookup} />
         </div>
         <div className="flex gap-2 p-4 border-t peract-border-color sticky bottom-0 peract-bg-card">
           <PeractButtonPrimitive onClick={onClose} className="flex-1 px-4 py-2 border peract-border-color rounded-lg text-sm text-gray-600 hover:bg-gray-50" variant="plain" size="plain">Cancelar</PeractButtonPrimitive>

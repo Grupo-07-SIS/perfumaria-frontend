@@ -72,7 +72,7 @@ export function ProductsTable({
 }: ProductsTableProps) {
   const firstProduct = products.length === 0 ? 0 : (currentPage - 1) * PRODUCTS_PAGE_SIZE + 1;
   const lastProduct = products.length === 0 ? 0 : firstProduct + products.length - 1;
-  const pagination = <div className="flex flex-wrap items-center justify-between gap-4">
+  const pagination = <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
       <p className="text-xs peract-font-color-muted">Exibindo {firstProduct} a {lastProduct} de {totalProducts} produtos</p>
       <PeractPagination currentPage={currentPage} onPageChange={onPageChange} targetSelection="products-section" totalPages={totalPages} />
     </div>;
@@ -80,7 +80,8 @@ export function ProductsTable({
       <PeractButton action={() => onEditProduct(product)} className="h-8 w-8 peract-font-color-muted hover:bg-amber-50 hover:text-amber-700" size="icon" theme="secondary" title="Editar"><Edit3 size={15} /></PeractButton>
       <PeractButton action={() => onDeleteProduct({
       id: product.id,
-      nome: product.nome
+      nome: product.nome,
+      categoriaNome: product.categoriaNome
     })} className="h-8 w-8 peract-font-color-muted hover:bg-red-50 hover:text-red-600" size="icon" theme="secondary" title="Excluir"><Trash2 size={15} /></PeractButton>
     </div>;
   return <>
@@ -127,7 +128,7 @@ export function ProductsTable({
       }]} onOrderColumn={field => onSort(field as ProductSortField)} renderHeaderLabel={column => column.orderColumn ? <div className="flex items-center gap-1">{column.name}<SortIcon active={sortField === column.value} ascending={sortAscending} /></div> : column.name} renderRow={product => {
         const status = statusConfig[product.estoqueStatus];
         return <PeractTableRow key={product.id} className="transition-colors hover:bg-gray-50/50">
-                <PeractTableCell className="whitespace-nowrap px-4 py-3 text-sm font-medium peract-font-color-default">{product.nome}</PeractTableCell>
+                <PeractTableCell className="max-w-[18rem] truncate px-4 py-3 text-sm font-medium peract-font-color-default" title={product.nome}>{product.nome}</PeractTableCell>
                 <PeractTableCell className="px-4 py-3 text-sm text-gray-600">{product.marca || <span className="text-gray-300">—</span>}</PeractTableCell>
                 <PeractTableCell className="px-4 py-3"><PeractTag>{product.categoriaNome}</PeractTag></PeractTableCell>
                 <PeractTableCell className="px-4 py-3">{product.volumeLabel ? <PeractTag className="w-fit bg-blue-50 text-blue-600" icon={<Ruler size={10} />}>{product.volumeLabel}</PeractTag> : <span className="text-xs italic text-gray-300">—</span>}</PeractTableCell>
@@ -149,7 +150,7 @@ export function ProductsTable({
         const status = statusConfig[product.estoqueStatus];
         return <PeractCard key={product.id} className="p-4 shadow-sm">
               <div className="mb-2 flex items-start justify-between gap-3">
-                <div>
+                <div className="min-w-0">
                   <p className="text-sm font-medium peract-font-color-default">{product.nome}</p>
                   <p className="text-xs peract-font-color-muted">{product.marca || "Sem marca"} · {product.categoriaNome}</p>
                 </div>
@@ -172,7 +173,8 @@ export function ProductsTable({
                 <PeractButton action={() => onEditProduct(product)} className="flex-1 text-gray-600" size="sm" theme="secondary">Editar</PeractButton>
                 <PeractButton action={() => onDeleteProduct({
               id: product.id,
-              nome: product.nome
+              nome: product.nome,
+              categoriaNome: product.categoriaNome
             })} className="border-red-200 text-red-600 hover:bg-red-50" size="sm" theme="secondary"><Trash2 size={13} /></PeractButton>
               </div>
             </PeractCard>;

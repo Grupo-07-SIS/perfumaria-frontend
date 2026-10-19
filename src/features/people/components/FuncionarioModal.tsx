@@ -44,9 +44,10 @@ export function FuncionarioModal({
         </div>
         <div className="p-4 flex flex-col gap-3">
           {success && <div className="flex items-center gap-2 px-3 py-2 bg-green-50 border border-green-200 rounded-lg text-green-700 text-sm"><CheckCircle size={16} /> Salvo!</div>}
+          {errors.form && <p role="alert" className="text-sm text-red-600">{errors.form}</p>}
           <PeractField>
             <PeractLabel className="text-sm text-gray-700 block mb-1.5">Nome completo <span className="text-red-500">*</span></PeractLabel>
-            <PeractInputControl type="text" value={nome} onChange={e => {
+            <PeractInputControl type="text" maxLength={45} value={nome} onChange={e => {
           setNome(e.target.value);
           setErrors({
             ...errors,
@@ -64,14 +65,14 @@ export function FuncionarioModal({
           </PeractField>
           <PeractField>
             <PeractLabel className="text-sm text-gray-700 block mb-1.5">E-mail de acesso <span className="text-red-500">*</span></PeractLabel>
-            <PeractInputControl type="email" value={email} onChange={e => {
+            <PeractInputControl type="email" maxLength={45} value={email} onChange={e => {
           setEmail(e.target.value);
           setErrors({
             ...errors,
             email: ""
           });
         }} placeholder="usuario@canalperfumado.com.br" className={`w-full border rounded-lg px-3 py-2 text-sm focus:outline-none transition-colors ${errors.email ? "border-red-400" : "peract-border-color"}`} onFocus={e => e.target.style.borderColor = ACC} onBlur={e => e.target.style.borderColor = errors.email ? "#f87171" : ""} />
-            {errors.email && <p className="text-xs text-red-600 mt-1">{errors.email}</p>}
+            {errors.email && <p role="alert" className="text-xs text-red-600 mt-1">{errors.email}</p>}
           </PeractField>
           <div className="border peract-border-color rounded-xl overflow-hidden">
             <div className="px-3 py-2 border-b peract-border-color flex items-center gap-1.5" style={{
@@ -87,7 +88,7 @@ export function FuncionarioModal({
               <PeractField>
                 <PeractLabel className="text-xs text-gray-600 block mb-1">{isNew ? "Senha" : "Nova senha"} {isNew && <span className="text-red-500">*</span>}</PeractLabel>
                 <div className="relative">
-                  <PeractInputControl type={showSenha ? "text" : "password"} value={senha} onChange={e => {
+                  <PeractInputControl type={showSenha ? "text" : "password"} maxLength={100} value={senha} onChange={e => {
                 setSenha(e.target.value);
                 setErrors({
                   ...errors,
@@ -102,7 +103,7 @@ export function FuncionarioModal({
               </PeractField>
               <PeractField>
                 <PeractLabel className="text-xs text-gray-600 block mb-1">Confirmar senha {isNew && <span className="text-red-500">*</span>}</PeractLabel>
-                <PeractInputControl type={showSenha ? "text" : "password"} value={confirmSenha} onChange={e => {
+                <PeractInputControl type={showSenha ? "text" : "password"} maxLength={100} value={confirmSenha} onChange={e => {
               setConfirmSenha(e.target.value);
               setErrors({
                 ...errors,

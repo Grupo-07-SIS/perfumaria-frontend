@@ -25,6 +25,7 @@ export function ClienteModal({
     errors,
     success,
     clearError,
+    cepLookup,
     handleSave
   } = useClienteModalForm({
     data,
@@ -38,10 +39,11 @@ export function ClienteModal({
         </div>
         <div className="p-4 flex flex-col gap-4">
           {success && <div className="flex items-center gap-2 px-3 py-2 bg-green-50 border border-green-200 rounded-lg text-green-700 text-sm"><CheckCircle size={16} /> Salvo!</div>}
+          {errors.form && <p role="alert" className="text-sm text-red-600">{errors.form}</p>}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <PeractField>
               <PeractLabel className="text-sm text-gray-700 block mb-1.5">Nome completo <span className="text-red-500">*</span></PeractLabel>
-              <PeractInputControl type="text" autoComplete="name" value={nome} onChange={e => {
+              <PeractInputControl type="text" autoComplete="name" maxLength={45} value={nome} onChange={e => {
             setNome(e.target.value);
             clearError("nome");
           }} placeholder="Ex: Ana Lima" className={`w-full border rounded-lg px-3 py-2 text-sm focus:outline-none transition-colors ${errors.nome ? "border-red-400" : "peract-border-color"}`} onFocus={e => e.target.style.borderColor = ACC} onBlur={e => e.target.style.borderColor = errors.nome ? "#f87171" : ""} />
@@ -58,13 +60,13 @@ export function ClienteModal({
           </div>
           <PeractField>
             <PeractLabel className="text-sm text-gray-700 block mb-1.5">E-mail <span className="text-xs peract-font-color-muted">(opcional)</span></PeractLabel>
-            <PeractInputControl type="email" inputMode="email" autoComplete="email" maxLength={254} aria-invalid={!!errors.email} value={email} onChange={e => {
+            <PeractInputControl type="email" inputMode="email" autoComplete="email" maxLength={100} aria-invalid={!!errors.email} value={email} onChange={e => {
           setEmail(e.target.value);
           clearError("email");
         }} placeholder="cliente@email.com" className={`w-full border rounded-lg px-3 py-2 text-sm focus:outline-none transition-colors ${errors.email ? "border-red-400" : "peract-border-color"}`} onFocus={e => e.target.style.borderColor = ACC} onBlur={e => e.target.style.borderColor = errors.email ? "#f87171" : ""} />
             {errors.email && <p className="text-xs text-red-600 mt-1">{errors.email}</p>}
           </PeractField>
-          <EnderecoFields endereco={endereco} onChange={setEndereco} errors={errors} onClearError={clearError} />
+          <EnderecoFields endereco={endereco} onChange={setEndereco} errors={errors} onClearError={clearError} cepLookup={cepLookup} />
         </div>
         <div className="flex gap-2 p-4 border-t peract-border-color sticky bottom-0 peract-bg-card">
           <PeractButtonPrimitive onClick={onClose} className="flex-1 px-4 py-2 border peract-border-color rounded-lg text-sm text-gray-600 hover:bg-gray-50" variant="plain" size="plain">Cancelar</PeractButtonPrimitive>

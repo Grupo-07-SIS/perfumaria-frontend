@@ -250,7 +250,7 @@ describe("Sales backend integration", () => {
     expect((customerSearch as HTMLInputElement).value).toContain("Cliente remoto");
   });
 
-  it("posts real IDs, groups quantities and registers a pending sale without lowering local stock", async () => {
+  it("posts real IDs, groups quantities and registers a finalized in-person sale without lowering local stock", async () => {
     const user = userEvent.setup();
     await renderLoaded();
     await fillSale(user);
@@ -259,7 +259,7 @@ describe("Sales backend integration", () => {
     await user.type(screen.getByPlaceholderText("0"), "10");
     expect(screen.getByText("Total", { selector: "span" }).parentElement).toHaveTextContent("81.00");
     await reviewAndConfirmSale(user);
-    expect(await screen.findByRole("status")).toHaveTextContent("Venda registrada como pendente.");
+    expect(await screen.findByRole("status")).toHaveTextContent("Venda registrada como finalizada.");
     expect(apiClient.post).toHaveBeenCalledExactlyOnceWith("/vendas", { clienteId: 81, forma: "Pix", tipoVenda: "PRESENCIAL", desconto: 10, tipoDesconto: "PERCENTUAL", itens: [{ produtoId: 42, quantidade: 2 }] });
     expect(screen.getByText("Nenhum item adicionado ainda.")).toBeInTheDocument();
     expect(screen.getByRole("combobox")).toHaveValue("");
@@ -289,7 +289,7 @@ describe("Sales backend integration", () => {
     expect(modal.getByText("- R$ 5,00")).toBeInTheDocument();
     expect(modal.getByText("R$ 52,50")).toBeInTheDocument();
     await user.click(modal.getByRole("button", { name: "Confirmar registro" }));
-    await screen.findByRole("status");
+    expect(await screen.findByRole("status")).toHaveTextContent("Venda registrada como pendente.");
     expect(apiClient.post).toHaveBeenCalledWith("/vendas", { clienteId: 81, forma: "Pix", tipoVenda: "ONLINE", canalVendaOnline: channel.toUpperCase(), desconto: 5, tipoDesconto: "VALOR", frete: 12.5, itens: [{ produtoId: 42, quantidade: 1 }] });
     await user.click(screen.getByRole("button", { name: "Online", exact: true }));
     expect(screen.getByLabelText("Valor do frete (R$)")).toHaveValue(null);
@@ -320,14 +320,25 @@ describe("Sales backend integration", () => {
     expect(apiClient.post).toHaveBeenLastCalledWith("/vendas", expect.not.objectContaining({ frete: expect.anything() }));
   });
 
-  it.each([5, 1.5])("blocks unavailable or fractional quantities: %s", async (quantity) => {
+  it.each([5, 1.5])("rejects unavailable or fractional quantities immediately: %s", async (quantity) => {
     const user = userEvent.setup();
     await renderLoaded();
     await fillSale(user);
     fireEvent.change(screen.getByRole("spinbutton", { name: "Quantidade de Perfume remoto" }), { target: { value: String(quantity) } });
-    await user.click(screen.getByRole("button", { name: "Registrar venda" }));
     expect(screen.getByRole("alert")).toBeInTheDocument();
+    expect(screen.getByRole("spinbutton", { name: "Quantidade de Perfume remoto" })).toHaveValue(1);
     expect(apiClient.post).not.toHaveBeenCalled();
+  });
+
+  it("disables adding a complete product once the cart reaches its stock", async () => {
+    const user = userEvent.setup();
+    await renderLoaded();
+    await fillSale(user);
+    fireEvent.change(screen.getByRole("spinbutton", { name: "Quantidade de Perfume remoto" }), { target: { value: "4" } });
+    await user.type(screen.getByPlaceholderText("Buscar produto..."), "Perfume");
+    await user.click(screen.getByRole("button", { name: /^Perfume remoto/ }));
+    expect(screen.getByRole("button", { name: "Adicionar ao carrinho" })).toBeDisabled();
+    expect(screen.getByRole("spinbutton", { name: "Quantidade de Perfume remoto" })).toHaveValue(4);
   });
 
   it("keeps the cart and form on HTTP failure and allows retry", async () => {
@@ -341,7 +352,7 @@ describe("Sales backend integration", () => {
     expect(screen.getByRole("combobox", { hidden: true })).toHaveValue("Pix");
     expect(screen.queryByRole("status")).not.toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Confirmar registro" }));
-    expect(await screen.findByRole("status")).toHaveTextContent("pendente");
+    expect(await screen.findByRole("status")).toHaveTextContent("finalizada");
   });
 
   it("blocks repeated submissions and editing while the POST is pending", async () => {
@@ -363,7 +374,7 @@ describe("Sales backend integration", () => {
     expect(screen.getByRole("dialog")).toBeInTheDocument();
     expect(screen.queryByRole("status")).not.toBeInTheDocument();
     await act(async () => { resolveSale({ status: 201, data: "" }); });
-    expect(screen.getByRole("status")).toHaveTextContent("pendente");
+    expect(screen.getByRole("status")).toHaveTextContent("finalizada");
   });
 
   it("reports loading errors and reloads without inventing catalog entries", async () => {

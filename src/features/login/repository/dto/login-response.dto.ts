@@ -3,6 +3,7 @@ export interface LoginResponseDto {
   expiresIn: number;
   tokenType: string;
   usuario: {
+    donoOrganizacao?: boolean;
     email: string;
     id: string;
     idOrganizacao?: number | null;

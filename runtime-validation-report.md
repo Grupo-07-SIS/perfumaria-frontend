@@ -1,3 +1,70 @@
+# Validacao atual: 2026-10-12
+
+Esta secao registra a verificacao atual. O relato de setembro abaixo e historico e nao substitui os resultados desta execucao.
+
+## Resultado
+
+Nao foi encontrado um novo bloqueio de rota ou endpoint nos carregamentos verificados. A validacao integral nao esta verde: persistem falhas de testes e dois riscos de contrato descritos abaixo.
+
+| Verificacao | Resultado |
+| --- | --- |
+| Navegacao real, sessao ADMIN | Dez rotas carregaram com dados, sem falhas de requisicao da API durante o carregamento. |
+| Consultas principais na API ativa | Dezoito GETs responderam 200. |
+| Recibo e edicao da venda V-18 | Rastreio exibido nos dois modais; data e itens no recibo; canal neutro na edicao. |
+| Backend: autenticacao, clientes e vendas | 94 testes aprovados. |
+| Backend: todos os controllers de integracao | 314 testes: 312 aprovados, duas falhas, zero erros. |
+| Frontend: suite completa | 856 testes: 850 aprovados, seis falhas; 121 arquivos aprovados e dois com falha. |
+| Build frontend | Sucesso; 3398 modulos; aviso de bundle maior que 500 kB. |
+
+Os 94 testes do backend estao incluidos nos 314; nao somar as duas execucoes. Os testes focados anteriores tambem estao incluidos na suite completa do frontend.
+
+## API e interface reais
+
+As rotas verificadas foram `/`, `/estoque/produtos`, `/estoque/categorias`, `/decants`, `/bodysplash`, `/vendas/registrar`, `/vendas/pedidos`, `/clientes`, `/configuracoes` e `/vendas/historico`.
+
+As consultas com HTTP 200 cobrem produtos, clientes ativos, categorias, produtos por categoria, decants, Body Splash, fornecedores, funcionarios, vendas, detalhes de venda, busca de itens e os seis endpoints de dashboard consumidos pelo frontend. Os endpoints por periodo receberam datas ISO validas.
+
+A venda `V-18` exibiu `BR202610070BR` no recibo e no modal de edicao. O recibo carregou `07/10/2026 14:45` e os itens; nenhum botao de salvar foi acionado.
+
+`GET /vendas/recentes`, `/vendas/resumo` e `/vendas/online` continuam respondendo 501. O frontend atual nao os utiliza; isso nao bloqueou as telas verificadas.
+
+## Permissoes de funcionario
+
+O bloqueio de consulta e cadastro de clientes foi corrigido no backend. Os testes de integracao passaram para FUNCIONARIO selecionando cliente, cadastrando pelo PDV e registrando uma venda. Tambem verificam restricao das operacoes administrativas e isolamento entre organizacoes.
+
+Essa verificacao usa Spring Security em ambiente de teste, nao um login real de funcionario na API ativa. A navegacao real foi executada apenas com ADMIN.
+
+## Falhas encontradas
+
+### Backend: dois testes de estoque critico
+
+Em `DashboardControllerIntegrationTest`, os testes `deveRetornarKpisConsolidadosSemPeriodo` e `deveFiltrarPorDatasInclusivasEmFormatoIso` esperam 21 produtos criticos e recebem 22.
+
+O helper `quantidadeProdutosCriticos()` consulta `estoqueAtual < limite` e nao filtra status. O servico usa produtos ativos com `estoqueAtual <= limite`, consistente com o alerta da interface sobre produtos no limite ou abaixo. Alinhar a consulta esperada do teste com essa regra; nao alterar o calculo apenas para satisfazer a expectativa antiga. Nenhum codigo do backend foi modificado nesta validacao.
+
+### Frontend: seis testes de catalogo e arquitetura
+
+- Quatro falhas em `src/app/pages/catalog-pages.test.tsx`: as paginas de catalogo usam `useApp`, mas os testes as renderizam sem `AppProvider` ou mock do contexto. Erro: `useApp must be used inside AppProvider`.
+- Duas falhas em `src/test/feature-boundaries.test.ts`: `DecantsPage` e `BodySplashPage` acessam `useApp` na entrada, contrariando a regra de composicao exigida pelo teste. A leitura de permissao deve ser organizada conforme o contrato de arquitetura, preservando a restricao de gerenciamento para ADMIN.
+
+Decants e Body Splash carregaram normalmente no navegador dentro do provider real. Essas falhas impedem declarar a suite aprovada, mas nao comprovaram um bloqueio de endpoint na aplicacao aberta. Nenhum teste ou codigo de producao foi alterado aqui.
+
+## Riscos restantes
+
+- As alteracoes de senha/e-mail ainda usam 401 para senha atual incorreta e sessao invalida. O frontend preserva a sessao nesses endpoints e pode mostrar a mensagem de senha incorreta em uma expiracao real.
+- DELETE de rastreio e PATCH de status continuam separados: uma falha no segundo passo pode deixar a venda no status anterior e sem rastreio. O fluxo normal e a ordem das requisicoes passaram nos testes, mas isso nao fornece atomicidade.
+
+## Comandos e limites
+
+- Backend focado: `mvn -Dtest=ClientesControllerIntegrationTest,AuthControllerIntegrationTest,*Venda*IntegrationTest "-Dspring.datasource.url=jdbc:h2:mem:validation;MODE=MySQL;DB_CLOSE_DELAY=-1" test`.
+- Backend ampliado: `mvn -Dtest=*ControllerIntegrationTest "-Dspring.datasource.url=jdbc:h2:mem:validation;MODE=MySQL;DB_CLOSE_DELAY=-1" test`.
+- Frontend: `npm test -- --maxWorkers=3 --reporter=dot` e `npm run build`.
+- Os testes do backend usaram H2 em memoria, separado do banco da aplicacao. Nenhum cadastro, cancelamento, edicao ou exclusao real foi executado; as escritas ocorreram apenas no ambiente de teste.
+- Esta validacao confirma carregamento/leitura no ambiente atual e cenarios automatizados, nao todos os cenarios de persistencia em producao. A suite completa de services/unitarios do backend e um typecheck separado nao foram executados nesta rodada.
+- Apenas este relatorio foi atualizado. A ausencia do documento anterior de ajustes foi preservada.
+
+---
+
 # QA independente: revalidacao final focada Peract
 
 ## Verificacao final pelo implementador

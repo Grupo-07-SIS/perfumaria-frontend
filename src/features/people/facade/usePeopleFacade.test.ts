@@ -188,7 +188,7 @@ describe("usePeopleFacade com pessoas remotas", () => {
     const { result } = renderHook(() => usePeopleFacade());
 
     await waitFor(() => expect(result.current.isLoading).toBe(false));
-    expect(result.current.error).toContain("PEOPLE_CLIENTS_LIST_FAILED:503");
+    expect(result.current.error).toBe("O servidor está temporariamente indisponível. Tente novamente em instantes.");
   });
 
   it("adiciona cliente somente depois do sucesso e mantem o modal aberto na falha", async () => {
@@ -313,7 +313,7 @@ describe("usePeopleFacade com pessoas remotas", () => {
 
     expect(result.current.clientes).toEqual([inativo]);
     expect(result.current.reactivateTarget).toEqual(inativo);
-    expect(result.current.error).toBe("PEOPLE_CLIENTS_REACTIVATE_FAILED:500");
+    expect(result.current.error).toBe("O servidor está temporariamente indisponível. Tente novamente em instantes.");
   });
 
   it("cria, atualiza e exclui funcionario somente depois do backend confirmar", async () => {

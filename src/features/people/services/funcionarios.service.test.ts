@@ -32,7 +32,7 @@ const response = {
   fkTipoUsuario: 2,
   tipoUsuarioNome: "Funcionário",
 };
-const model = { id: uuid, nome: values.nome, email: values.email, cargo: "Funcionário" as const };
+const model = { id: uuid, nome: values.nome, email: values.email, cargo: "Funcionário" as const, donoOrganizacao: false };
 
 describe("funcionariosService", () => {
   beforeEach(() => vi.clearAllMocks());

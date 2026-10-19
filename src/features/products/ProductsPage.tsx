@@ -23,11 +23,11 @@ export function ProductsPage() {
   return <div className="mx-auto max-w-[1400px] p-4 lg:p-6" id="products-section">
       {facade.isFormOpen ? <ProductFormModal categories={facade.categoryOptions} defaultValues={facade.formTarget ? getDefaultFormValues(facade.formTarget) : undefined} onClose={facade.closeForm} onSave={facade.submitProduct} submitting={facade.isSubmitting} title={facade.formTarget ? "Editar Produto" : "Novo Produto"} /> : null}
 
-      {facade.deleteTarget ? <DeleteProductModal nome={facade.deleteTarget.nome} onClose={facade.closeDeleteConfirm} onConfirm={() => void facade.confirmDelete()} submitting={facade.isDeleteSubmitting} /> : null}
+      {facade.deleteTarget ? <DeleteProductModal categoriaNome={facade.deleteTarget.categoriaNome} nome={facade.deleteTarget.nome} onClose={facade.closeDeleteConfirm} onConfirm={() => void facade.confirmDelete()} submitting={facade.isDeleteSubmitting} /> : null}
 
       <div className="mb-5 flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
         <div>
-          <h1 className="peract-font-color-default">Estoque – Produtos</h1>
+          <h1 data-tour="tour-products-header" className="peract-font-color-default">Estoque – Produtos</h1>
           <nav className="mt-0.5 text-xs peract-font-color-muted">Estoque &rsaquo; <span className="text-[#A67449]">Produtos</span></nav>
         </div>
         <PeractButton action={facade.openCreateForm} className="self-start" icon={<Plus size={16} />}>Novo produto</PeractButton>
@@ -42,9 +42,9 @@ export function ProductsPage() {
         Status Crítico: estoque ≤ <strong className="mx-1 text-gray-600">{facade.criticalThreshold}</strong> · Esgotado quando = 0
       </div>
 
-      <ProductsFilters categoryTabs={facade.categoryTabs} onCategoryChange={facade.setSelectedCategory} onSearchChange={facade.setSearch} onSearchSubmit={() => void facade.submitSearch()} onStatusChange={facade.setStatusFilter} search={facade.search} selectedCategory={facade.selectedCategory} statusFilter={facade.statusFilter} />
+      <div data-tour="tour-products-filters"><ProductsFilters categoryTabs={facade.categoryTabs} onCategoryChange={facade.setSelectedCategory} onSearchChange={facade.setSearch} onSearchSubmit={() => void facade.submitSearch()} onStatusChange={facade.setStatusFilter} search={facade.search} selectedCategory={facade.selectedCategory} statusFilter={facade.statusFilter} /></div>
 
-      <ProductsTable currentPage={facade.currentPage} onCreateProduct={facade.openCreateForm} onDeleteProduct={facade.openDeleteConfirm} onEditProduct={facade.openEditForm} onPageChange={facade.setCurrentPage} onSort={facade.toggleSort} products={facade.paginatedProducts} sortAscending={facade.sortAscending} sortField={facade.sortField} totalPages={facade.totalPages} totalProducts={facade.filteredProductsCount} />
+      <div data-tour="tour-products-table"><ProductsTable currentPage={facade.currentPage} onCreateProduct={facade.openCreateForm} onDeleteProduct={facade.openDeleteConfirm} onEditProduct={facade.openEditForm} onPageChange={facade.setCurrentPage} onSort={facade.toggleSort} products={facade.paginatedProducts} sortAscending={facade.sortAscending} sortField={facade.sortField} totalPages={facade.totalPages} totalProducts={facade.filteredProductsCount} /></div>
 
       {facade.isLoading ? <p className="mt-4 text-sm peract-font-color-muted">Carregando produtos...</p> : null}
     </div>;

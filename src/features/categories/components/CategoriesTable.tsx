@@ -42,7 +42,7 @@ export function CategoriesTable({
               <div className="flex h-6 w-6 items-center justify-center peract-radius-sm peract-bg-accent-soft">
                 <Tag size={12} className="peract-font-color-accent" />
               </div>
-              <span className="text-sm font-medium peract-font-color-default">{category.nome}</span>
+              <span className="max-w-[18rem] truncate text-sm font-medium peract-font-color-default" title={category.nome}>{category.nome}</span>
             </div>
           </PeractTableCell>
           <PeractTableCell className="px-4 py-3"><span className="text-sm text-gray-600">{category.linkedProducts} produto(s)</span></PeractTableCell>
