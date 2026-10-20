@@ -30,6 +30,7 @@ export function FuncionarioModal({
     errors,
     setErrors,
     success,
+    isSaving,
     isNew,
     handleSave
   } = useFuncionarioModalForm({
@@ -37,7 +38,8 @@ export function FuncionarioModal({
     onClose,
     onSave
   });
-  return <PeractModal className="peract-bg-card peract-radius-lg shadow-2xl max-w-sm max-h-[90vh] overflow-y-auto" onClose={onClose}>
+    return <PeractModal className="peract-bg-card peract-radius-lg shadow-2xl max-w-sm max-h-[90vh] overflow-y-auto" onClose={() => { if (!isSaving) onClose(); }}>
+      <fieldset disabled={isSaving} className="contents" aria-busy={isSaving}>
         <div className="flex items-center justify-between p-4 border-b peract-border-color sticky top-0 peract-bg-card z-10">
           <PeractModalTitle className="peract-font-color-default">{data ? "Editar Funcionário" : "Novo Funcionário"}</PeractModalTitle>
           <PeractButtonPrimitive onClick={onClose} className="p-1 rounded-lg hover:bg-gray-100 peract-font-color-muted" variant="plain" size="plain" aria-label="Fechar"><X size={18} /></PeractButtonPrimitive>
@@ -88,7 +90,7 @@ export function FuncionarioModal({
               <PeractField>
                 <PeractLabel className="text-xs text-gray-600 block mb-1">{isNew ? "Senha" : "Nova senha"} {isNew && <span className="text-red-500">*</span>}</PeractLabel>
                 <div className="relative">
-                  <PeractInputControl type={showSenha ? "text" : "password"} maxLength={100} value={senha} onChange={e => {
+                  <PeractInputControl type={showSenha ? "text" : "password"} autoComplete="new-password" maxLength={72} value={senha} onChange={e => {
                 setSenha(e.target.value);
                 setErrors({
                   ...errors,
@@ -103,7 +105,7 @@ export function FuncionarioModal({
               </PeractField>
               <PeractField>
                 <PeractLabel className="text-xs text-gray-600 block mb-1">Confirmar senha {isNew && <span className="text-red-500">*</span>}</PeractLabel>
-                <PeractInputControl type={showSenha ? "text" : "password"} maxLength={100} value={confirmSenha} onChange={e => {
+                <PeractInputControl type={showSenha ? "text" : "password"} autoComplete="new-password" maxLength={72} value={confirmSenha} onChange={e => {
               setConfirmSenha(e.target.value);
               setErrors({
                 ...errors,
@@ -117,7 +119,8 @@ export function FuncionarioModal({
         </div>
         <div className="flex gap-2 p-4 border-t peract-border-color sticky bottom-0 peract-bg-card">
           <PeractButtonPrimitive onClick={onClose} className="flex-1 px-4 py-2 border peract-border-color rounded-lg text-sm text-gray-600 hover:bg-gray-50" variant="plain" size="plain">Cancelar</PeractButtonPrimitive>
-          <PeractButtonPrimitive onClick={handleSave} className="flex-1 px-4 py-2 rounded-lg text-sm text-white hover:opacity-90 peract-bg-accent" variant="plain" size="plain">Salvar</PeractButtonPrimitive>
+          <PeractButtonPrimitive onClick={handleSave} className="flex-1 px-4 py-2 rounded-lg text-sm text-white hover:opacity-90 peract-bg-accent" variant="plain" size="plain">{isSaving ? "Salvando..." : "Salvar"}</PeractButtonPrimitive>
         </div>
+        </fieldset>
       </PeractModal>;
 }

@@ -14,6 +14,7 @@ import { PeractCard } from "../../../shared/components/peract-card";
 /* ─── Brand accent ─── */
 import { PeractInputControl } from "../../../shared/components/peract-input";
 import { PeractTableRoot, PeractTableHeader, PeractTableRow, PeractTableHead, PeractTableBody, PeractTableCell } from "../../../shared/components/peract-table";
+import { PeractPaginationFooter } from "../../../shared/components/peract-pagination";
 /* ─── Brand accent ─── */
 
 export function BodySplashView({
@@ -34,6 +35,12 @@ export function BodySplashView({
   handleSave,
   fmt,
   canManagePrices,
+  currentPage,
+  setCurrentPage,
+  totalElements,
+  totalPages,
+  firstItem,
+  lastItem,
 }: ReturnType<typeof useBodySplashFacade> & { canManagePrices: boolean }) {
   return <div className="p-4 lg:p-6 max-w-[1400px] mx-auto">
       {canManagePrices && (showModal || editItem) && <BodySplashModal onClose={() => {
@@ -145,7 +152,7 @@ export function BodySplashView({
           </PeractTableRoot>
         </div>
         <div className="px-4 py-3 border-t border-gray-50">
-          <p className="text-xs peract-font-color-muted">{filtered.length} body splash(es) cadastrado(s)</p>
+          <PeractPaginationFooter currentPage={currentPage} onPageChange={page => void setCurrentPage(page)} totalPages={totalPages} firstItem={firstItem} lastItem={lastItem} totalItems={totalElements}>body splash(es)</PeractPaginationFooter>
         </div>
       </PeractCard>
 
@@ -184,5 +191,6 @@ export function BodySplashView({
             </div>
           </PeractCard>)}
       </div>
+          <PeractPaginationFooter className="mt-4 md:hidden" currentPage={currentPage} onPageChange={page => void setCurrentPage(page)} totalPages={totalPages} firstItem={firstItem} lastItem={lastItem} totalItems={totalElements}>body splash(es)</PeractPaginationFooter>
     </div>;
 }

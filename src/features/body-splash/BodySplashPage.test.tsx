@@ -106,6 +106,22 @@ describe("BodySplash: caracterizacao do catalogo", () => {
     removeBodySplashMock.mockImplementation(async (item: BodySplashItem) => item.id);
   });
 
+  it("pagina no servidor com controles iguais no desktop e mobile", async () => {
+    const records = Array.from({ length: 25 }, (_, index) => ({ ...initialItems[0], id: index + 100, produto: index === 0 ? "Lavanda & Ylang" : `Body paginado ${index + 1}` }));
+    fetchBodySplashCatalogMock.mockImplementation(async ({ page = 0, size = 10, busca = "" } = {}) => {
+      const filtered = records.filter(item => item.produto.toLowerCase().includes(busca.toLowerCase()));
+      return { page: { content: filtered.slice(page * size, (page + 1) * size), number: page, totalElements: filtered.length, totalPages: Math.ceil(filtered.length / size) }, productOptions };
+    });
+    const user = userEvent.setup();
+    await renderLoadedPage();
+    expect(screen.getAllByText("Exibindo 1 a 10 de 25 body splash(es)")).toHaveLength(2);
+    await user.click(screen.getAllByRole("button", { name: "3", exact: true })[1]);
+    await waitFor(() => expect(screen.getAllByText("Exibindo 21 a 25 de 25 body splash(es)")).toHaveLength(2));
+    expect(screen.getByRole("table").querySelectorAll("tbody tr")).toHaveLength(5);
+    await user.type(screen.getByPlaceholderText("Buscar por nome do body splash..."), "Lavanda");
+    await waitFor(() => expect(screen.getAllByText("Exibindo 1 a 1 de 1 body splash(es)")).toHaveLength(2));
+  });
+
   it("busca sem diferenciar maiusculas e recupera os produtos apos resultado vazio", async () => {
     fetchBodySplashCatalogMock.mockImplementation(async ({ busca = "" }: { busca?: string } = {}) => {
       const content = initialItems.filter(item => item.produto.toLowerCase().includes(busca.toLowerCase()));

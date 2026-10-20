@@ -8,6 +8,8 @@ import { createCliente, fetchClientes, reactivateCliente, removeCliente, updateC
 import { createFuncionario, fetchFuncionarios, removeFuncionario, updateFuncionario } from "./services/funcionarios.service";
 import { fetchCepAddress } from "./services/cep.service";
 import { PeoplePage } from "./PeoplePage";
+import { toClienteModel } from "./repository/mapper/cliente.mapper";
+import { toFornecedorModel } from "./repository/mapper/fornecedor.mapper";
 
 const {
   createFornecedorMock,
@@ -23,9 +25,6 @@ const {
 
 vi.mock("../../core/auth/session.service", () => ({
   sessionService: { restore: vi.fn(), subscribeToClear: vi.fn(() => () => {}) },
-}));
-vi.mock("../../core/services/botpress", () => ({
-  triggerBotpressPresencialFlow: vi.fn().mockResolvedValue(undefined),
 }));
 vi.mock("./services/clientes.service", () => ({
   fetchClientes: vi.fn(),
@@ -171,6 +170,27 @@ describe("People: caracterizacao de filtros e permissoes", () => {
     expect(removeFuncionario).not.toHaveBeenCalled();
   });
 
+  it.each([
+    { tipo: "cliente", endereco: null },
+    { tipo: "cliente", endereco: undefined },
+    { tipo: "fornecedor", endereco: null },
+    { tipo: "fornecedor", endereco: undefined },
+  ])("lista e edita $tipo com endereco $endereco retornado pela API", async ({ tipo, endereco }) => {
+    vi.mocked(fetchClientes).mockResolvedValue([toClienteModel({ ...clientesRemotos[0], status: 1, endereco })]);
+    fetchFornecedoresMock.mockResolvedValue([toFornecedorModel({ ...fornecedoresRemotos[0], nome: fornecedoresRemotos[0].razaoSocial, endereco })]);
+    const user = userEvent.setup();
+    await renderPeople();
+    if (tipo === "fornecedor") await user.click(screen.getByRole("button", { name: /^Fornecedores/ }));
+    const table = within(screen.getByRole("table", { name: tipo === "cliente" ? "Clientes" : "Fornecedores" }));
+    const row = within(table.getByRole("row", { name: tipo === "cliente" ? /Ana Lima/ : /FrascosBR Ltda/ }));
+    expect(row.getByRole("cell", { name: "—", exact: true })).toBeInTheDocument();
+    await user.click(row.getByRole("button", { name: "Editar", exact: true }));
+    const dialog = within(screen.getByRole("dialog", { name: tipo === "cliente" ? "Editar Cliente" : "Editar Fornecedor" }));
+    expect(dialog.getByLabelText("Logradouro")).toHaveValue("");
+    expect(dialog.getByLabelText("Cidade")).toHaveValue("");
+    expect(dialog.getByLabelText("CEP")).toHaveValue("");
+  });
+
   it("organiza clientes em tabela com contato, status, pedidos e acoes", async () => {
     await renderPeople();
     const table = within(screen.getByRole("table", { name: "Clientes" }));
@@ -199,12 +219,84 @@ describe("People: caracterizacao de filtros e permissoes", () => {
     expect(screen.getByRole("dialog", { name: "Editar Fornecedor" })).toBeInTheDocument();
   });
 
+  it.each(["cliente", "fornecedor", "funcionario"] as const)("bloqueia envio duplicado de %s e permite repetir apos falha", async tipo => {
+    let rejectSave!: (reason: Error) => void;
+    const pending = new Promise<void>((_resolve, reject) => { rejectSave = reject; });
+    const user = userEvent.setup();
+    await renderPeople();
+    if (tipo === "fornecedor") {
+      await user.click(screen.getByRole("button", { name: /^Fornecedores/ }));
+      createFornecedorMock.mockImplementationOnce(async values => { await pending; return { ...fornecedoresRemotos[0], ...values }; });
+      await user.click(screen.getAllByRole("button", { name: "Novo fornecedor" })[0]);
+      fireEvent.change(screen.getByPlaceholderText("Ex: Empresa Ltda"), { target: { value: "Fornecedor teste" } });
+      fireEvent.change(screen.getByPlaceholderText("00.000.000/0001-00"), { target: { value: "12345678000190" } });
+      fireEvent.change(screen.getByPlaceholderText("contato@empresa.com.br"), { target: { value: "fornecedor@example.test" } });
+    } else if (tipo === "funcionario") {
+      await user.click(screen.getByRole("button", { name: /^Funcionários/ }));
+      vi.mocked(createFuncionario).mockImplementationOnce(async values => { await pending; return { id: "999", ...values }; });
+      await user.click(screen.getAllByRole("button", { name: "Novo funcionário" })[0]);
+      fireEvent.change(screen.getByPlaceholderText("Ex: Beatriz Oliveira"), { target: { value: "Funcionario teste" } });
+      fireEvent.change(screen.getByPlaceholderText("usuario@canalperfumado.com.br"), { target: { value: "funcionario@example.test" } });
+      fireEvent.change(screen.getByPlaceholderText("Mínimo 6 caracteres"), { target: { value: "123456" } });
+      fireEvent.change(screen.getByPlaceholderText("Repita a senha"), { target: { value: "123456" } });
+    } else {
+      vi.mocked(createCliente).mockImplementationOnce(async values => { await pending; return { id: 999, ...values, totalPedidos: 0 }; });
+      await user.click(screen.getAllByRole("button", { name: "Novo cliente" })[0]);
+      fireEvent.change(screen.getByPlaceholderText("Ex: Ana Lima"), { target: { value: "Cliente teste" } });
+      fireEvent.change(screen.getByPlaceholderText("(11) 99999-9999"), { target: { value: "11912345678" } });
+      fireEvent.change(screen.getByPlaceholderText("cliente@email.com"), { target: { value: "cliente@example.test" } });
+    }
+    const dialog = within(screen.getByRole("dialog"));
+    const create = tipo === "cliente" ? createCliente : tipo === "fornecedor" ? createFornecedorMock : createFuncionario;
+    await user.dblClick(dialog.getByRole("button", { name: "Salvar", exact: true }));
+    expect(create).toHaveBeenCalledTimes(1);
+    expect(dialog.getByRole("button", { name: "Salvando..." })).toBeDisabled();
+    expect(dialog.getByRole("button", { name: "Cancelar" })).toBeDisabled();
+    await user.keyboard("{Escape}");
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
+    await act(async () => { rejectSave(new Error("Falha simulada")); });
+    expect(dialog.getByRole("button", { name: "Salvar", exact: true })).toBeEnabled();
+    await user.click(dialog.getByRole("button", { name: "Salvar", exact: true }));
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+    expect(create).toHaveBeenCalledTimes(2);
+  });
+
+  it.each(["clientes", "fornecedores", "funcionarios"] as const)("pagina a aba %s com o mesmo rodape do historico", async aba => {
+    const user = userEvent.setup();
+    const clients = Array.from({ length: 25 }, (_, index) => ({ ...clientesRemotos[0], id: index + 100, nome: index === 0 ? "Ana Lima" : `Cliente paginado ${index + 1}` }));
+    const suppliers = Array.from({ length: 25 }, (_, index) => ({ ...fornecedoresRemotos[0], id: index + 100, razaoSocial: `Fornecedor paginado ${index + 1}` }));
+    const employees = Array.from({ length: 25 }, (_, index) => ({ ...funcionariosRemotos[1], id: String(index + 100), nome: `Funcionario paginado ${index + 1}` }));
+    vi.mocked(fetchClientes).mockResolvedValue(clients);
+    fetchFornecedoresMock.mockResolvedValue(suppliers);
+    vi.mocked(fetchFuncionarios).mockResolvedValue(employees);
+    await renderPeople();
+    if (aba !== "clientes") await user.click(screen.getByRole("button", { name: aba === "fornecedores" ? /^Fornecedores/ : /^Funcionários/ }));
+    const label = aba === "clientes" ? "cliente(s)" : aba === "fornecedores" ? "fornecedor(es)" : "funcionário(s)";
+    expect(screen.getAllByText(`Exibindo 1 a 10 de 25 ${label}`).length).toBeGreaterThan(0);
+    expect(screen.getByRole("table").querySelectorAll("tbody tr")).toHaveLength(10);
+    await user.click(screen.getAllByRole("button", { name: "3", exact: true })[0]);
+    expect(screen.getAllByText(`Exibindo 21 a 25 de 25 ${label}`).length).toBeGreaterThan(0);
+    expect(screen.getByRole("table").querySelectorAll("tbody tr")).toHaveLength(5);
+    await user.type(screen.getByPlaceholderText(aba === "clientes" ? "Buscar cliente..." : aba === "fornecedores" ? "Buscar fornecedor..." : "Buscar funcionário..."), "p");
+    expect(screen.getAllByText(`Exibindo 1 a 10 de 25 ${label}`).length).toBeGreaterThan(0);
+  });
+
+  it("permite navegar ate clientes alem do registro 100", async () => {
+    const user = userEvent.setup();
+    vi.mocked(fetchClientes).mockResolvedValue(Array.from({ length: 105 }, (_, index) => ({ ...clientesRemotos[0], id: index + 100, nome: index === 0 ? "Ana Lima" : `Cliente paginado ${index + 1}` })));
+    await renderPeople();
+    for (const target of [4, 6, 8, 10, 11]) await user.click(screen.getByRole("button", { name: String(target), exact: true }));
+    expect(screen.getByText("Exibindo 101 a 105 de 105 cliente(s)")).toBeInTheDocument();
+    expect(screen.getByRole("table")).toHaveTextContent("Cliente paginado 105");
+  });
+
   it("preenche endereco por CEP no cliente e salva com numero e complemento manuais", async () => {
     const user = userEvent.setup();
     await renderPeople();
     await user.click(screen.getAllByRole("button", { name: "Novo cliente" })[0]);
     const dialog = within(screen.getByRole("dialog", { name: "Novo Cliente" }));
     await user.type(dialog.getByPlaceholderText("Ex: Ana Lima"), "Cliente CEP");
+    await user.type(dialog.getByPlaceholderText("cliente@email.com"), "cep@example.test");
     await user.type(dialog.getByPlaceholderText("(11) 99999-9999"), "11912345678");
     await user.type(dialog.getByLabelText("Número"), "100");
     await user.type(dialog.getByLabelText("Complemento"), "Casa");
@@ -244,6 +336,7 @@ describe("People: caracterizacao de filtros e permissoes", () => {
     await user.click(screen.getAllByRole("button", { name: "Novo cliente" })[0]);
     const dialog = within(screen.getByRole("dialog", { name: "Novo Cliente" }));
     await user.type(dialog.getByPlaceholderText("Ex: Ana Lima"), "Cliente manual");
+    await user.type(dialog.getByPlaceholderText("cliente@email.com"), "manual@example.test");
     await user.type(dialog.getByPlaceholderText("(11) 99999-9999"), "11912345678");
     await user.type(dialog.getByLabelText("CEP"), "99999999");
     expect(await dialog.findByRole("status")).toHaveTextContent("CEP não encontrado");
@@ -289,6 +382,7 @@ describe("People: caracterizacao de filtros e permissoes", () => {
     expect(screen.getAllByText("Obrigatório.")).toHaveLength(2);
     await user.type(screen.getByPlaceholderText("Ex: Ana Lima"), "Cliente teste");
     await user.type(screen.getByPlaceholderText("(11) 99999-9999"), "11912345678");
+    await user.type(screen.getByPlaceholderText("cliente@email.com"), "cliente@example.test");
     await user.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Salvar" }));
     await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
     expect(screen.getByText("Cliente teste")).toBeInTheDocument();
@@ -434,7 +528,7 @@ describe("People: caracterizacao de filtros e permissoes", () => {
     expect(table.getByText("Administrador")).toBeInTheDocument();
     expect(table.getByText("Administrador (dono)")).toBeInTheDocument();
     expect(table.getByText("Beatriz Oliveira")).toBeInTheDocument();
-    expect(screen.getByText("2 funcionário(s)")).toBeInTheDocument();
+    expect(screen.getAllByText("Exibindo 1 a 2 de 2 funcionário(s)")).toHaveLength(2);
   });
 
   it("administrador comum visualiza apenas funcionarios mesmo se a resposta contiver admins", async () => {
@@ -451,7 +545,7 @@ describe("People: caracterizacao de filtros e permissoes", () => {
     expect(table.queryByText("Administrador")).not.toBeInTheDocument();
     expect(table.queryByText("Outro administrador")).not.toBeInTheDocument();
     expect(table.getByText("Beatriz Oliveira")).toBeInTheDocument();
-    expect(screen.getByText("1 funcionário(s)")).toBeInTheDocument();
+    expect(screen.getAllByText("Exibindo 1 a 1 de 1 funcionário(s)")).toHaveLength(2);
   });
 
   it("mostra mensagem legivel quando a exclusao de funcionario falha", async () => {
@@ -475,14 +569,32 @@ describe("People: caracterizacao de filtros e permissoes", () => {
     const dialog = within(screen.getByRole("dialog", { name: "Novo Funcionário" }));
     await user.type(dialog.getByPlaceholderText("Ex: Beatriz Oliveira"), "Beatriz Oliveira");
     await user.type(dialog.getByPlaceholderText("usuario@canalperfumado.com.br"), "duplicado@example.com");
-    await user.type(dialog.getByPlaceholderText("Mínimo 6 caracteres"), "senha123");
-    await user.type(dialog.getByPlaceholderText("Repita a senha"), "senha123");
+    await user.type(dialog.getByPlaceholderText("Mínimo 6 caracteres"), "SenhaForte12!");
+    await user.type(dialog.getByPlaceholderText("Repita a senha"), "SenhaForte12!");
     await user.click(dialog.getByRole("button", { name: "Salvar" }));
 
     expect(await dialog.findByText("Este e-mail já está cadastrado. Informe outro e-mail.")).toBeInTheDocument();
     expect(dialog.queryByText("PEOPLE_EMPLOYEES_CREATE_FAILED:409")).not.toBeInTheDocument();
     expect(screen.getAllByRole("alert")).toHaveLength(1);
     expect(dialog.getByPlaceholderText("usuario@canalperfumado.com.br")).toHaveValue("duplicado@example.com");
+  });
+
+  it.each(["email", "telefone"])("destaca conflito remoto no campo %s do cliente e permite repetir", async field => {
+    const user = userEvent.setup();
+    const message = field === "email" ? "Este e-mail já está cadastrado." : "Este telefone já está cadastrado.";
+    vi.mocked(updateCliente).mockRejectedValueOnce(Object.assign(new Error("PEOPLE_CLIENTS_UPDATE_FAILED:409"), {
+      status: 409, fields: { [field]: message },
+    }));
+    await renderPeople();
+    await user.click(clienteCard("Ana Lima").getByRole("button", { name: "Editar" }));
+    const dialog = within(screen.getByRole("dialog", { name: "Editar Cliente" }));
+    await user.click(dialog.getByRole("button", { name: "Salvar" }));
+    expect(await dialog.findByText(message)).toBeInTheDocument();
+    expect(dialog.queryByText("Salvo!")).not.toBeInTheDocument();
+    expect(dialog.getByPlaceholderText("cliente@email.com")).toHaveValue("ana@email.com");
+    await user.click(dialog.getByRole("button", { name: "Salvar" }));
+    await waitFor(() => expect(screen.queryByRole("dialog", { name: "Editar Cliente" })).not.toBeInTheDocument());
+    expect(updateCliente).toHaveBeenCalledTimes(2);
   });
 
   it("aplica mascara no telefone do cliente e valida telefone e e-mail no campo", async () => {
@@ -609,6 +721,7 @@ describe("People: caracterizacao de filtros e permissoes", () => {
       fireEvent.click(screen.getAllByRole("button", { name: "Novo cliente" })[0]);
       fireEvent.change(screen.getByPlaceholderText("Ex: Ana Lima"), { target: { value: "Cliente salvo" } });
       fireEvent.change(screen.getByPlaceholderText("(11) 99999-9999"), { target: { value: "11912345678" } });
+      fireEvent.change(screen.getByPlaceholderText("cliente@email.com"), { target: { value: "salvo@example.test" } });
       fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Salvar" }));
       await act(async () => {});
       expect(screen.queryByRole("dialog")).not.toBeInTheDocument();

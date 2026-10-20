@@ -1,5 +1,5 @@
-export { PeractPagination } from "./PeractPagination";
-export type { PeractPaginationProps } from "./PeractPagination.types";export {
+export { PeractPagination, PeractPaginationFooter } from "./PeractPagination";
+export type { PeractPaginationProps, PeractPaginationFooterProps } from "./PeractPagination.types";export {
   PeractPaginationRoot,
   PeractPaginationContent,
   PeractPaginationLink,

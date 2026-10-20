@@ -6,7 +6,8 @@ import { sessionService } from "../../core/auth/session.service";
 import { apiClient } from "../../core/services/http-client";
 import { SettingsPage } from "./SettingsPage";
 import { useSettingsFacade } from "./facade/useSettingsFacade";
-import { changeAccountPassword } from "./services/settings.service";
+import { changeAccountPassword, validatePasswordChange } from "./services/settings.service";
+import { STRONG_PASSWORD_MESSAGE } from "../../shared/utils/password";
 
 vi.mock("../../core/auth/session.service", async importOriginal => {
   const original = await importOriginal<typeof import("../../core/auth/session.service")>();
@@ -43,6 +44,14 @@ beforeEach(() => {
 });
 
 describe("Settings: caracterizacao das validacoes", () => {
+  it.each(["12345", "Aa1!".repeat(19), "Aa1!" + "é".repeat(35)])("rejeita a nova senha curta ou longa: %s", novaSenha => {
+    expect(validatePasswordChange({ senhaAtual: "atual", novaSenha, confirmSenha: novaSenha }).novaSenha).toBe(STRONG_PASSWORD_MESSAGE);
+  });
+
+  it.each(["123456", "abcdef"])("aceita nova senha com seis caracteres: %s", novaSenha => {
+    expect(validatePasswordChange({ senhaAtual: "atual", novaSenha, confirmSenha: novaSenha })).toEqual({});
+  });
+
   it("converte resposta da API em uma sessão autenticada persistida", async () => {
     vi.mocked(apiClient.patch).mockResolvedValueOnce(AccountSessionResponse());
 
@@ -157,18 +166,19 @@ describe("Settings: caracterizacao das validacoes", () => {
     await user.type(screen.getByLabelText("Nova senha", { exact: true }), "12345");
     await user.type(screen.getByLabelText("Confirmar nova senha"), "diferente");
     await user.click(screen.getByRole("button", { name: "Alterar senha", exact: true }));
-    expect(screen.getByText("Mínimo de 6 caracteres.")).toBeInTheDocument();
+    expect(screen.getByText(STRONG_PASSWORD_MESSAGE)).toBeInTheDocument();
     expect(screen.getByText("As senhas não coincidem.")).toBeInTheDocument();
     expect(screen.queryByRole("status")).not.toBeInTheDocument();
-    await user.type(screen.getByLabelText("Nova senha", { exact: true }), "6");
+    await user.clear(screen.getByLabelText("Nova senha", { exact: true }));
+    await user.type(screen.getByLabelText("Nova senha", { exact: true }), "SenhaForte12!");
     await user.clear(screen.getByLabelText("Confirmar nova senha"));
-    await user.type(screen.getByLabelText("Confirmar nova senha"), "123456");
+    await user.type(screen.getByLabelText("Confirmar nova senha"), "SenhaForte12!");
     vi.mocked(apiClient.patch).mockResolvedValueOnce(AccountSessionResponse());
     await user.click(screen.getByRole("button", { name: "Alterar senha", exact: true }));
     expect(await screen.findByText("Senha alterada com sucesso.")).toBeInTheDocument();
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
     expect(screen.getByLabelText("Nova senha", { exact: true })).toHaveValue("");
-    expect(apiClient.patch).toHaveBeenCalledWith("/auth/alterar-senha", { senhaAtual: "senha-teste", novaSenha: "123456" });
+    expect(apiClient.patch).toHaveBeenCalledWith("/auth/alterar-senha", { senhaAtual: "senha-teste", novaSenha: "SenhaForte12!" });
   });
 
   it("explica quando a senha atual está incorreta", async () => {
@@ -177,8 +187,8 @@ describe("Settings: caracterizacao das validacoes", () => {
     render(<AppProvider><SettingsPage /></AppProvider>);
     await user.click(screen.getByRole("button", { name: "Segurança" }));
     await user.type(screen.getByLabelText("Senha atual", { exact: true }), "senha-incorreta");
-    await user.type(screen.getByLabelText("Nova senha", { exact: true }), "senha-nova");
-    await user.type(screen.getByLabelText("Confirmar nova senha"), "senha-nova");
+    await user.type(screen.getByLabelText("Nova senha", { exact: true }), "SenhaForte12!");
+    await user.type(screen.getByLabelText("Confirmar nova senha"), "SenhaForte12!");
     await user.click(screen.getByRole("button", { name: "Alterar senha", exact: true }));
 
     expect(await screen.findByRole("alert")).toHaveTextContent("A senha atual está incorreta. Confira e tente novamente.");

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { toFornecedorModel, toFornecedorRequestDto } from "./fornecedor.mapper";
+import { EMPTY_ENDERECO } from "../../config/people.config";
 
 const endereco = {
   logradouro: "Rua das Essencias",
@@ -12,6 +13,12 @@ const endereco = {
 };
 
 describe("fornecedorMapper", () => {
+  it.each([null, undefined, {}, { cidade: "Sao Paulo" }])("normaliza endereco opcional do fornecedor: %s", value => {
+    const result = toFornecedorModel({ id: 31, nome: "Essencias Brasil", cnpj: "12345678000190", telefone: "1133334444", email: "contato@example.test", endereco: value });
+    expect(result.endereco).toEqual({ ...EMPTY_ENDERECO, ...value });
+    expect(result.endereco).not.toBe(EMPTY_ENDERECO);
+  });
+
   it("mapeia nome e endereco do backend para o model visual", () => {
     expect(toFornecedorModel({
       id: 31,

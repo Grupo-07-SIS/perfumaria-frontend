@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -6,6 +6,7 @@ import { AppProvider } from "../../core/store/AppContext";
 import { sessionService } from "../../core/auth/session.service";
 import { HomePage } from "./HomePage";
 import { dashboardRepository } from "./repository/dashboard.repository";
+import type { DashboardSalesByChannelResult } from "./repository/dashboard.repository";
 
 vi.mock("../../core/auth/session.service", () => ({
   sessionService: { restore: vi.fn(), subscribeToClear: vi.fn(() => () => {}) },
@@ -14,7 +15,7 @@ vi.mock("./repository/dashboard.repository", async importOriginal => {
   const original = await importOriginal<typeof import("./repository/dashboard.repository")>();
   return {
     ...original,
-    dashboardRepository: { listDashboardData: vi.fn(), listSalesOverview: vi.fn() },
+    dashboardRepository: { listDashboardData: vi.fn(), listSalesOverview: vi.fn(), listSalesByChannel: vi.fn() },
   };
 });
 vi.mock("recharts", async (importOriginal) => {
@@ -33,6 +34,8 @@ function renderHome() {
 
 describe("Home: caracterizacao dos indicadores", () => {
   beforeEach(() => {
+    vi.mocked(dashboardRepository.listSalesByChannel).mockReset();
+    vi.mocked(dashboardRepository.listSalesByChannel).mockResolvedValue({ presencial: 12, whatsapp: 7, site: 3, previous: { presencial: 6, whatsapp: 14, site: 3 } });
     const today = new Date().toLocaleDateString("pt-BR");
     vi.mocked(dashboardRepository.listDashboardData).mockResolvedValue({
       data: {
@@ -89,9 +92,9 @@ describe("Home: caracterizacao dos indicadores", () => {
     expect(screen.getByText("-1.294,98% vs anterior")).toBeInTheDocument();
     expect(screen.getByText("-477,80%")).toBeInTheDocument();
     expect(screen.getByText("Perda: R$ 998,60")).toHaveStyle({ color: "#dc2626" });
-    expect(screen.getByText("Ticket Médio")).toBeInTheDocument();
-    expect(screen.getByText("R$ 104,50")).toBeInTheDocument();
-    expect(screen.getByText("+12,35% vs anterior")).toBeInTheDocument();
+    expect(screen.queryByText("Ticket Médio")).not.toBeInTheDocument();
+    expect(screen.getByText("Vendas por canal")).toBeInTheDocument();
+    expect(screen.getByRole("combobox", { name: "Canal das vendas" })).toHaveValue("todos");
     expect(screen.queryByText("Clientes Cadastrados")).not.toBeInTheDocument();
     expect(screen.getByText("Ana Lima")).toBeInTheDocument();
     expect(screen.queryByText("Aguardando endpoint de resumo")).not.toBeInTheDocument();
@@ -127,24 +130,31 @@ describe("Home: caracterizacao dos indicadores", () => {
     expect(screen.getByRole("status")).toHaveTextContent("Personalizado: 09/10/2026 - 09/10/2026");
     expect(dashboardRepository.listDashboardData).toHaveBeenLastCalledWith("7dias", { dataInicio: "2026-10-09", dataFim: "2026-10-09" });
     expect(dashboardRepository.listSalesOverview).toHaveBeenLastCalledWith("7dias", { dataInicio: "2026-10-09", dataFim: "2026-10-09" });
+    expect(dashboardRepository.listSalesByChannel).toHaveBeenLastCalledWith("7dias", { dataInicio: "2026-10-09", dataFim: "2026-10-09" });
   });
 
-  it("simula ausencia de dados sem apagar o contexto nem perder o periodo selecionado", async () => {
+  it("nao oferece simulacao sem dados e preserva os dados reais ao trocar periodo", async () => {
     const user = userEvent.setup();
     renderHome();
     await user.click(screen.getByRole("button", { name: "30 dias", exact: true }));
-    await user.click(screen.getByRole("button", { name: "Simular dashboard sem dados (primeiro acesso)" }));
-    expect(screen.getByText("Nenhuma venda registrada ainda")).toBeInTheDocument();
-    expect(screen.getByText("Sem vendas finalizadas")).toBeInTheDocument();
-    expect(screen.getAllByText("Simulação sem dados")).toHaveLength(2);
-    expect(screen.getByText("Nenhum produto vendido ainda")).toBeInTheDocument();
-    expect(screen.getByText("Sem dados por categoria")).toBeInTheDocument();
-    expect(screen.getByText("Nenhum produto cadastrado ainda")).toBeInTheDocument();
-    expect(screen.getByText("Nenhuma venda realizada ainda")).toBeInTheDocument();
-    expect(screen.queryByText("Chanel N°5")).not.toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: "Sair da simulação e ver dados reais" }));
     expect(await screen.findByText("Chanel N°5")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /simula/i })).not.toBeInTheDocument();
     expect(screen.queryByText("Modo de simulação ativo.")).not.toBeInTheDocument();
+  });
+
+  it("mantem o estado vazio quando a API realmente nao retorna dados", async () => {
+    vi.mocked(dashboardRepository.listDashboardData).mockResolvedValueOnce({
+      data: { topProducts: [], criticalProducts: [], categoryData: [] }, chartData: [], failedSections: [],
+    });
+    vi.mocked(dashboardRepository.listSalesOverview).mockResolvedValueOnce({
+      sales: [], customerCount: 0, criticalCount: 0, kpis: null, failedSections: [],
+    });
+    renderHome();
+    expect(await screen.findAllByText("Sem movimentação no período")).toHaveLength(2);
+    expect(screen.getByText("Nenhum produto vendido no período")).toBeInTheDocument();
+    expect(screen.getByText("Nenhum produto em estoque crítico")).toBeInTheDocument();
+    expect(screen.getByText("Nenhuma venda recente")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /simula/i })).not.toBeInTheDocument();
   });
 
   it("funcionario ve atalhos sem chamar endpoints administrativos", () => {
@@ -152,6 +162,7 @@ describe("Home: caracterizacao dos indicadores", () => {
     vi.mocked(sessionService.restore).mockReturnValue({ ...session, user: { ...session.user, cargo: "Funcionário" } });
     vi.mocked(dashboardRepository.listDashboardData).mockClear();
     vi.mocked(dashboardRepository.listSalesOverview).mockClear();
+    vi.mocked(dashboardRepository.listSalesByChannel).mockClear();
     renderHome();
     expect(screen.queryByText("Vendas no Período")).not.toBeInTheDocument();
     expect(screen.queryByText("Faturamento no Período")).not.toBeInTheDocument();
@@ -163,5 +174,75 @@ describe("Home: caracterizacao dos indicadores", () => {
     expect(screen.getByRole("link", { name: /Pedidos Online/ })).toHaveAttribute("href", "/vendas/pedidos");
     expect(dashboardRepository.listDashboardData).not.toHaveBeenCalled();
     expect(dashboardRepository.listSalesOverview).not.toHaveBeenCalled();
+    expect(dashboardRepository.listSalesByChannel).not.toHaveBeenCalled();
+    expect(screen.queryByRole("combobox", { name: "Canal das vendas" })).not.toBeInTheDocument();
+  });
+
+  it("seleciona todos os canais, presencial, WhatsApp e Site sem refazer consultas", async () => {
+    const user = userEvent.setup();
+    renderHome();
+    const card = within(screen.getByText("Vendas por canal").closest(".peract-bg-card")!);
+    expect(await card.findByText("22", { exact: true })).toBeInTheDocument();
+    const select = card.getByRole("combobox", { name: "Canal das vendas" });
+    for (const [channel, count, change] of [["presencial", "12", "+100,00% vs anterior"], ["whatsapp", "7", "-50,00% vs anterior"], ["site", "3", "+0,00% vs anterior"], ["todos", "22", "-4,35% vs anterior"]]) {
+      await user.selectOptions(select, channel);
+      expect(card.getByText(count, { exact: true })).toBeInTheDocument();
+      expect(card.getByText(change, { exact: true })).toBeInTheDocument();
+    }
+    expect(dashboardRepository.listSalesByChannel).toHaveBeenCalledTimes(1);
+  });
+
+  it("exibe zero quando o canal nao possui vendas", async () => {
+    vi.mocked(dashboardRepository.listSalesByChannel).mockResolvedValueOnce({ presencial: 0, whatsapp: 0, site: 0, previous: { presencial: 0, whatsapp: 0, site: 0 } });
+    renderHome();
+    const card = within(screen.getByText("Vendas por canal").closest(".peract-bg-card")!);
+    expect(await card.findByText("0", { exact: true })).toBeInTheDocument();
+    expect(card.queryByText("Não foi possível carregar vendas por canal")).not.toBeInTheDocument();
+    expect(card.getByText("+0,00% vs anterior")).toBeInTheDocument();
+  });
+
+  it("mantem o total quando apenas a comparacao anterior falha", async () => {
+    vi.mocked(dashboardRepository.listSalesByChannel).mockResolvedValueOnce({ presencial: 12, whatsapp: 7, site: 3, previous: null });
+    renderHome();
+    const card = within(screen.getByText("Vendas por canal").closest(".peract-bg-card")!);
+    expect(await card.findByText("22", { exact: true })).toBeInTheDocument();
+    expect(card.getByText("Comparação com período anterior indisponível")).toBeInTheDocument();
+    expect(card.queryByText(/% vs anterior/)).not.toBeInTheDocument();
+  });
+
+  it("isola falha de canais e permite repetir sem ocultar os demais indicadores", async () => {
+    vi.mocked(dashboardRepository.listSalesByChannel).mockRejectedValueOnce(new Error("offline"));
+    const user = userEvent.setup();
+    renderHome();
+    expect(await screen.findByText("Não foi possível carregar vendas por canal")).toBeInTheDocument();
+    expect(await screen.findByText("R$ 209,00")).toBeInTheDocument();
+    const grid = screen.getByText("Vendas por canal").closest('[data-tour="tour-home-kpis"]');
+    expect(grid).toHaveClass("items-start", "grid-cols-1", "sm:grid-cols-2", "xl:grid-cols-4");
+    expect(grid?.children).toHaveLength(4);
+    Array.from(grid!.children).forEach(card => {
+      expect(card).toHaveClass("h-48", "flex-col");
+      expect(card.querySelector('[data-slot="kpi-header"]')).toHaveClass("h-14", "shrink-0");
+    });
+    expect(screen.getByRole("combobox", { name: "Canal das vendas" }).closest('[data-slot="kpi-header"]')).not.toBeNull();
+    expect(screen.getByRole("button", { name: "Recarregar vendas por canal" })).toHaveAttribute("title", "Tentar novamente");
+    expect(screen.queryByText("Tentar novamente", { exact: true })).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Recarregar vendas por canal" }));
+    const card = within(screen.getByText("Vendas por canal").closest(".peract-bg-card")!);
+    expect(await card.findByText("22", { exact: true })).toBeInTheDocument();
+  });
+
+  it("ignora resposta atrasada do periodo anterior", async () => {
+    let resolveOld!: (value: DashboardSalesByChannelResult) => void;
+    vi.mocked(dashboardRepository.listSalesByChannel).mockImplementationOnce(() => new Promise(resolve => { resolveOld = resolve; }))
+      .mockResolvedValueOnce({ presencial: 1, whatsapp: 2, site: 3, previous: { presencial: 0, whatsapp: 0, site: 0 } });
+    const user = userEvent.setup();
+    renderHome();
+    const card = within(screen.getByText("Vendas por canal").closest(".peract-bg-card")!);
+    expect(card.getByText("Carregando vendas por canal...")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "30 dias", exact: true }));
+    expect(await card.findByText("6", { exact: true })).toBeInTheDocument();
+    await act(async () => { resolveOld({ presencial: 100, whatsapp: 100, site: 100, previous: { presencial: 1, whatsapp: 1, site: 1 } }); });
+    expect(card.getByText("6", { exact: true })).toBeInTheDocument();
+    expect(card.queryByText("300", { exact: true })).not.toBeInTheDocument();
   });
 });

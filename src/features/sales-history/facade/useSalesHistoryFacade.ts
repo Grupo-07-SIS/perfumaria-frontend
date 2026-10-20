@@ -3,7 +3,7 @@ import { salesHistoryRepository, useSalesHistoryRepository } from "../repository
 import { useEffect, useState } from "react";
 import type { StatusFilter } from "../models/sales-history.models";
 import type { Venda } from "../../../core/store/AppContext";
-import { SALES_HISTORY_PAGE_SIZE } from "../config/sales-history.config";
+import { usePagination } from "../../../shared/hooks/usePagination";
 export function useSalesHistoryFacade() {
   const { currentUser } = useSalesHistoryRepository();
   const [vendas, setVendas] = useState<Venda[]>([]);
@@ -14,7 +14,6 @@ export function useSalesHistoryFacade() {
   const [pagamentoFilter, setPagamentoFilter] = useState("todos");
   const [tipoFilter, setTipoFilter] = useState<"todos" | "online" | "presencial">("todos");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("todos");
-  const [currentPage, setCurrentPage] = useState(1);
   const [viewVenda, setViewVenda] = useState<Venda | null>(null);
   const [editVenda, setEditVenda] = useState<Venda | null>(null);
 
@@ -60,10 +59,7 @@ export function useSalesHistoryFacade() {
     tipoFilter,
     statusFilter
   });
-  const totalPages = Math.max(1, Math.ceil(filtered.length / SALES_HISTORY_PAGE_SIZE));
-  const firstSaleOnPage = filtered.length === 0 ? 0 : (currentPage - 1) * SALES_HISTORY_PAGE_SIZE + 1;
-  const lastSaleOnPage = Math.min(currentPage * SALES_HISTORY_PAGE_SIZE, filtered.length);
-  const paginatedSales = filtered.slice(firstSaleOnPage - 1, lastSaleOnPage);
+  const { currentPage, setCurrentPage, totalPages, firstItem: firstSaleOnPage, lastItem: lastSaleOnPage, paginatedItems: paginatedSales } = usePagination(filtered);
 
   const updateSearch = (value: string) => {
     setSearch(value);

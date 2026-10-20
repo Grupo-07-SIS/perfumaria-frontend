@@ -2,9 +2,9 @@ import { useState } from "react";
 import { ptBR } from "date-fns/locale";
 import type { useHomeFacade } from "../facade/useHomeFacade";
 import { PeractButtonPrimitive } from "../../../shared/components/peract-button";
-import { Eye, AlertTriangle, ShoppingBag, DollarSign, TrendingUp, TrendingDown, BarChart2, Droplets, Package, ArrowRight, ShoppingCart, CalendarDays, Check, Receipt } from "lucide-react";
-import { PERIOD_LABELS, DARK, ACC, CAT_COLORS, WARM } from "../config/home.config";
-import type { Period } from "../models/home.models";
+import { AlertTriangle, ShoppingBag, DollarSign, TrendingUp, TrendingDown, BarChart2, Droplets, Package, ArrowRight, ShoppingCart, CalendarDays, Check, RefreshCw } from "lucide-react";
+import { PERIOD_LABELS, DARK, ACC, CAT_COLORS, WARM, SALES_CHANNEL_OPTIONS } from "../config/home.config";
+import type { Period, SalesChannel } from "../models/home.models";
 import { Link } from "react-router";
 import { KpiCard } from "./KpiCard";
 import { fmtBRL, fmtBRLShort } from "../services/home.service";
@@ -14,6 +14,7 @@ import { ResponsiveContainer, LineChart, CartesianGrid, XAxis, YAxis, Tooltip, L
 import { TooltipFat } from "./TooltipFat";
 import { TooltipVendas } from "./TooltipVendas";
 import { PeractTag } from "../../../shared/components/peract-tag";
+import { PeractNativeSelect } from "../../../shared/components/peract-select";
 import { PeractCalendar } from "../../../shared/components/peract-calendar";
 import { PeractPopover, PeractPopoverContent, PeractPopoverTrigger } from "../../../shared/components/peract-popover";
 import { brazilianDateToLocalDate } from "../services/home.service";
@@ -67,8 +68,6 @@ export function HomeView({
   customRangeActive,
   customPeriodError,
   applyCustomPeriod,
-  emptyMode,
-  setEmptyMode,
   chartData,
   categoriaData,
   criticalProducts,
@@ -82,8 +81,14 @@ export function HomeView({
   faturamentoKpi,
   revenueChange,
   marginChange,
-  ticketMedioKpi,
-  ticketMedioChange,
+  salesChannel,
+  setSalesChannel,
+  channelSalesCount,
+  channelSalesChange,
+  channelsAvailable,
+  isChannelsLoading,
+  channelsError,
+  retrySalesByChannel,
   topProdutos,
   isDashboardLoading,
   failedSections,
@@ -105,12 +110,6 @@ export function HomeView({
         </div>
         {isAdmin && <div className="flex w-full flex-col items-start gap-2 self-start sm:w-auto sm:items-end">
           <div className="flex w-full flex-wrap items-center justify-start gap-2 sm:w-auto sm:justify-end">
-            <PeractButtonPrimitive onClick={() => setEmptyMode(!emptyMode)} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs border transition-all ${emptyMode ? "text-white border-transparent" : "peract-font-color-muted peract-border-color peract-bg-card hover:border-gray-300"}`} style={emptyMode ? {
-            background: "#6366f1"
-          } : {}} title={emptyMode ? "Sair da simulação e ver dados reais" : "Simular dashboard sem dados (primeiro acesso)"} variant="plain" size="plain" aria-label={emptyMode ? "Sair da simulação e ver dados reais" : "Simular dashboard sem dados (primeiro acesso)"}>
-              <Eye size={12} />
-              {emptyMode ? "Sair da simulação" : "Simular sem dados"}
-            </PeractButtonPrimitive>
             <div className="flex rounded-lg overflow-hidden border peract-border-color">
               {(Object.keys(PERIOD_LABELS) as Period[]).map(p => <PeractButtonPrimitive key={p} onClick={() => setPeriod(p)} className="px-3 py-1.5 text-xs transition-all" style={period === p && !customMode ? {
                 background: DARK,
@@ -140,27 +139,11 @@ export function HomeView({
         </div>}
       </div>
 
-      {/* Empty mode banner */}
-      {emptyMode && <div className="flex items-center gap-3 px-4 py-3 rounded-lg border text-sm mb-5" style={{
-      background: "rgba(99,102,241,0.08)",
-      borderColor: "rgba(99,102,241,0.3)",
-      color: "#4338ca"
-    }}>
-          <Eye size={16} className="shrink-0" />
-          <span>
-            <strong>Modo de simulação ativo.</strong> Exibindo como ficaria o painel sem nenhum dado cadastrado —
-            útil para prever a experiência de primeiro acesso.
-            <PeractButtonPrimitive onClick={() => setEmptyMode(false)} className="underline ml-2 font-medium hover:opacity-80" variant="plain" size="plain">
-              Sair da simulação
-            </PeractButtonPrimitive>
-          </span>
-        </div>}
+      {isAdmin && isDashboardLoading && <p role="status" className="mb-4 text-xs peract-font-color-muted">Carregando indicadores da Dashboard...</p>}
+      {isAdmin && failedSections.length > 0 && <div role="alert" className="mb-5 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">Não foi possível carregar {failedSections.length === 1 ? "um indicador" : "alguns indicadores"}. As demais seções continuam disponíveis.</div>}
 
-      {isAdmin && !emptyMode && isDashboardLoading && <p role="status" className="mb-4 text-xs peract-font-color-muted">Carregando indicadores da Dashboard...</p>}
-      {isAdmin && !emptyMode && failedSections.length > 0 && <div role="alert" className="mb-5 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">Não foi possível carregar {failedSections.length === 1 ? "um indicador" : "alguns indicadores"}. As demais seções continuam disponíveis.</div>}
-
-      {/* Alert (só admin, fora do empty mode) */}
-      {!emptyMode && criticalCount > 0 && isAdmin && <div className="flex items-center gap-3 px-4 py-3 rounded-lg border text-sm mb-5 peract-font-color-default" style={{
+      {/* Alert (só admin) */}
+      {criticalCount > 0 && isAdmin && <div className="flex items-center gap-3 px-4 py-3 rounded-lg border text-sm mb-5 peract-font-color-default" style={{
       background: `${ACC}12`,
       borderColor: `${ACC}40`
     }}>
@@ -174,18 +157,22 @@ export function HomeView({
         </div>}
 
       {/* ── KPI Cards ── */}
-      {isAdmin && <div data-tour="tour-home-kpis" className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4 mb-5">
-        <KpiCard title="Vendas no Período" value={String(totalVendasKpi)} icon={<ShoppingBag size={20} />} variacao={salesChange} empty={emptyMode || !summaryAvailable} emptyMsg={emptyMode ? "Nenhuma venda registrada ainda" : "Não foi possível carregar vendas"} />
-        {isAdmin && <KpiCard title="Faturamento no Período" value={fmtBRL(faturamentoKpi)} icon={<DollarSign size={20} />} variacao={revenueChange} empty={emptyMode || !summaryAvailable} emptyMsg={emptyMode ? "Registre a primeira venda para ver o faturamento" : "Não foi possível carregar vendas"} />}
-        {isAdmin && <KpiCard title="Margem de Lucro" value={`${margemPerc.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%`} value2={marginValueLabel} icon={isLoss ? <TrendingDown size={20} /> : <TrendingUp size={20} />} variacao={marginChange} sub="sobre vendas finalizadas" highlight={marginColor} empty={emptyMode || !marginAvailable} emptyMsg={emptyMode ? "Sem dados no período" : "Não foi possível carregar margem"} />}
-        <KpiCard title="Ticket Médio" value={fmtBRL(ticketMedioKpi)} icon={<Receipt size={20} />} variacao={ticketMedioChange} sub="por venda finalizada" highlight="#6366f1" empty={emptyMode || !summaryAvailable} emptyMsg={emptyMode ? "Sem vendas finalizadas" : "Não foi possível carregar ticket médio"} />
+      {isAdmin && <div data-tour="tour-home-kpis" className="grid grid-cols-1 items-start sm:grid-cols-2 xl:grid-cols-4 gap-3 lg:gap-4 mb-5">
+        <KpiCard title="Vendas no Período" value={String(totalVendasKpi)} icon={<ShoppingBag size={20} />} variacao={salesChange} empty={!summaryAvailable} emptyMsg="Não foi possível carregar vendas" />
+        {isAdmin && <KpiCard title="Faturamento no Período" value={fmtBRL(faturamentoKpi)} icon={<DollarSign size={20} />} variacao={revenueChange} empty={!summaryAvailable} emptyMsg="Não foi possível carregar vendas" />}
+        {isAdmin && <KpiCard title="Margem de Lucro" value={`${margemPerc.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%`} value2={marginValueLabel} icon={isLoss ? <TrendingDown size={20} /> : <TrendingUp size={20} />} variacao={marginChange} sub="sobre vendas finalizadas" highlight={marginColor} empty={!marginAvailable} emptyMsg="Não foi possível carregar margem" />}
+        <KpiCard title="Vendas por canal" value={channelSalesCount.toLocaleString("pt-BR")} icon={<ShoppingCart size={20} />} variacao={channelSalesChange} sub={channelsAvailable && channelSalesChange === undefined ? "Comparação com período anterior indisponível" : "vendas finalizadas no período"} empty={!channelsAvailable} emptyMsg={isChannelsLoading ? "Carregando vendas por canal..." : "Não foi possível carregar vendas por canal"} headerAction={channelsError ? <PeractButtonPrimitive onClick={retrySalesByChannel} aria-label="Recarregar vendas por canal" title="Tentar novamente" variant="plain" size="plain" className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg peract-bg-accent-soft peract-font-color-muted hover:opacity-80"><RefreshCw size={16} /></PeractButtonPrimitive> : undefined}>
+          <PeractNativeSelect aria-label="Canal das vendas" value={salesChannel} onChange={event => setSalesChannel(event.target.value as SalesChannel)} className="h-7 min-h-7 w-full max-w-full px-2 py-0 text-xs">
+            {SALES_CHANNEL_OPTIONS.map(channel => <option key={channel.value} value={channel.value}>{channel.label}</option>)}
+          </PeractNativeSelect>
+        </KpiCard>
       </div>}
 
       {/* ── Charts row 1: Faturamento + Qtd Vendas ── */}
       {isAdmin && <div data-tour="tour-home-charts" className="grid grid-cols-1 xl:grid-cols-2 gap-4 mb-4">
         <PeractCard className="peract-bg-card rounded-xl border peract-border-color p-4 shadow-sm">
             <h2 className="text-sm mb-4 peract-font-color-default">Faturamento — {customRangeActive ? periodLabel : PERIOD_LABELS[period]}</h2>
-            {chartData.length === 0 ? <EmptyChart icon={<DollarSign size={22} />} message={failedSections.includes("temporalSeries") ? "Série temporal indisponível" : emptyMode ? "Simulação sem dados" : "Sem movimentação no período"} sub={failedSections.includes("temporalSeries") ? "Não foi possível carregar os dados do período" : undefined} /> : <ResponsiveContainer width="100%" height={200}>
+            {chartData.length === 0 ? <EmptyChart icon={<DollarSign size={22} />} message={failedSections.includes("temporalSeries") ? "Série temporal indisponível" : "Sem movimentação no período"} sub={failedSections.includes("temporalSeries") ? "Não foi possível carregar os dados do período" : undefined} /> : <ResponsiveContainer width="100%" height={200}>
                 <LineChart data={chartData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
                   <XAxis dataKey="label" tick={{
@@ -204,7 +191,7 @@ export function HomeView({
 
         <PeractCard className="peract-bg-card rounded-xl border peract-border-color p-4 shadow-sm">
           <h2 className="text-sm mb-4 peract-font-color-default">Quantidade de Vendas — {customRangeActive ? periodLabel : PERIOD_LABELS[period]}</h2>
-          {chartData.length === 0 ? <EmptyChart icon={<BarChart2 size={22} />} message={failedSections.includes("temporalSeries") ? "Série temporal indisponível" : emptyMode ? "Simulação sem dados" : "Sem movimentação no período"} sub={failedSections.includes("temporalSeries") ? "Não foi possível carregar os dados do período" : undefined} /> : <ResponsiveContainer width="100%" height={200}>
+          {chartData.length === 0 ? <EmptyChart icon={<BarChart2 size={22} />} message={failedSections.includes("temporalSeries") ? "Série temporal indisponível" : "Sem movimentação no período"} sub={failedSections.includes("temporalSeries") ? "Não foi possível carregar os dados do período" : undefined} /> : <ResponsiveContainer width="100%" height={200}>
               <LineChart data={chartData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
                 <XAxis dataKey="label" tick={{
@@ -227,7 +214,7 @@ export function HomeView({
         {/* Top 5 Produtos */}
         <PeractCard className="peract-bg-card rounded-xl border peract-border-color p-4 shadow-sm">
           <h2 className="text-sm mb-4 peract-font-color-default">Top 5 Produtos Mais Vendidos</h2>
-          {topProdutos.length === 0 ? <EmptyChart icon={<Droplets size={22} />} message={emptyMode ? "Nenhum produto vendido ainda" : failedSections.includes("topProducts") ? "Top produtos indisponível" : "Nenhum produto vendido no período"} /> : <div className="flex flex-col gap-3">
+          {topProdutos.length === 0 ? <EmptyChart icon={<Droplets size={22} />} message={failedSections.includes("topProducts") ? "Top produtos indisponível" : "Nenhum produto vendido no período"} /> : <div className="flex flex-col gap-3">
               {topProdutos.map((p, i) => <div key={p.nome} className="flex items-center gap-3">
                   <PeractTag className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold shrink-0 text-white" style={{
               background: i === 0 ? ACC : i === 1 ? DARK : "#d1c0a0"
@@ -259,7 +246,7 @@ export function HomeView({
         {/* Distribuição por Categoria */}
         <PeractCard className="peract-bg-card rounded-xl border peract-border-color p-4 shadow-sm">
           <h2 className="text-sm mb-4 peract-font-color-default">Distribuição por Categoria — {customRangeActive ? periodLabel : PERIOD_LABELS[period]}</h2>
-          {categoriaData.length === 0 ? <EmptyChart icon={<Package size={22} />} message={emptyMode ? "Sem dados por categoria" : failedSections.includes("categoryData") ? "Distribuição por categoria indisponível" : "Sem vendas por categoria no período"} /> : <ResponsiveContainer width="100%" height={200}>
+          {categoriaData.length === 0 ? <EmptyChart icon={<Package size={22} />} message={failedSections.includes("categoryData") ? "Distribuição por categoria indisponível" : "Sem vendas por categoria no período"} /> : <ResponsiveContainer width="100%" height={200}>
               <PieChart>
                 <Pie data={categoriaData} dataKey="receita" nameKey="categoria" cx="50%" cy="50%" innerRadius={50} outerRadius={80} paddingAngle={3}>
                   {categoriaData.map((entry, i) => <Cell key={`cat-${entry.categoria}`} fill={CAT_COLORS[i % CAT_COLORS.length]} />)}
@@ -298,9 +285,8 @@ export function HomeView({
                   <Package size={18} className="text-green-500" />
                 </div>
                 <p className="text-sm peract-font-color-muted">
-                  {emptyMode ? "Nenhum produto cadastrado ainda" : failedSections.includes("criticalProducts") ? "Estoque crítico indisponível" : "Nenhum produto em estoque crítico"}
+                  {failedSections.includes("criticalProducts") ? "Estoque crítico indisponível" : "Nenhum produto em estoque crítico"}
                 </p>
-                {emptyMode && <p className="text-xs text-gray-300 text-center">Os produtos com baixo estoque aparecerão aqui</p>}
               </div> : <div className="flex flex-col gap-1.5 mb-4">
                 {criticalProducts.slice(0, 6).map((item, i) => <div key={i} className="flex items-center justify-between py-2 px-3 rounded-lg" style={{
             background: "#fafaf9"
@@ -335,11 +321,8 @@ export function HomeView({
             }} className="peract-font-color-accent" />
                 </div>
                 <p className="text-sm peract-font-color-muted">
-                  {emptyMode ? "Nenhuma venda realizada ainda" : failedSections.includes("recentSales") ? "Vendas recentes indisponíveis" : "Nenhuma venda recente"}
+                  {failedSections.includes("recentSales") ? "Vendas recentes indisponíveis" : "Nenhuma venda recente"}
                 </p>
-                {emptyMode && <p className="text-xs text-gray-300 text-center max-w-[200px]">
-                    As últimas transações aparecerão aqui assim que uma venda for registrada
-                  </p>}
               </div> : <div className="flex flex-col gap-1.5">
                 {vendasRecentes.map(v => {
               const statusLabel = v.status === "FINALIZADA" ? "Finalizado" : v.status === "CANCELADA" ? "Cancelado" : "Pendente";

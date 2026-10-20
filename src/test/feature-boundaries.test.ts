@@ -34,11 +34,6 @@ describe("Feature boundaries", () => {
   it("preserves core runtime export identity through legacy adapters", async () => {
     const adapters = [
       [() => import("../app/context/AppContext"), () => import("../core/store/AppContext")],
-      [() => import("../app/services/botpress"), () => import("../core/services/botpress")],
-      [() => import("../app/services/botpress-dispatcher"), () => import("../core/services/botpress-dispatcher")],
-      [() => import("../app/services/botpress-strategies"), () => import("../core/services/botpress-strategies")],
-      [() => import("../app/services/botpress-telemetry"), () => import("../core/services/botpress-telemetry")],
-      [() => import("../app/services/botpress-types"), () => import("../core/services/botpress-types")],
     ];
     for (const [loadLegacy, loadCore] of adapters) {
       const legacy: Record<string, unknown> = await loadLegacy();

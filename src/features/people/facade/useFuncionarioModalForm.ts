@@ -1,8 +1,8 @@
-import { peopleErrorMessage, validateFuncionario } from "../services/people.service";
+import { peopleFormErrors, validateFuncionario } from "../services/people.service";
 import { useForm } from "react-hook-form";
 import type { SetStateAction } from "react";
 import type { FuncionarioModalFormValues, FuncionarioModalProps } from "../models/people.models";
-import { useState } from "react";
+import { useRef, useState } from "react";
 export function useFuncionarioModalForm({
   data,
   onClose,
@@ -42,8 +42,11 @@ export function useFuncionarioModalForm({
   const [showSenha, setShowSenha] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [success, setSuccess] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const savingRef = useRef(false);
   const isNew = !data;
   const handleSave = async () => {
+    if (savingRef.current) return;
     const e = validateFuncionario({
       nome,
       email,
@@ -55,6 +58,9 @@ export function useFuncionarioModalForm({
       setErrors(e);
       return;
     }
+    setErrors({});
+    savingRef.current = true;
+    setIsSaving(true);
     try {
       await onSave({
         nome: nome.trim(),
@@ -64,8 +70,10 @@ export function useFuncionarioModalForm({
       });
       setSuccess(true);
     } catch (error) {
-      const message = peopleErrorMessage(error, "Não foi possível salvar o funcionário. Tente novamente.");
-      setErrors(message.startsWith("Este e-mail já está cadastrado") ? { email: message } : { form: message });
+      setErrors(peopleFormErrors(error, "Não foi possível salvar o funcionário. Tente novamente."));
+    } finally {
+      savingRef.current = false;
+      setIsSaving(false);
     }
   };
   return {
@@ -84,6 +92,7 @@ export function useFuncionarioModalForm({
     errors,
     setErrors,
     success,
+    isSaving,
     isNew,
     handleSave
   };

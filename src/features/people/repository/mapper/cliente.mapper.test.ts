@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { toClienteModel, toClienteRequestDto } from "./cliente.mapper";
+import { EMPTY_ENDERECO } from "../../config/people.config";
 
 const endereco = {
   logradouro: "Rua das Flores",
@@ -12,6 +13,12 @@ const endereco = {
 };
 
 describe("clienteMapper", () => {
+  it.each([null, undefined, {}, { cidade: "Sao Paulo" }])("normaliza endereco opcional do cliente: %s", value => {
+    const result = toClienteModel({ id: 17, nome: "Ana Lima", telefone: "11999990000", email: "ana@example.test", status: 1, totalPedidos: 0, endereco: value });
+    expect(result.endereco).toEqual({ ...EMPTY_ENDERECO, ...value });
+    expect(result.endereco).not.toBe(EMPTY_ENDERECO);
+  });
+
   it("mapeia status numerico e total de pedidos da resposta", () => {
     expect(toClienteModel({
       id: 17,

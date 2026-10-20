@@ -1,8 +1,8 @@
-import { peopleErrorMessage, validateCliente } from "../services/people.service";
+import { peopleFormErrors, validateCliente } from "../services/people.service";
 import { useForm } from "react-hook-form";
 import type { SetStateAction } from "react";
 import type { ClienteModalFormValues, ClienteModalProps } from "../models/people.models";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { EMPTY_ENDERECO } from "../config/people.config";
 import { formatTelefone } from "../../../shared/utils/masks";
 import { useCepAutofill } from "./useCepAutofill";
@@ -40,12 +40,15 @@ export function useClienteModalForm({
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [success, setSuccess] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const savingRef = useRef(false);
   const clearError = (key: string) => setErrors(p => ({
     ...p,
     [key]: ""
   }));
   const cepLookup = useCepAutofill(endereco, setEndereco, clearError);
   const handleSave = async () => {
+    if (savingRef.current) return;
     const e = validateCliente({
       nome,
       telefone,
@@ -57,6 +60,8 @@ export function useClienteModalForm({
       return;
     }
     setErrors({});
+    savingRef.current = true;
+    setIsSaving(true);
     try {
       await onSave({
         nome: nome.trim(),
@@ -66,7 +71,10 @@ export function useClienteModalForm({
       });
       setSuccess(true);
     } catch (error) {
-      setErrors({ form: peopleErrorMessage(error, "Não foi possível salvar o cliente. Tente novamente.") });
+      setErrors(peopleFormErrors(error, "Não foi possível salvar o cliente. Tente novamente."));
+    } finally {
+      savingRef.current = false;
+      setIsSaving(false);
     }
   };
   return {
@@ -80,6 +88,7 @@ export function useClienteModalForm({
     setEndereco,
     errors,
     success,
+    isSaving,
     clearError,
     cepLookup,
     handleSave

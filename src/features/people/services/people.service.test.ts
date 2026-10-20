@@ -1,9 +1,32 @@
 import { describe, expect, it } from "vitest";
-import { buildSearchParams, peopleErrorMessage, selectPeople, validateCliente, validateFornecedor, validateFuncionario } from "./people.service";
+import { buildSearchParams, formatEndereco, peopleErrorMessage, peopleFormErrors, selectPeople, validateCliente, validateFornecedor, validateFuncionario } from "./people.service";
+import { STRONG_PASSWORD_MESSAGE } from "../../../shared/utils/password";
 
 const endereco = { logradouro: "", numero: "", cep: "", bairro: "", cidade: "", uf: "" };
 
 describe("people.service", () => {
+  it.each([null, undefined, {}])("formata endereco ausente sem interromper a tela: %s", value => {
+    expect(formatEndereco(value)).toBe("—");
+  });
+
+  it("preserva os campos disponiveis de enderecos parciais e completos", () => {
+    expect(formatEndereco({ cidade: "São Paulo", uf: "SP" })).toBe("São Paulo/SP");
+    expect(formatEndereco({ logradouro: "Rua das Flores", numero: "10", complemento: "Casa", bairro: "Centro", cidade: "São Paulo", uf: "SP", cep: "01001-000" }))
+      .toBe("Rua das Flores, nº 10, Casa, Centro, São Paulo/SP, CEP 01001-000");
+  });
+
+  it("mapeia validação remota para os campos e ignora campos desconhecidos", () => {
+    const error = Object.assign(new Error("PEOPLE_SUPPLIERS_CREATE_FAILED:400"), { status: 400, fields: { nome: "Nome inválido", "endereco.cep": "CEP inválido", interno: "SQL" } });
+    expect(peopleFormErrors(error, "Falha", { nome: "razaoSocial" })).toEqual({ razaoSocial: "Nome inválido", cep: "CEP inválido" });
+  });
+
+  it("mantém conflitos concorrentes genéricos e erros de servidor fora dos campos", () => {
+    expect(peopleFormErrors(new Error("PEOPLE_CLIENTS_CREATE_FAILED:409|Já existe um cadastro com esses dados. Confira e-mail e telefone."), "Falha")).toHaveProperty("form");
+    expect(peopleFormErrors({ isAxiosError: true, response: { status: 500, data: { fields: { email: "SQL" } } } }, "Falha")).toEqual({ form: "O servidor está temporariamente indisponível. Tente novamente em instantes." });
+  });
+  it("traduz conflito de telefone sem confundir com e-mail", () => {
+    expect(peopleErrorMessage({ isAxiosError: true, response: { status: 409, data: { message: "Telefone já cadastrado" } } }, "Falha")).toBe("Este telefone já está cadastrado. Informe outro telefone.");
+  });
   it("traduz conflito de e-mail do funcionário para orientação no campo", () => {
     expect(peopleErrorMessage(new Error("PEOPLE_EMPLOYEES_CREATE_FAILED:409"), "Falha ao salvar.")).toBe(
       "Este e-mail já está cadastrado. Informe outro e-mail."
@@ -95,11 +118,15 @@ describe("people.service", () => {
   });
 
   describe("validateCliente", () => {
-    const valido = { nome: "Ana", telefone: "(11) 99999-0000", email: "", endereco };
+    const valido = { nome: "Ana", telefone: "(11) 99999-0000", email: "ana@example.test", endereco };
 
-    it("aceita telefone com DDD e e-mail vazio porque ele e opcional", () => {
+    it("aceita telefone com DDD e e-mail valido", () => {
       expect(validateCliente(valido)).toEqual({});
       expect(validateCliente({ ...valido, telefone: "1133334444", email: "ana@perfumaria.com" })).toEqual({});
+    });
+
+    it.each(["", "   ", undefined])("exige e-mail do cliente: %s", email => {
+      expect(validateCliente({ ...valido, email })).toEqual({ email: "Informe o e-mail do cliente." });
     });
 
     it("exige nome e telefone", () => {
@@ -114,9 +141,9 @@ describe("people.service", () => {
       expect(validateCliente({ ...valido, email: "ana@perfumaria,com" })).toEqual({ email: "Informe um e-mail válido." });
     });
     it("valida o CEP informado no endereco do cliente", () => {
-      expect(validateCliente({ nome: "Ana", telefone: "11999990000", endereco: { ...endereco, cep: "0100" } }))
+      expect(validateCliente({ ...valido, endereco: { ...endereco, cep: "0100" } }))
         .toEqual({ cep: "O CEP deve conter 8 dígitos." });
-      expect(validateCliente({ nome: "Ana", telefone: "11999990000", endereco: { ...endereco, cep: "01001-000" } }))
+      expect(validateCliente({ ...valido, endereco: { ...endereco, cep: "01001-000" } }))
         .toEqual({});
     });
 
@@ -135,14 +162,27 @@ describe("people.service", () => {
   });
 
   describe("validateFuncionario", () => {
-    const valid = { nome: "Ana", email: "ana@example.test", senha: "senha123", confirmSenha: "senha123", isNew: true };
+    const valid = { nome: "Ana", email: "ana@example.test", senha: "SenhaForte12!", confirmSenha: "SenhaForte12!", isNew: true };
+
+    it("aceita senha forte e edição sem alterar a senha", () => {
+      expect(validateFuncionario(valid)).toEqual({});
+      expect(validateFuncionario({ ...valid, isNew: false, senha: "", confirmSenha: "" })).toEqual({});
+    });
+
+    it.each(["12345", "abc"])("rejeita senha curta: %s", senha => {
+      expect(validateFuncionario({ ...valid, senha, confirmSenha: senha })).toEqual({ senha: STRONG_PASSWORD_MESSAGE });
+    });
+
+    it.each(["123456", "abcdef"])("aceita senha com seis caracteres: %s", senha => {
+      expect(validateFuncionario({ ...valid, senha, confirmSenha: senha })).toEqual({});
+    });
 
     it("rejeita campos acima dos limites da API", () => {
       const oversizedPassword = "x".repeat(101);
       expect(validateFuncionario({ ...valid, nome: "x".repeat(46), email: `${"x".repeat(34)}@example.test`, senha: oversizedPassword, confirmSenha: oversizedPassword })).toEqual({
         nome: "Máximo de 45 caracteres.",
         email: "Máximo de 45 caracteres.",
-        senha: "Máximo de 100 caracteres.",
+        senha: STRONG_PASSWORD_MESSAGE,
       });
     });
   });

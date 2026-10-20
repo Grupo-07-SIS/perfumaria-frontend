@@ -1,4 +1,10 @@
-import type { Period } from "../models/home.models";
+import type { Period, SalesChannel } from "../models/home.models";
+export const SALES_CHANNEL_OPTIONS: { value: SalesChannel; label: string }[] = [
+  { value: "todos", label: "Todos os canais" },
+  { value: "presencial", label: "Presencial" },
+  { value: "whatsapp", label: "WhatsApp" },
+  { value: "site", label: "Site" },
+];
 export const ACC = "#c29958";
 export const DARK = "#050300";
 export const WARM = "#f5ede0";

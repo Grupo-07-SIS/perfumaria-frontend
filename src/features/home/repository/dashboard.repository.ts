@@ -9,6 +9,7 @@ import type {
   DashboardKpisResponseDto,
   DashboardRecentSalesResponseDto,
   DashboardTimeSeriesResponseDto,
+  DashboardSalesByChannelResponseDto,
 } from "./dto/dashboard.dto";
 import type { Period } from "../models/home.models";
 
@@ -34,6 +35,29 @@ export function getDashboardPeriodData(period: Period, currentDate = new Date())
   }
   const toIsoDate = (date: Date) => `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, "0")}-${String(date.getUTCDate()).padStart(2, "0")}`;
   return { dataInicio: toIsoDate(startDate), dataFim: toIsoDate(endDate) };
+}
+
+export function getPreviousDashboardPeriodData(range: DashboardPeriodData): DashboardPeriodData {
+  const dayMilliseconds = 86_400_000;
+  const start = Date.parse(`${range.dataInicio}T00:00:00Z`);
+  const end = Date.parse(`${range.dataFim}T00:00:00Z`);
+  const duration = end - start + dayMilliseconds;
+  return {
+    dataInicio: new Date(start - duration).toISOString().slice(0, 10),
+    dataFim: new Date(start - dayMilliseconds).toISOString().slice(0, 10),
+  };
+}
+
+export interface DashboardSalesByChannelResult extends DashboardSalesByChannelResponseDto {
+  previous: DashboardSalesByChannelResponseDto | null;
+}
+
+async function readSalesByChannel(range: DashboardPeriodData): Promise<DashboardSalesByChannelResponseDto> {
+  const { data } = await apiClient.get<DashboardSalesByChannelResponseDto>("/dashboard/vendas-por-canal", { params: range });
+  if (![data?.presencial, data?.whatsapp, data?.site].every(value => Number.isSafeInteger(value) && value >= 0)) {
+    throw new Error("DASHBOARD_SALES_BY_CHANNEL_INVALID_RESPONSE");
+  }
+  return data;
 }
 
 export type DashboardSection = "topProducts" | "criticalProducts" | "categoryData" | "temporalSeries" | "salesOverview" | "customerCount" | "recentSales";
@@ -92,6 +116,16 @@ function mapRecentSale(sale: DashboardRecentSalesResponseDto["vendas"][number]):
 }
 
 export const dashboardRepository = {
+  async listSalesByChannel(period: Period, customRange?: DashboardPeriodData): Promise<DashboardSalesByChannelResult> {
+    const range = customRange ?? getDashboardPeriodData(period);
+    const [current, previous] = await Promise.allSettled([
+      readSalesByChannel(range),
+      readSalesByChannel(getPreviousDashboardPeriodData(range)),
+    ]);
+    if (current.status === "rejected") throw current.reason;
+    return { ...current.value, previous: previous.status === "fulfilled" ? previous.value : null };
+  },
+
   async listSalesOverview(period: Period, customRange?: DashboardPeriodData): Promise<DashboardOverviewResult> {
     const dateRange = customRange ?? getDashboardPeriodData(period);
     const [kpisResult, recentSalesResult] = await Promise.allSettled([

@@ -2,7 +2,7 @@ import { useState } from "react";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
-import { PeractPagination } from "./PeractPagination";
+import { PeractPagination, PeractPaginationFooter } from "./PeractPagination";
 
 function PaginationHarness({ initialPage = 1, totalPages = 7 }: { initialPage?: number; totalPages?: number }) {
   const [currentPage, setCurrentPage] = useState(initialPage);
@@ -14,6 +14,15 @@ function pageNumbers() {
 }
 
 describe("PeractPagination", () => {
+  it("exibe a mesma faixa e controles no rodape compartilhado", async () => {
+    const onPageChange = vi.fn();
+    const user = userEvent.setup();
+    render(<PeractPaginationFooter currentPage={2} totalPages={11} firstItem={11} lastItem={20} totalItems={105} onPageChange={onPageChange}>cliente(s)</PeractPaginationFooter>);
+    expect(screen.getByText("Exibindo 11 a 20 de 105 cliente(s)")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Próxima" }));
+    expect(onPageChange).toHaveBeenCalledWith(3);
+  });
+
   it.each([
     { currentPage: 1, totalPages: 2, expected: ["1", "2"] },
     { currentPage: 1, totalPages: 4, expected: ["1", "2", "3", "4"] },

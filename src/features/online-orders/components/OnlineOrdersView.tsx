@@ -10,10 +10,12 @@ import { PeractButtonPrimitive } from "../../../shared/components/peract-button"
 import { PeractTableRoot, PeractTableHeader, PeractTableRow, PeractTableHead, PeractTableBody, PeractTableCell } from "../../../shared/components/peract-table";
 import { CanalBadge } from "./CanalBadge";
 import { StatusBadge } from "./StatusBadge";
+import { PeractPaginationFooter } from "../../../shared/components/peract-pagination";
 export function OnlineOrdersView({
   canManageOrders,
   pedidosOnline,
   isLoading,
+  isUpdating,
   error,
   search,
   setSearch,
@@ -32,12 +34,14 @@ export function OnlineOrdersView({
   confirmarCancelamento,
   pendentes,
   finalizados,
-  filtered
+  filtered,
+  pagination,
+  paginatedOrders,
 }: ReturnType<typeof useOnlineOrdersFacade>) {
   return <div className="p-4 lg:p-6 max-w-[1400px] mx-auto">
       {viewVenda && <ReciboModal venda={viewVenda} onClose={() => setViewVenda(null)} />}
-      {cancelVenda && <CancelModal venda={cancelVenda} error={error} onClose={() => setCancelVenda(null)} onConfirm={confirmarCancelamento} />}
-      {rastreioVenda && <RastreioModal venda={rastreioVenda} onClose={() => setRastreioVenda(null)} onConfirm={confirmarRastreio} />}
+      {cancelVenda && <CancelModal venda={cancelVenda} error={error} isSaving={isUpdating} onClose={() => setCancelVenda(null)} onConfirm={confirmarCancelamento} />}
+      {rastreioVenda && <RastreioModal venda={rastreioVenda} error={error} isSaving={isUpdating} onClose={() => setRastreioVenda(null)} onConfirm={confirmarRastreio} />}
 
       <div className="mb-5">
         <h1 data-tour="tour-orders-heading" className="peract-font-color-default">Pedidos Online</h1>
@@ -56,8 +60,7 @@ export function OnlineOrdersView({
     }}>
         <Package size={16} className="shrink-0 peract-font-color-accent" />
         <span>
-          <strong>{pendentes} pedido(s)</strong> aguardando finalização. Pedidos
-          pelo WhatsApp solicitarão o código de rastreio ao finalizar.
+          <strong>{pendentes} pedido(s)</strong> aguardando finalização.
         </span>
       </div>
 
@@ -165,7 +168,7 @@ export function OnlineOrdersView({
                   <PeractTableCell colSpan={9} className="text-center py-12 peract-font-color-muted text-sm">
                     Nenhum pedido encontrado.
                   </PeractTableCell>
-                </PeractTableRow> : filtered.map(pedido => <PeractTableRow key={pedido.id} className={`hover:bg-gray-50/50 transition-colors ${pedido.enviado ? "opacity-70" : ""}`}>
+                </PeractTableRow> : paginatedOrders.map(pedido => <PeractTableRow key={pedido.id} className={`hover:bg-gray-50/50 transition-colors ${pedido.enviado ? "opacity-70" : ""}`}>
                     <PeractTableCell className="px-4 py-3 text-sm font-mono font-medium text-gray-700">
                       {pedido.id}
                     </PeractTableCell>
@@ -198,15 +201,15 @@ export function OnlineOrdersView({
                         <PeractButtonPrimitive onClick={() => setViewVenda(pedido)} className="p-1.5 rounded-lg peract-font-color-muted hover:bg-gray-100 transition-colors" title="Ver pedido" variant="plain" size="plain" aria-label="Ver pedido">
                           <Eye size={14} />
                         </PeractButtonPrimitive>
-                        {!pedido.enviado ? <PeractButtonPrimitive onClick={() => handleFinalizar(pedido)} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs text-white font-medium hover:opacity-90 transition-all" style={{
+                        {!pedido.enviado ? <PeractButtonPrimitive disabled={isUpdating} onClick={() => handleFinalizar(pedido)} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs text-white font-medium hover:opacity-90 transition-all" style={{
                     background: pedido.canalOnline === "whatsapp" ? "#22c55e" : ACC
                   }} variant="plain" size="plain">
                             {pedido.canalOnline === "whatsapp" ? <MessageCircle size={13} /> : <CheckCircle size={13} />}
                             <span className="sr-only 2xl:not-sr-only">Finalizar</span>
-                          </PeractButtonPrimitive> : canManageOrders ? <PeractButtonPrimitive onClick={() => handleFinalizar(pedido)} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium border transition-all hover:bg-gray-50 peract-border-color-accent peract-font-color-accent" title="Desfazer" variant="plain" size="plain">
+                          </PeractButtonPrimitive> : canManageOrders ? <PeractButtonPrimitive disabled={isUpdating} onClick={() => handleFinalizar(pedido)} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium border transition-all hover:bg-gray-50 peract-border-color-accent peract-font-color-accent" title="Desfazer" variant="plain" size="plain">
                             <RotateCcw size={13} /> <span className="sr-only 2xl:not-sr-only">Desfazer</span>
                           </PeractButtonPrimitive> : null}
-                        {canManageOrders && <PeractButtonPrimitive onClick={() => setCancelVenda(pedido)} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium border border-red-200 text-red-600 hover:bg-red-50 transition-all" title="Cancelar pedido" variant="plain" size="plain" aria-label="Cancelar pedido">
+                        {canManageOrders && <PeractButtonPrimitive disabled={isUpdating} onClick={() => setCancelVenda(pedido)} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium border border-red-200 text-red-600 hover:bg-red-50 transition-all" title="Cancelar pedido" variant="plain" size="plain" aria-label="Cancelar pedido">
                           <XCircle size={13} /> <span className="sr-only 2xl:not-sr-only">Cancelar</span>
                         </PeractButtonPrimitive>}
                       </div>
@@ -216,15 +219,13 @@ export function OnlineOrdersView({
           </PeractTableRoot>
         </div>
         <div className="px-4 py-3 border-t border-gray-50">
-          <p className="text-xs peract-font-color-muted">
-            {filtered.length} pedido(s) online
-          </p>
+          <PeractPaginationFooter {...pagination} onPageChange={pagination.setCurrentPage}>pedido(s)</PeractPaginationFooter>
         </div>
       </PeractCard>
 
       {/* Mobile cards */}
       <div className="lg:hidden grid grid-cols-1 md:grid-cols-2 gap-3">
-        {filtered.map(pedido => <div key={pedido.id} className={`bg-white rounded-xl border border-gray-100 p-4 shadow-sm ${pedido.enviado ? "opacity-80" : ""}`}>
+        {paginatedOrders.map(pedido => <div key={pedido.id} className={`bg-white rounded-xl border border-gray-100 p-4 shadow-sm ${pedido.enviado ? "opacity-80" : ""}`}>
             <div className="grid grid-cols-[minmax(0,1fr)_2.25rem] items-start gap-2 mb-2">
               <div className="min-w-0">
                 <span className="text-xs font-mono peract-font-color-muted">
@@ -255,15 +256,15 @@ export function OnlineOrdersView({
               </span>
             </div>
             <div className="flex gap-2">
-              {!pedido.enviado ? <PeractButtonPrimitive onClick={() => handleFinalizar(pedido)} className="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm text-white hover:opacity-90" style={{
+              {!pedido.enviado ? <PeractButtonPrimitive disabled={isUpdating} onClick={() => handleFinalizar(pedido)} className="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm text-white hover:opacity-90" style={{
             background: pedido.canalOnline === "whatsapp" ? "#22c55e" : ACC
           }} variant="plain" size="plain">
                   {pedido.canalOnline === "whatsapp" ? <MessageCircle size={14} /> : <CheckCircle size={14} />}
                   Finalizar
-                </PeractButtonPrimitive> : canManageOrders ? <PeractButtonPrimitive onClick={() => handleFinalizar(pedido)} className="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-medium border hover:bg-gray-50 peract-border-color-accent peract-font-color-accent" variant="plain" size="plain">
+                </PeractButtonPrimitive> : canManageOrders ? <PeractButtonPrimitive disabled={isUpdating} onClick={() => handleFinalizar(pedido)} className="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-medium border hover:bg-gray-50 peract-border-color-accent peract-font-color-accent" variant="plain" size="plain">
                   <RotateCcw size={14} /> Desfazer
                 </PeractButtonPrimitive> : null}
-              {canManageOrders && <PeractButtonPrimitive onClick={() => setCancelVenda(pedido)} className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-sm border border-red-200 text-red-600 hover:bg-red-50" variant="plain" size="plain">
+              {canManageOrders && <PeractButtonPrimitive disabled={isUpdating} onClick={() => setCancelVenda(pedido)} className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-sm border border-red-200 text-red-600 hover:bg-red-50" variant="plain" size="plain">
                 <XCircle size={14} /> Cancelar
               </PeractButtonPrimitive>}
             </div>
@@ -272,6 +273,7 @@ export function OnlineOrdersView({
             Nenhum pedido online encontrado.
           </div>}
       </div>
+      <PeractPaginationFooter className="mt-4 lg:hidden" {...pagination} onPageChange={pagination.setCurrentPage}>pedido(s)</PeractPaginationFooter>
       </div>
     </div>;
 }

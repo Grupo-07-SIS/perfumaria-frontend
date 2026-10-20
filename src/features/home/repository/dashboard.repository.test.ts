@@ -1,12 +1,47 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { apiClient } from "../../../core/services/http-client";
-import { dashboardRepository, getDashboardPeriodData } from "./dashboard.repository";
+import { dashboardRepository, getDashboardPeriodData, getPreviousDashboardPeriodData } from "./dashboard.repository";
 
 vi.mock("../../../core/services/http-client", () => ({
   apiClient: { get: vi.fn() },
 }));
 
 describe("dashboardRepository", () => {
+  it("carrega contagens agregadas por canal com o periodo informado", async () => {
+    const counts = { presencial: 12, whatsapp: 7, site: 3 };
+    const previous = { presencial: 6, whatsapp: 10, site: 0 };
+    vi.mocked(apiClient.get).mockResolvedValueOnce({ data: counts } as never).mockResolvedValueOnce({ data: previous } as never);
+    const range = { dataInicio: "2026-10-01", dataFim: "2026-10-20" };
+    await expect(dashboardRepository.listSalesByChannel("30dias", range)).resolves.toEqual({ ...counts, previous });
+    expect(apiClient.get).toHaveBeenCalledWith("/dashboard/vendas-por-canal", { params: range });
+    expect(apiClient.get).toHaveBeenCalledWith("/dashboard/vendas-por-canal", { params: { dataInicio: "2026-09-11", dataFim: "2026-09-30" } });
+  });
+
+  it.each([
+    ["2026-01-01", "2026-01-01", "2025-12-31", "2025-12-31"],
+    ["2026-10-01", "2026-10-07", "2026-09-24", "2026-09-30"],
+    ["2024-03-01", "2024-03-03", "2024-02-27", "2024-02-29"],
+  ])("calcula periodo anterior equivalente a %s ate %s", (dataInicio, dataFim, previousStart, previousEnd) => {
+    expect(getPreviousDashboardPeriodData({ dataInicio, dataFim })).toEqual({ dataInicio: previousStart, dataFim: previousEnd });
+  });
+
+  it("preserva a contagem atual quando apenas o periodo anterior falha", async () => {
+    const counts = { presencial: 2, whatsapp: 1, site: 0 };
+    vi.mocked(apiClient.get).mockResolvedValueOnce({ data: counts } as never).mockRejectedValueOnce(new Error("offline"));
+    await expect(dashboardRepository.listSalesByChannel("7dias")).resolves.toEqual({ ...counts, previous: null });
+  });
+
+  it("nao substitui falha do periodo atual por dados do anterior", async () => {
+    vi.mocked(apiClient.get).mockRejectedValueOnce(new Error("CURRENT_FAILED"))
+      .mockResolvedValueOnce({ data: { presencial: 9, whatsapp: 0, site: 0 } } as never);
+    await expect(dashboardRepository.listSalesByChannel("7dias")).rejects.toThrow("CURRENT_FAILED");
+  });
+
+  it.each([null, {}, { presencial: -1, whatsapp: 0, site: 0 }, { presencial: 1, whatsapp: "2", site: 0 }])("nao exibe uma resposta de canais invalida como zero: %s", async data => {
+    vi.mocked(apiClient.get).mockResolvedValueOnce({ data } as never);
+    await expect(dashboardRepository.listSalesByChannel("7dias")).rejects.toThrow("DASHBOARD_SALES_BY_CHANNEL_INVALID_RESPONSE");
+  });
+
   beforeEach(() => vi.clearAllMocks());
 
   it.each([

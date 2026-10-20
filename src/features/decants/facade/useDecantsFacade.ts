@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from "react";
+import { useApp } from "../../../core/store/AppContext";
 import { useDebouncedValue } from "../../../shared/hooks/useDebouncedValue";
+import { DEFAULT_PAGE_SIZE as PAGE_SIZE } from "../../../shared/hooks/usePagination";
 import type { Decant, DecantModalFormValues, PerfumeOption } from "../models/decants.models";
 import { createDecant, fetchDecants, fetchPerfumeOptions, removeDecant, updateDecant } from "../services/decants.service";
 
-const PAGE_SIZE = 10;
-
 export function useDecantsFacade() {
+  const { currentUser } = useApp();
   const [decants, setDecants] = useState<Decant[]>([]);
   const [perfumeOptions, setPerfumeOptions] = useState<PerfumeOption[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -17,7 +18,7 @@ export function useDecantsFacade() {
   const [submittedSearch, setSubmittedSearch] = useState("");
   const [currentPage, setCurrentPageState] = useState(1);
   const [totalElements, setTotalElements] = useState(0);
-  const [totalPages, setTotalPages] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
   const requestId = useRef(0);
   const debouncedSearch = useDebouncedValue(search.trim());
 
@@ -39,7 +40,7 @@ export function useDecantsFacade() {
         setDecants(page.content);
         setCurrentPageState(1);
         setTotalElements(page.totalElements);
-        setTotalPages(page.totalPages);
+        setTotalPages(Math.max(1, page.totalPages));
       })
       .catch(() => {
         if (currentRequestId === requestId.current) setError("Não foi possível carregar os decants.");
@@ -59,7 +60,7 @@ export function useDecantsFacade() {
       setDecants(response.content);
       setCurrentPageState(page);
       setTotalElements(response.totalElements);
-      setTotalPages(response.totalPages);
+      setTotalPages(Math.max(1, response.totalPages));
     } catch {
       if (currentRequestId !== requestId.current) return;
       setError("Não foi possível carregar os decants.");
@@ -94,7 +95,10 @@ export function useDecantsFacade() {
         setDecants(prev => prev.map(decant => decant.id === saved.id ? saved : decant));
       } else {
         const saved = await createDecant(values);
-        setDecants(prev => [...prev, saved]);
+        setDecants(prev => [...prev, saved].slice(0, PAGE_SIZE));
+        setTotalElements(totalElements + 1);
+        setTotalPages(Math.max(1, Math.ceil((totalElements + 1) / PAGE_SIZE)));
+        if (totalElements >= PAGE_SIZE || submittedSearch) await loadPage(1, submittedSearch);
       }
       setEditDecant(null);
       setShowModal(false);
@@ -110,12 +114,18 @@ export function useDecantsFacade() {
     try {
       const deletedId = await removeDecant(deleteDecant);
       setDecants(prev => prev.filter(decant => decant.id !== deletedId));
+      const remaining = Math.max(0, totalElements - 1);
+      const remainingPages = Math.max(1, Math.ceil(remaining / PAGE_SIZE));
+      setTotalElements(remaining);
+      setTotalPages(remainingPages);
+      if (totalElements > PAGE_SIZE || submittedSearch) await loadPage(Math.min(currentPage, remainingPages), submittedSearch);
       setDeleteDecant(null);
     } catch {
       setError("Não foi possível excluir o decant.");
     }
   };
   return {
+    canManagePrices: currentUser?.cargo === "Administrador",
     decants,
     perfumeOptions,
     isLoading,
@@ -133,6 +143,8 @@ export function useDecantsFacade() {
     setCurrentPage,
     totalElements,
     totalPages,
+    firstItem: filtered.length === 0 ? 0 : (currentPage - 1) * PAGE_SIZE + 1,
+    lastItem: Math.min((currentPage - 1) * PAGE_SIZE + filtered.length, totalElements),
     filtered,
     handleSave,
     fmt,

@@ -15,6 +15,7 @@ import { formatEndereco } from "../services/people.service";
 import { formatCnpj, formatTelefone } from "../../../shared/utils/masks";
 import { CardActions } from "./CardActions";
 import { PeractTableRoot, PeractTableHeader, PeractTableRow, PeractTableHead, PeractTableBody, PeractTableCell } from "../../../shared/components/peract-table";
+import { PeractPaginationFooter } from "../../../shared/components/peract-pagination";
 export function PeopleView({
   clientes,
   isLoading,
@@ -46,6 +47,10 @@ export function PeopleView({
   filtClientes,
   filtFornecedores,
   filtFuncionarios,
+  pagination,
+  clientesPage,
+  fornecedoresPage,
+  funcionariosPage,
   openNew,
   newLabel
 }: ReturnType<typeof usePeopleFacade>) {
@@ -146,7 +151,7 @@ export function PeopleView({
                     </PeractTableRow>
                   </PeractTableHeader>
                   <PeractTableBody className="divide-y divide-gray-50">
-                    {filtClientes.map(cliente => {
+                    {clientesPage.map(cliente => {
                       const isAtivo = cliente.ativo !== false;
                       const endereco = formatEndereco(cliente.endereco);
                       return <PeractTableRow key={cliente.id} className={`hover:bg-gray-50/50 transition-colors ${!isAtivo ? "opacity-70" : ""}`}>
@@ -177,7 +182,7 @@ export function PeopleView({
                   </PeractTableBody>
                 </PeractTableRoot>
               </div>
-              <div className="px-4 py-3 border-t border-gray-50"><p className="text-xs peract-font-color-muted">{filtClientes.length} cliente(s)</p></div>
+              <div className="px-4 py-3 border-t border-gray-50"><PeractPaginationFooter {...pagination} onPageChange={pagination.setCurrentPage}>cliente(s)</PeractPaginationFooter></div>
             </PeractCard>
           </div>
         </>}
@@ -193,7 +198,7 @@ export function PeopleView({
                   </PeractTableRow>
                 </PeractTableHeader>
                 <PeractTableBody className="divide-y divide-gray-50">
-                  {filtFornecedores.map(fornecedor => {
+                  {fornecedoresPage.map(fornecedor => {
                     const endereco = formatEndereco(fornecedor.endereco);
                     return <PeractTableRow key={fornecedor.id} className="hover:bg-gray-50/50 transition-colors">
                       <PeractTableCell className="px-4 py-3">
@@ -213,7 +218,7 @@ export function PeopleView({
                 </PeractTableBody>
               </PeractTableRoot>
             </div>
-            <div className="px-4 py-3 border-t border-gray-50"><p className="text-xs peract-font-color-muted">{filtFornecedores.length} fornecedor(es)</p></div>
+            <div className="px-4 py-3 border-t border-gray-50"><PeractPaginationFooter {...pagination} onPageChange={pagination.setCurrentPage}>fornecedor(es)</PeractPaginationFooter></div>
           </PeractCard>
         </div>}
 
@@ -230,7 +235,7 @@ export function PeopleView({
                   </PeractTableRow>
                 </PeractTableHeader>
                 <PeractTableBody className="divide-y divide-gray-50">
-                  {filtFuncionarios.map(f => <PeractTableRow key={f.id} className="hover:bg-gray-50/50 transition-colors">
+                  {funcionariosPage.map(f => <PeractTableRow key={f.id} className="hover:bg-gray-50/50 transition-colors">
                       <PeractTableCell className="px-4 py-3">
                         <div className="flex items-center gap-2">
                           <div className="w-7 h-7 rounded-full flex items-center justify-center text-white peract-bg-accent">
@@ -262,13 +267,13 @@ export function PeopleView({
               </PeractTableRoot>
             </div>
             <div className="px-4 py-3 border-t border-gray-50">
-              <p className="text-xs peract-font-color-muted">{filtFuncionarios.length} funcionário(s)</p>
+              <PeractPaginationFooter {...pagination} onPageChange={pagination.setCurrentPage}>funcionário(s)</PeractPaginationFooter>
             </div>
           </PeractCard>
 
           {/* Mobile funcionários */}
           <div className="md:hidden flex flex-col gap-3">
-            {filtFuncionarios.map(f => <PeractCard key={f.id} className="peract-bg-card rounded-xl border peract-border-color p-4 shadow-sm">
+            {funcionariosPage.map(f => <PeractCard key={f.id} className="peract-bg-card rounded-xl border peract-border-color p-4 shadow-sm">
                 <div className="flex items-center gap-3">
                   <div className="w-9 h-9 rounded-full flex items-center justify-center text-white shrink-0 peract-bg-accent">
                     <User size={16} />
@@ -287,6 +292,7 @@ export function PeopleView({
                 </div>
               </PeractCard>)}
           </div>
+          <PeractPaginationFooter className="md:hidden" {...pagination} onPageChange={pagination.setCurrentPage}>funcionário(s)</PeractPaginationFooter>
         </div>}
     </div>;
 }

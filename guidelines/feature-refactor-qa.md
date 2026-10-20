@@ -25,7 +25,7 @@ Data: 2026-09-22. Escopo: nove features extraidas e core movido; baseline `15d6d
 - `npm test -- src/test/feature-boundaries.test.ts src/features/decants/facade/useDecantsFacade.test.ts --reporter=verbose --maxWorkers=4`: 14 testes passaram.
 - `npm test -- src/features/home/HomePage.test.tsx src/features/dashboard/DashboardPage.test.tsx --reporter=verbose --maxWorkers=4`: 8 testes passaram.
 - Total desta revisao: 29 testes aceitos, sendo 28 convencionais e 1 falha esperada. Quatro testes adicionados em tres arquivos existentes; nomes anteriores preservados. Os 44 testes informados pelo usuario nao foram reexecutados integralmente.
-- Seis modulos movidos (AppContext e cinco Botpress) identicos ao baseline apos normalizar somente imports relativos do core. Novo teste confirma identidade dos exports de runtime entre adaptadores `app` e `core`, sem disparar mensagens ou HTTP. Isso nao verifica exports apagados de tipos.
+- O modulo AppContext preserva compatibilidade apos normalizar somente imports relativos do core. O teste confirma identidade dos exports de runtime entre os adaptadores `app` e `core`. Isso nao verifica exports apagados de tipos.
 - Analise sem emissao com TypeScript 6.0.3 embarcado no VS Code: 111 arquivos-raiz do recorte; 18 diagnosticos locais (10 usos do header como valor e 8 de declaracoes/imports inutilizados). Nenhum export ausente ou caminho nao resolvido encontrado nesse recorte. Cinco avisos de import inutilizado tambem decorrem do header; os outros tres estao listados acima.
 - RHF: cancelar/reabrir cliente restaura valores persistidos; editar e salvar funciona. Exclusao de Decants ignora alvo ausente, respeita cancelamento e remove apenas o alvo confirmado. Entradas permanecem composicao; rotas existentes seguem lazy. Dashboard nao tem rota propria no estado atual.
 
@@ -48,4 +48,4 @@ O segundo cenario falha atualmente e esta registrado como falha esperada. Os tes
 
 ## Limitacoes
 
-Sem suite completa, build, instalacoes, browser ou writes reais. Compilador do editor, nao dependencia fixada pelo projeto; analise com `types: []` porque `@types/node` local esta ausente, excluindo testes e filtrando diagnosticos por escopo. Nao substitui o gate TypeScript do projeto. Fluxos assicronos Botpress pendentes e todas as combinacoes de formularios nao foram exercitados. Nenhuma alteracao em implementacao, PeractCheckbox, scripts, README, relatorio antigo ou commits.
+Sem suite completa, build, instalacoes, browser ou writes reais. Compilador do editor, nao dependencia fixada pelo projeto; analise com `types: []` porque `@types/node` local esta ausente, excluindo testes e filtrando diagnosticos por escopo. Nao substitui o gate TypeScript do projeto. Todas as combinacoes de formularios nao foram exercitadas. Nenhuma alteracao em implementacao, PeractCheckbox, scripts, README, relatorio antigo ou commits.

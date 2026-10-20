@@ -10,7 +10,9 @@ export function KpiCard({
   variacao,
   highlight,
   empty,
-  emptyMsg
+  emptyMsg,
+  children,
+  headerAction,
 }: {
   title: string;
   value: string;
@@ -21,15 +23,20 @@ export function KpiCard({
   highlight?: string;
   empty?: boolean;
   emptyMsg?: string;
+  children?: React.ReactNode;
+  headerAction?: React.ReactNode;
 }) {
-  return <PeractCard className="peract-bg-card rounded-xl border peract-border-color p-4 shadow-sm">
-      <div className="flex items-start justify-between mb-3">
-        <p className="text-xs peract-font-color-muted leading-tight pr-2">{title}</p>
-        <div className="w-9 h-9 rounded-lg flex items-center justify-center text-white shrink-0" style={{
+    return <PeractCard className="flex h-48 min-w-0 flex-col peract-bg-card rounded-xl border peract-border-color p-4 shadow-sm">
+      <div data-slot="kpi-header" className="mb-2 flex h-14 min-w-0 shrink-0 items-start justify-between gap-2">
+        <div className="min-w-0 flex-1">
+          <p className="text-xs peract-font-color-muted leading-tight">{title}</p>
+          {children && <div className="mt-2 min-w-0">{children}</div>}
+        </div>
+        {headerAction ?? <div className="w-9 h-9 rounded-lg flex items-center justify-center text-white shrink-0" style={{
         background: empty ? "#e5e7eb" : highlight ?? ACC
       }}>
           <span className={empty ? "peract-font-color-muted" : "text-white"}>{icon}</span>
-        </div>
+        </div>}
       </div>
 
       {empty ? <div>
@@ -46,8 +53,7 @@ export function KpiCard({
                 {variacao >= 0 ? "+" : ""}{variacao.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}% vs anterior
               </span>
             </div>}
-          {sub && variacao === undefined && !value2 && <p className="text-xs peract-font-color-muted">{sub}</p>}
-          {sub && value2 && <p className="text-xs peract-font-color-muted">{sub}</p>}
+          {sub && <p className="text-xs peract-font-color-muted">{sub}</p>}
         </>}
     </PeractCard>;
 }

@@ -119,13 +119,16 @@ export const salesHistoryRepository = {
     const tipoPagamento = normalizedPayment(venda.pagamento)
       .replace("CARTAO_DE_CREDITO", "CARTAO_CREDITO")
       .replace("CARTAO_DE_DEBITO", "CARTAO_DEBITO");
-    const clearWhatsappTracking = status !== "FINALIZADA" && venda.canalOnline === "whatsapp";
+    const canHaveTracking = venda.tipoVenda === "online" && venda.canalOnline === "whatsapp";
+    const trackingCode = venda.codigoRastreio?.trim();
+    const clearWhatsappTracking = canHaveTracking && (status !== "FINALIZADA" || trackingCode === "");
     if (clearWhatsappTracking) {
       await apiClient.delete<void>(`/vendas/${getNumericSaleId(venda.id)}/codigo-rastreio`);
     }
     const { data } = await apiClient.patch<SaleResponseDto>(`/vendas/${getNumericSaleId(venda.id)}`, {
       status,
       tipoPagamento,
+      ...(canHaveTracking && status === "FINALIZADA" && trackingCode ? { codigoRastreio: trackingCode } : {}),
     });
     return {
       ...toVenda(data),

@@ -36,6 +36,8 @@ function renderDecantsView(overrides: Record<string, unknown> = {}) {
     showModal: false,
     totalElements: 23,
     totalPages: 3,
+    firstItem: 11,
+    lastItem: 11,
     canManagePrices: true,
     ...overrides,
   } as unknown as ComponentProps<typeof DecantsView>;
@@ -47,7 +49,8 @@ describe("DecantsView", () => {
   it("renders and delegates page changes to PeractPagination", () => {
     const { setCurrentPage } = renderDecantsView();
 
-    fireEvent.click(screen.getByRole("button", { name: "3", exact: true }));
+    expect(screen.getAllByText("Exibindo 11 a 11 de 23 decant(s)")).toHaveLength(2);
+    fireEvent.click(screen.getAllByRole("button", { name: "3", exact: true })[0]);
 
     expect(setCurrentPage).toHaveBeenCalledWith(3);
   });

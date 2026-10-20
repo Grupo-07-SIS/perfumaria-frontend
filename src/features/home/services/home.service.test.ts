@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { brazilianDateToLocalDate, formatBrazilianDate, parseBrazilianDate, selectSalesOverview } from "./home.service";
+import { brazilianDateToLocalDate, formatBrazilianDate, parseBrazilianDate, selectSalesOverview, selectChannelSales } from "./home.service";
 import type { Venda } from "../../../core/store/AppContext";
 
 const sales: Venda[] = [
@@ -7,6 +7,24 @@ const sales: Venda[] = [
   { id: "V-2", data: "05/10/2026 10:00", cliente: "B", pagamento: "Pix", total: 40, tipoVenda: "online", itens: [], enviado: false },
   { id: "V-3", data: "04/10/2026 10:00", cliente: "C", pagamento: "Pix", total: 20, tipoVenda: "presencial", itens: [], cancelada: true },
 ];
+
+describe("selectChannelSales", () => {
+  const data = { presencial: 4, whatsapp: 2, site: 0, previous: { presencial: 2, whatsapp: 4, site: 0 } };
+  it.each([
+    ["todos", 6, 0], ["presencial", 4, 100], ["whatsapp", 2, -50], ["site", 0, 0],
+  ] as const)("compara o canal %s com o mesmo canal anterior", (channel, count, change) => {
+    expect(selectChannelSales(data, channel)).toEqual({ count, change });
+  });
+
+  it("considera crescimento a partir de zero e queda a zero", () => {
+    expect(selectChannelSales({ ...data, site: 3 }, "site")).toEqual({ count: 3, change: 100 });
+    expect(selectChannelSales({ ...data, whatsapp: 0 }, "whatsapp")).toEqual({ count: 0, change: -100 });
+  });
+
+  it("nao inventa percentual quando o periodo anterior esta indisponivel", () => {
+    expect(selectChannelSales({ ...data, previous: null }, "presencial")).toEqual({ count: 4, change: undefined });
+  });
+});
 
 describe("selectSalesOverview", () => {
   it("aggregates selected-period sales and revenue while excluding cancelled sales", () => {

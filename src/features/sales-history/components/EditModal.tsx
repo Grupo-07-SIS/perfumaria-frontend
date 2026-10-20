@@ -6,6 +6,7 @@ import { PeractButtonPrimitive } from "../../../shared/components/peract-button"
 import { CanalBadge } from "./CanalBadge";
 import { PeractLabel } from "../../../shared/components/peract-label";
 import { PeractField } from "../../../shared/components/peract-field";
+import { PeractInputControl } from "../../../shared/components/peract-input";
 import { PeractNativeSelect } from "../../../shared/components/peract-select";
 import { ACC, pagamentosOpcoes } from "../config/sales-history.config";
 export function EditModal({
@@ -21,6 +22,10 @@ export function EditModal({
 }) {
   const {
     pagamento,
+    codigoRastreio,
+    setCodigoRastreio,
+    canEditTracking,
+    trackingError,
     novoStatus,
     setPagamento,
     setNovoStatus,
@@ -79,10 +84,6 @@ export function EditModal({
                   <p className="text-xs peract-font-color-muted mb-1">Desconto aplicado</p>
                   <p className="text-sm font-medium text-green-700">- R$ {venda.desconto.toFixed(2).replace(".", ",")}</p>
                 </div>}
-              {venda.tipoVenda === "online" && venda.canalOnline === "whatsapp" && venda.codigoRastreio && <div className="col-span-2 min-w-0 p-2.5 rounded-lg peract-bg-accent-soft">
-                  <p className="text-xs peract-font-color-muted mb-1">Código de rastreio</p>
-                  <p className="text-sm font-mono font-medium peract-font-color-default break-all">{venda.codigoRastreio}</p>
-                </div>}
             </div>
 
             {/* Itens (read-only) */}
@@ -115,8 +116,8 @@ export function EditModal({
             {/* Status */}
             <div>
               <PeractLabel className="text-xs peract-font-color-muted block mb-2">Status da venda *</PeractLabel>
-              <div className="flex gap-2">
-                {statusOpcoes.map(s => <PeractButtonPrimitive key={s} onClick={() => setNovoStatus(s)} className={`flex items-center gap-1.5 px-3 py-2 rounded-xl border-2 text-xs font-medium transition-all flex-1 justify-center ${novoStatus === s ? statusCfg[s].active : statusCfg[s].base}`} variant="plain" size="plain">
+              <div className="grid grid-cols-3 gap-1.5">
+                {statusOpcoes.map(s => <PeractButtonPrimitive key={s} onClick={() => setNovoStatus(s)} className={`flex min-w-0 flex-col items-center gap-1.5 px-1.5 py-2 rounded-xl border-2 text-xs font-medium transition-all justify-center sm:flex-row sm:px-3 ${novoStatus === s ? statusCfg[s].active : statusCfg[s].base}`} variant="plain" size="plain">
                     {statusCfg[s].icon} {s}
                   </PeractButtonPrimitive>)}
               </div>
@@ -127,6 +128,12 @@ export function EditModal({
                   <XCircle size={11} /> A venda será marcada como cancelada.
                 </p>}
             </div>
+
+            {canEditTracking && <PeractField>
+              <PeractLabel className="text-xs peract-font-color-muted block mb-1.5">Código de rastreio (opcional)</PeractLabel>
+              <PeractInputControl type="text" value={codigoRastreio} onChange={event => setCodigoRastreio(event.target.value)} maxLength={100} disabled={novoStatus !== "Finalizado"} aria-invalid={!!trackingError} placeholder="Ex: BR123456789BR" className="w-full border peract-border-color rounded-lg px-3 py-2 text-sm font-mono focus:outline-none disabled:opacity-50" />
+              {trackingError && <p role="alert" className="mt-1 text-xs text-red-600">{trackingError}</p>}
+            </PeractField>}
 
             {/* Pagamento */}
             <PeractField>
@@ -142,7 +149,7 @@ export function EditModal({
           </div>
         </div>
 
-        <div className="p-4 border-t peract-border-color flex gap-2">
+        <div className="p-4 border-t peract-border-color grid grid-cols-1 gap-2 sm:grid-cols-2">
           <PeractButtonPrimitive onClick={onClose} className="flex-1 px-4 py-2 rounded-lg text-sm border peract-border-color text-gray-600 hover:bg-gray-50 transition-colors" variant="plain" size="plain">Fechar</PeractButtonPrimitive>
           <PeractButtonPrimitive onClick={handleSave} className="flex-1 px-4 py-2 rounded-lg text-sm text-white hover:opacity-90 flex items-center justify-center gap-2 peract-bg-accent" variant="plain" size="plain">
             <CheckCircle size={15} /> Salvar alterações
