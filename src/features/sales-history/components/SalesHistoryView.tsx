@@ -13,7 +13,7 @@ import { getVendaStatus } from "../services/sales-history.service";
 import { CanalBadge } from "./CanalBadge";
 import { PeractTag } from "../../../shared/components/peract-tag";
 import { StatusBadge } from "./StatusBadge";
-import { PeractPagination } from "../../../shared/components/peract-pagination";
+import { PeractPaginationFooter } from "../../../shared/components/peract-pagination";
 export function SalesHistoryView({
   isAdmin,
   isLoading,
@@ -157,10 +157,7 @@ export function SalesHistoryView({
           </PeractTableRoot>
         </div>
         <div className="px-4 py-3 border-t border-gray-50">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-xs peract-font-color-muted">Exibindo {firstSaleOnPage} a {lastSaleOnPage} de {filtered.length} venda(s)</p>
-            <PeractPagination currentPage={currentPage} onPageChange={setCurrentPage} totalPages={totalPages} />
-          </div>
+          <PeractPaginationFooter currentPage={currentPage} onPageChange={setCurrentPage} totalPages={totalPages} firstItem={firstSaleOnPage} lastItem={lastSaleOnPage} totalItems={filtered.length}>venda(s)</PeractPaginationFooter>
         </div>
       </PeractCard>
 
@@ -196,10 +193,7 @@ export function SalesHistoryView({
         {filtered.length === 0 && <PeractCard className="text-center py-12 peract-font-color-muted text-sm peract-bg-card rounded-xl border peract-border-color">Nenhuma venda encontrada.</PeractCard>}
       </div>
       <div className="mt-4 md:hidden">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-xs peract-font-color-muted">Exibindo {firstSaleOnPage} a {lastSaleOnPage} de {filtered.length} venda(s)</p>
-          <PeractPagination currentPage={currentPage} onPageChange={setCurrentPage} totalPages={totalPages} />
-        </div>
+        <PeractPaginationFooter currentPage={currentPage} onPageChange={setCurrentPage} totalPages={totalPages} firstItem={firstSaleOnPage} lastItem={lastSaleOnPage} totalItems={filtered.length}>venda(s)</PeractPaginationFooter>
       </div>
       </div>
     </div>;

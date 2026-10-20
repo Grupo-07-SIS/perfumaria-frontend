@@ -1,9 +1,9 @@
 import { useHomeRepository } from "../repository/home.repository";
 import { useEffect, useState } from "react";
-import type { Period } from "../models/home.models";
-import { dashboardRepository, type DashboardData, type DashboardDataResult, type DashboardOverviewResult, type DashboardSection } from "../repository/dashboard.repository";
+import type { Period, SalesChannel } from "../models/home.models";
+import { dashboardRepository, type DashboardData, type DashboardDataResult, type DashboardOverviewResult, type DashboardSection, type DashboardSalesByChannelResult } from "../repository/dashboard.repository";
 import type { DashboardPeriodData } from "../repository/dto/dashboard.dto";
-import { formatBrazilianDate, parseBrazilianDate } from "../services/home.service";
+import { formatBrazilianDate, parseBrazilianDate, selectChannelSales } from "../services/home.service";
 export function useHomeFacade() {
   const { currentUser } = useHomeRepository();
   const isAdmin = currentUser?.cargo === "Administrador";
@@ -13,7 +13,6 @@ export function useHomeFacade() {
   const [customEndDate, setCustomEndDate] = useState("");
   const [customRange, setCustomRange] = useState<DashboardPeriodData | null>(null);
   const [customPeriodError, setCustomPeriodError] = useState("");
-  const [emptyMode, setEmptyMode] = useState(false);
   const [dashboardData, setDashboardData] = useState<DashboardData>({ topProducts: [], criticalProducts: [], categoryData: [] });
   const [chartData, setChartData] = useState<DashboardDataResult["chartData"]>([]);
   const [failedSections, setFailedSections] = useState<DashboardSection[]>([]);
@@ -23,6 +22,32 @@ export function useHomeFacade() {
   const [criticalCount, setCriticalCount] = useState(0);
   const [kpis, setKpis] = useState<DashboardOverviewResult["kpis"]>(null);
   const [isOverviewLoading, setIsOverviewLoading] = useState(isAdmin);
+  const [salesChannel, setSalesChannel] = useState<SalesChannel>("todos");
+  const [salesByChannel, setSalesByChannel] = useState<DashboardSalesByChannelResult | null>(null);
+  const [isChannelsLoading, setIsChannelsLoading] = useState(isAdmin);
+  const [channelsError, setChannelsError] = useState(false);
+  const [channelsAttempt, setChannelsAttempt] = useState(0);
+
+  useEffect(() => {
+    if (!isAdmin) {
+      setSalesByChannel(null);
+      setIsChannelsLoading(false);
+      setChannelsError(false);
+      return;
+    }
+    let isActive = true;
+    setSalesByChannel(null);
+    setIsChannelsLoading(true);
+    setChannelsError(false);
+    dashboardRepository.listSalesByChannel(period, customRange ?? undefined).then(counts => {
+      if (isActive) setSalesByChannel(counts);
+    }).catch(() => {
+      if (isActive) setChannelsError(true);
+    }).finally(() => {
+      if (isActive) setIsChannelsLoading(false);
+    });
+    return () => { isActive = false; };
+  }, [isAdmin, period, customRange, channelsAttempt]);
 
   const setPeriod = (nextPeriod: Period) => {
     setPeriodState(nextPeriod);
@@ -121,6 +146,7 @@ export function useHomeFacade() {
   const margemPerc = margemPercReal ?? 0;
   const summaryAvailable = !isOverviewLoading && !failedSections.includes("salesOverview");
   const recentSalesAvailable = !isOverviewLoading && !failedSections.includes("recentSales");
+  const channelMetrics = selectChannelSales(salesByChannel, salesChannel);
   return {
     vendas: sales,
     currentUser,
@@ -137,25 +163,29 @@ export function useHomeFacade() {
     customRangeActive: customRange !== null,
     customPeriodError,
     applyCustomPeriod,
-    emptyMode,
-    setEmptyMode,
-    chartData: emptyMode ? [] : chartData,
-    categoriaData: emptyMode ? [] : dashboardData.categoryData,
-    criticalProducts: emptyMode ? [] : dashboardData.criticalProducts,
-    criticalCount: emptyMode ? 0 : criticalCount,
+    chartData,
+    categoriaData: dashboardData.categoryData,
+    criticalProducts: dashboardData.criticalProducts,
+    criticalCount,
     produtosComMargem: [],
     margemPercReal,
     margemPerc,
     margemBRL: (kpis?.faturamentoPeriodo.valor ?? 0) * margemPerc / 100,
-    vendasRecentes: emptyMode || !recentSalesAvailable ? [] : sales,
+    vendasRecentes: !recentSalesAvailable ? [] : sales,
     totalVendasKpi: kpis?.vendasPeriodo.vendas ?? 0,
     salesChange: kpis?.vendasPeriodo.comparacaoPeriodoAnterior,
     faturamentoKpi: kpis?.faturamentoPeriodo.valor ?? 0,
     revenueChange: kpis?.faturamentoPeriodo.comparacaoAnterior,
     marginChange: kpis?.margemLucro.comparacaoAnterior,
-    ticketMedioKpi: kpis?.ticketMedio.valor ?? 0,
-    ticketMedioChange: kpis?.ticketMedio.comparacaoAnterior,
-    topProdutos: emptyMode ? [] : dashboardData.topProducts,
+    salesChannel,
+    setSalesChannel,
+    channelSalesCount: channelMetrics.count,
+    channelSalesChange: channelMetrics.change,
+    channelsAvailable: salesByChannel !== null && !isChannelsLoading && !channelsError,
+    isChannelsLoading,
+    channelsError,
+    retrySalesByChannel: () => setChannelsAttempt(attempt => attempt + 1),
+    topProdutos: dashboardData.topProducts,
     isDashboardLoading: isDashboardLoading || isOverviewLoading,
     failedSections,
     summaryAvailable,

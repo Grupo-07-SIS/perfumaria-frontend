@@ -98,6 +98,26 @@ describe("salesHistoryRepository", () => {
     expect(apiClientDeleteMock).not.toHaveBeenCalled();
   });
 
+  it.each(["BR123456789XX", "NOVO123456789"])("persists tracking changes on finalized WhatsApp sales: %s", async codigoRastreio => {
+    apiClientGetMock.mockResolvedValue({ data: saleDto });
+    apiClientPatchMock.mockResolvedValue({ data: { ...saleDto, codigoRastreio } });
+    const sale = await salesHistoryRepository.getSaleDetails("V-19");
+    const saved = await salesHistoryRepository.updateSale({ ...sale, codigoRastreio: ` ${codigoRastreio} ` });
+    expect(apiClientPatchMock).toHaveBeenCalledWith("/vendas/19", { status: "FINALIZADA", tipoPagamento: "CARTAO_CREDITO", codigoRastreio });
+    expect(apiClientDeleteMock).not.toHaveBeenCalled();
+    expect(saved.codigoRastreio).toBe(codigoRastreio);
+  });
+
+  it("removes tracking without changing finalized status", async () => {
+    apiClientGetMock.mockResolvedValue({ data: saleDto });
+    apiClientPatchMock.mockResolvedValue({ data: { ...saleDto, codigoRastreio: null } });
+    const sale = await salesHistoryRepository.getSaleDetails("V-19");
+    const saved = await salesHistoryRepository.updateSale({ ...sale, codigoRastreio: "" });
+    expect(apiClientDeleteMock).toHaveBeenCalledWith("/vendas/19/codigo-rastreio");
+    expect(apiClientPatchMock).toHaveBeenCalledWith("/vendas/19", { status: "FINALIZADA", tipoPagamento: "CARTAO_CREDITO" });
+    expect(saved).toMatchObject({ enviado: true, codigoRastreio: undefined });
+  });
+
   it("clears WhatsApp tracking when returning a finalized sale to pending", async () => {
     apiClientPatchMock.mockResolvedValue({ data: { ...saleDto, status: "PENDENTE", codigoRastreio: null } });
 

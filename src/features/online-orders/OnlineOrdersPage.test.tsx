@@ -1,17 +1,14 @@
-import { render, screen, within } from "@testing-library/react";
+import { act, render, screen, within } from "@testing-library/react";
+import type { AxiosResponse } from "axios";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { apiClient } from "../../core/services/http-client";
-import { triggerBotpressOnlineFlow } from "../../core/services/botpress";
 import { OnlineOrdersPage } from "./OnlineOrdersPage";
 const { useAppMock } = vi.hoisted(() => ({ useAppMock: vi.fn() }));
 vi.mock("../../core/store/AppContext", () => ({ useApp: useAppMock }));
 
 vi.mock("../../core/services/http-client", () => ({
   apiClient: { get: vi.fn(), patch: vi.fn(), delete: vi.fn() },
-}));
-vi.mock("../../core/services/botpress", () => ({
-  triggerBotpressOnlineFlow: vi.fn().mockResolvedValue(undefined),
 }));
 
 function makeOrder(id: number, canal: "WHATSAPP" | "SITE", tipoVenda = "ONLINE") {
@@ -62,6 +59,79 @@ function orderRow(channel: "whatsapp" | "site") {
 }
 
 describe("OnlineOrders", () => {
+  it("pagina pedidos e reinicia ao alterar canal ou busca", async () => {
+    orders = Array.from({ length: 25 }, (_, index) => ({ ...makeOrder(index + 2000, index % 2 === 0 ? "WHATSAPP" : "SITE"), clienteNome: index === 0 ? "Pedido teste whatsapp" : `Pedido paginado ${index + 1}` }));
+    const user = userEvent.setup();
+    await renderOrders();
+    expect(screen.getAllByText("Exibindo 1 a 10 de 25 pedido(s)")).toHaveLength(2);
+    expect(screen.getByRole("table").querySelectorAll("tbody tr")).toHaveLength(10);
+    await user.click(screen.getAllByRole("button", { name: "3", exact: true })[0]);
+    expect(screen.getAllByText("Exibindo 21 a 25 de 25 pedido(s)")).toHaveLength(2);
+    expect(screen.getByRole("table").querySelectorAll("tbody tr")).toHaveLength(5);
+    await user.click(within(screen.getByRole("group", { name: "Canal dos pedidos" })).getByRole("button", { name: "Site", exact: true }));
+    expect(screen.getAllByText("Exibindo 1 a 10 de 12 pedido(s)")).toHaveLength(2);
+    await user.type(screen.getByPlaceholderText("Buscar pedido ou cliente..."), "Pedido paginado 24");
+    expect(screen.getAllByText("Exibindo 1 a 1 de 1 pedido(s)")).toHaveLength(2);
+  });
+
+  it.each(["site", "whatsapp"] as const)("bloqueia finalizacao duplicada de %s e permite nova tentativa", async canal => {
+    const user = userEvent.setup();
+    await renderOrders();
+    let rejectUpdate!: (reason: Error) => void;
+    vi.mocked(apiClient.patch).mockImplementationOnce(() => new Promise((_resolve, reject) => { rejectUpdate = reject; }));
+    const finalize = within(orderRow(canal)).getByRole("button", { name: "Finalizar", exact: true });
+    if (canal === "whatsapp") {
+      await user.click(finalize);
+      await user.type(screen.getByPlaceholderText("Ex: BR123456789BR"), "BR123456789BR");
+      await user.dblClick(within(screen.getByRole("dialog")).getByRole("button", { name: "Finalizar pedido" }));
+      expect(screen.getByPlaceholderText("Ex: BR123456789BR")).toBeDisabled();
+      await user.keyboard("{Escape}");
+      expect(screen.getByRole("dialog")).toBeInTheDocument();
+    } else {
+      await user.dblClick(finalize);
+      expect(finalize).toBeDisabled();
+    }
+    expect(apiClient.patch).toHaveBeenCalledTimes(1);
+    await act(async () => { rejectUpdate(new Error("Falha simulada")); });
+    if (canal === "whatsapp") {
+      const dialog = within(screen.getByRole("dialog"));
+      expect(dialog.getByRole("alert")).toHaveTextContent("Não foi possível atualizar o pedido.");
+      expect(screen.getByPlaceholderText("Ex: BR123456789BR")).toHaveValue("BR123456789BR");
+      await user.click(dialog.getByRole("button", { name: "Finalizar pedido" }));
+    } else {
+      expect(screen.getByRole("alert")).toHaveTextContent("Não foi possível atualizar o pedido.");
+      await user.click(finalize);
+    }
+    expect(apiClient.patch).toHaveBeenCalledTimes(2);
+    await user.click(screen.getByRole("button", { name: "Finalizados", exact: true }));
+    expect(orderRow(canal)).toHaveTextContent("Finalizado");
+  });
+
+  it("nao reabre detalhes quando a resposta chega depois de fechar o modal", async () => {
+    const user = userEvent.setup();
+    await renderOrders();
+    let resolveDetails!: (response: AxiosResponse) => void;
+    vi.mocked(apiClient.get).mockImplementationOnce(() => new Promise(resolve => { resolveDetails = resolve; }));
+    await user.click(within(orderRow("whatsapp")).getByRole("button", { name: "Ver pedido" }));
+    await user.click(within(screen.getByRole("dialog", { name: "Pedido Online" })).getAllByRole("button", { name: "Fechar" }).at(-1)!);
+    await act(async () => { resolveDetails({ data: orders[0] } as AxiosResponse); });
+    expect(screen.queryByRole("dialog", { name: "Pedido Online" })).not.toBeInTheDocument();
+  });
+
+  it("ignora detalhes de pedido anterior quando outro ja foi aberto", async () => {
+    const user = userEvent.setup();
+    await renderOrders();
+    let resolveDetails!: (response: AxiosResponse) => void;
+    vi.mocked(apiClient.get).mockImplementationOnce(() => new Promise(resolve => { resolveDetails = resolve; }));
+    await user.click(within(orderRow("whatsapp")).getByRole("button", { name: "Ver pedido" }));
+    await user.click(within(screen.getByRole("dialog", { name: "Pedido Online" })).getAllByRole("button", { name: "Fechar" }).at(-1)!);
+    await user.click(within(orderRow("site")).getByRole("button", { name: "Ver pedido" }));
+    expect(screen.getByRole("dialog", { name: "Pedido Online" })).toHaveTextContent("Pedido teste site");
+    await act(async () => { resolveDetails({ data: orders[0] } as AxiosResponse); });
+    expect(screen.getByRole("dialog", { name: "Pedido Online" })).toHaveTextContent("Pedido teste site");
+    expect(screen.getByRole("dialog", { name: "Pedido Online" })).not.toHaveTextContent("Pedido teste whatsapp");
+  });
+
   it.each(["site", "whatsapp"] as const)("permite ao funcionario finalizar %s sem cancelar ou desfazer", async canal => {
     useAppMock.mockReturnValue({ currentUser: { cargo: "Funcionário" } });
     const user = userEvent.setup();
@@ -135,23 +205,16 @@ describe("OnlineOrders", () => {
     expect(within(screen.getByRole("dialog", { name: "Pedido Online" })).getByText("Perfume", { exact: true })).toBeInTheDocument();
   });
 
-  it("finaliza WhatsApp com rastreio, aciona Botpress e desfaz", async () => {
+  it("finaliza WhatsApp com rastreio e desfaz", async () => {
     const user = userEvent.setup();
     orders[0].codigoRastreio = "BRRASTREIOANTERIOR";
     await renderOrders();
     expect(orderRow("whatsapp")).not.toHaveTextContent("BRRASTREIOANTERIOR");
     await user.click(within(orderRow("whatsapp")).getByRole("button", { name: "Finalizar", exact: true }));
     const rastreioDialog = screen.getByRole("dialog");
-    await user.click(within(rastreioDialog).getByRole("button", { name: "Finalizar pedido" }));
-    expect(within(rastreioDialog).getByRole("alert")).toHaveTextContent("Informe o código de rastreio para finalizar.");
-    expect(apiClient.patch).not.toHaveBeenCalled();
     await user.type(screen.getByPlaceholderText("Ex: BR123456789BR"), "  BR123456789BR  ");
     await user.click(within(rastreioDialog).getByRole("button", { name: "Finalizar pedido" }));
-    await vi.waitFor(() => expect(triggerBotpressOnlineFlow).toHaveBeenCalledTimes(1));
     expect(apiClient.patch).toHaveBeenCalledWith("/vendas/pedidos-online/1042/finalizar", { codigoRastreio: "BR123456789BR" });
-    expect(triggerBotpressOnlineFlow).toHaveBeenCalledWith(expect.objectContaining({
-      canalVenda: "whatsapp", codigoRastreio: "BR123456789BR", subtotal: 90, totalVenda: 100,
-    }));
     await user.click(screen.getByRole("button", { name: "Finalizados", exact: true }));
     expect(orderRow("whatsapp")).not.toHaveTextContent("BR123456789BR");
     await user.click(within(orderRow("whatsapp")).getByRole("button", { name: "Ver pedido" }));
@@ -209,19 +272,16 @@ describe("OnlineOrders", () => {
     expect(orderRow("site")).toHaveTextContent("Pendente");
   });
 
-  it("mantem finalizacao do Site quando Botpress falha", async () => {
+  it("finaliza WhatsApp sem registrar rastreio", async () => {
     const user = userEvent.setup();
-    vi.mocked(triggerBotpressOnlineFlow).mockRejectedValueOnce(new Error("Servico indisponivel"));
-    const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
-    try {
-      await renderOrders();
-      await user.click(within(orderRow("site")).getByRole("button", { name: "Finalizar", exact: true }));
-      await vi.waitFor(() => expect(consoleError).toHaveBeenCalled());
-      await user.click(screen.getByRole("button", { name: "Finalizados", exact: true }));
-      expect(orderRow("site")).toHaveTextContent("Finalizado");
-    } finally {
-      consoleError.mockRestore();
-    }
+    await renderOrders();
+    await user.click(within(orderRow("whatsapp")).getByRole("button", { name: "Finalizar", exact: true }));
+    const dialog = within(screen.getByRole("dialog"));
+    expect(dialog.getByLabelText("Código de rastreio (opcional)")).not.toBeRequired();
+    await user.click(dialog.getByRole("button", { name: "Finalizar pedido" }));
+    expect(apiClient.patch).toHaveBeenCalledWith("/vendas/pedidos-online/1042/finalizar", {});
+    await user.click(screen.getByRole("button", { name: "Finalizados", exact: true }));
+    expect(orderRow("whatsapp")).toHaveTextContent("Finalizado");
   });
 
   it("desfaz pedido Site sem enviar o campo de rastreio exclusivo do WhatsApp", async () => {
@@ -245,7 +305,6 @@ describe("OnlineOrders", () => {
     await user.click(within(screen.getByRole("dialog", { name: "Cancelar Pedido" })).getByRole("button", { name: "Cancelar pedido" }));
     await vi.waitFor(() => expect(screen.queryByRole("row", { name: /Pedido teste site/ })).not.toBeInTheDocument());
     expect(apiClient.patch).toHaveBeenCalledWith("/vendas/1037", { status: "CANCELADA" });
-    expect(triggerBotpressOnlineFlow).not.toHaveBeenCalled();
   });
 
   it("mostra erro quando a listagem falha", async () => {

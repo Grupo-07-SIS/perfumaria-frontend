@@ -1,7 +1,20 @@
 import type { Product, Cliente, Venda } from "../../../core/store/AppContext";
-import type { Period } from "../models/home.models";
+import type { Period, SalesChannel } from "../models/home.models";
 import type { CHART_DATA, CATEGORIA_DATA, KPI_DATA, TOP_PRODUTOS } from "../repository/home.repository";
 import { getDashboardPeriodData } from "../repository/dashboard.repository";
+import type { DashboardSalesByChannelResult } from "../repository/dashboard.repository";
+import type { DashboardSalesByChannelResponseDto } from "../repository/dto/dashboard.dto";
+
+export function selectChannelSales(data: DashboardSalesByChannelResult | null, channel: SalesChannel) {
+  const getCount = (counts: DashboardSalesByChannelResponseDto) => channel === "todos"
+    ? counts.presencial + counts.whatsapp + counts.site : counts[channel];
+  if (!data) return { count: 0, change: undefined };
+  const count = getCount(data);
+  const previous = data.previous ? getCount(data.previous) : null;
+  const change = previous === null ? undefined : previous === 0 ? count === 0 ? 0 : 100
+    : (count - previous) / previous * 100;
+  return { count, change };
+}
 export function fmtBRL(v: number) {
   return `R$ ${v.toLocaleString("pt-BR", {
     minimumFractionDigits: 2,

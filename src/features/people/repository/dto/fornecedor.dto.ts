@@ -8,7 +8,8 @@ export interface FornecedorRequestDto {
   endereco: Endereco;
 }
 
-export interface FornecedorResponseDto extends FornecedorRequestDto {
+export interface FornecedorResponseDto extends Omit<FornecedorRequestDto, "endereco"> {
+  endereco?: Partial<Endereco> | null;
   id: number;
   totalCompras?: number;
 }

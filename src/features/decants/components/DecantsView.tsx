@@ -8,7 +8,7 @@ import { ACC } from "../config/decants.config";
 import { PeractCard } from "../../../shared/components/peract-card";
 import { PeractInputControl } from "../../../shared/components/peract-input";
 import { PeractTableRoot, PeractTableHeader, PeractTableRow, PeractTableHead, PeractTableBody, PeractTableCell } from "../../../shared/components/peract-table";
-import { PeractPagination } from "../../../shared/components/peract-pagination";
+import { PeractPaginationFooter } from "../../../shared/components/peract-pagination";
 export function DecantsView({
   confirmDelete,
   perfumeOptions,
@@ -27,6 +27,8 @@ export function DecantsView({
   setCurrentPage,
   totalElements,
   totalPages,
+  firstItem,
+  lastItem,
   filtered,
   handleSave,
   fmt,
@@ -135,10 +137,7 @@ export function DecantsView({
           </PeractTableRoot>
         </div>
         <div className="px-4 py-3 border-t border-gray-50">
-          <div className="flex items-center justify-between gap-4">
-            <p className="text-xs peract-font-color-muted">{totalElements} decant(s) cadastrado(s)</p>
-            <PeractPagination currentPage={currentPage} totalPages={totalPages} onPageChange={page => void setCurrentPage(page)} />
-          </div>
+          <PeractPaginationFooter currentPage={currentPage} totalPages={totalPages} onPageChange={page => void setCurrentPage(page)} firstItem={firstItem} lastItem={lastItem} totalItems={totalElements}>decant(s)</PeractPaginationFooter>
         </div>
       </PeractCard>
 
@@ -190,5 +189,6 @@ export function DecantsView({
             Nenhum decant cadastrado.
           </PeractCard>}
       </div>
+      <PeractPaginationFooter className="mt-4 md:hidden" currentPage={currentPage} totalPages={totalPages} onPageChange={page => void setCurrentPage(page)} firstItem={firstItem} lastItem={lastItem} totalItems={totalElements}>decant(s)</PeractPaginationFooter>
     </div>;
 }

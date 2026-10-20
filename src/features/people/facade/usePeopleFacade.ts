@@ -3,6 +3,7 @@ import { buildSearchParams, peopleErrorMessage, selectPeople } from "../services
 import { usePeopleRepository } from "../repository/people.repository";
 import { useEffect, useRef, useState } from "react";
 import { useDebouncedValue } from "../../../shared/hooks/useDebouncedValue";
+import { usePagination } from "../../../shared/hooks/usePagination";
 import type { Aba, Cliente, ClienteModalFormValues, Fornecedor, FornecedorModalFormValues, Funcionario, FuncionarioModalFormValues, StatusFiltro } from "../models/people.models";
 import { createCliente, fetchClientes, reactivateCliente, removeCliente, updateCliente } from "../services/clientes.service";
 import { createFornecedor, fetchFornecedores, removeFornecedor, updateFornecedor } from "../services/fornecedores.service";
@@ -87,6 +88,7 @@ export function usePeopleFacade() {
   };
 
   const searchActiveTab = (busca: string) => {
+    resetPagination();
     setSubmittedSearch(busca);
     return loadTab(aba, busca);
   };
@@ -99,6 +101,7 @@ export function usePeopleFacade() {
   }, [debouncedSearch]);
 
   const selectTab = (nextAba: Aba) => {
+    resetPagination();
     if (submittedSearch) void loadTab(aba, "");
     setAba(nextAba);
     setSearch("");
@@ -156,6 +159,15 @@ export function usePeopleFacade() {
     funcionarios: funcionariosVisiveis,
     statusFiltro
   });
+  const clientesPagination = usePagination(filtClientes);
+  const fornecedoresPagination = usePagination(filtFornecedores);
+  const funcionariosPagination = usePagination(filtFuncionarios);
+  const pagination = aba === "clientes" ? clientesPagination : aba === "fornecedores" ? fornecedoresPagination : funcionariosPagination;
+  const resetPagination = () => {
+    clientesPagination.setCurrentPage(1);
+    fornecedoresPagination.setCurrentPage(1);
+    funcionariosPagination.setCurrentPage(1);
+  };
   const openNew = () => {
     if (aba === "clientes") setModal({
       type: "cliente"
@@ -240,10 +252,16 @@ export function usePeopleFacade() {
     setAba,
     selectTab,
     search,
-    setSearch,
+    setSearch: (value: string) => {
+      setSearch(value);
+      resetPagination();
+    },
     submitSearch,
     statusFiltro,
-    setStatusFiltro,
+    setStatusFiltro: (value: StatusFiltro) => {
+      setStatusFiltro(value);
+      resetPagination();
+    },
     modal,
     setModal,
     deleteTarget,
@@ -263,6 +281,10 @@ export function usePeopleFacade() {
     filtClientes,
     filtFornecedores,
     filtFuncionarios,
+    pagination,
+    clientesPage: clientesPagination.paginatedItems,
+    fornecedoresPage: fornecedoresPagination.paginatedItems,
+    funcionariosPage: funcionariosPagination.paginatedItems,
     openNew,
     newLabel,
     requestClientDeletion,

@@ -1,6 +1,10 @@
 import { act, renderHook, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+vi.mock("../../../core/store/AppContext", () => ({
+  useApp: () => ({ currentUser: { cargo: "Administrador" } }),
+}));
+
 const {
   createDecantMock,
   fetchDecantsMock,
@@ -47,6 +51,24 @@ describe("useDecantsFacade", () => {
     expect(result.current.decants).toEqual([original]);
     expect(result.current.perfumeOptions).toEqual([{ id: 7, nome: "Chanel N°5" }, { id: 8, nome: "Libre" }]);
     expect(result.current.error).toBe("");
+  });
+
+  it("volta a pagina anterior ao excluir o unico item da ultima pagina", async () => {
+    let records = [...Array.from({ length: 10 }, (_, index) => ({ ...original, id: index + 100 })), created];
+    fetchDecantsMock.mockImplementation(async ({ page = 0, size = 10 } = {}) => ({
+      content: records.slice(page * size, (page + 1) * size), number: page, totalElements: records.length, totalPages: Math.ceil(records.length / size),
+    }));
+    removeDecantMock.mockImplementation(async item => {
+      records = records.filter(record => record.id !== item.id);
+      return item.id;
+    });
+    const { result } = renderHook(() => useDecantsFacade());
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    await act(async () => { await result.current.setCurrentPage(2); });
+    act(() => result.current.setDeleteDecant(created));
+    await act(async () => { await result.current.confirmDelete(); });
+    expect(result.current).toMatchObject({ currentPage: 1, totalPages: 1, totalElements: 10, firstItem: 1, lastItem: 10 });
+    expect(result.current.filtered).toHaveLength(10);
   });
 
   it("keeps decants visible and warns when category options fail", async () => {

@@ -1,9 +1,12 @@
 import { useEffect, useRef, useState } from "react";
+import { useApp } from "../../../core/store/AppContext";
 import { useDebouncedValue } from "../../../shared/hooks/useDebouncedValue";
+import { DEFAULT_PAGE_SIZE } from "../../../shared/hooks/usePagination";
 import type { BodySplashItem, BodySplashModalFormValues, BodySplashProductOption } from "../models/body-splash.models";
 import { createBodySplash, fetchBodySplashCatalog, removeBodySplash, updateBodySplash } from "../services/body-splash.service";
 
 export function useBodySplashFacade() {
+  const { currentUser } = useApp();
   const [items, setItems] = useState<BodySplashItem[]>([]);
   const [productOptions, setProductOptions] = useState<BodySplashProductOption[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -13,6 +16,9 @@ export function useBodySplashFacade() {
   const [deleteItem, setDeleteItem] = useState<BodySplashItem | null>(null);
   const [search, setSearch] = useState("");
   const [submittedSearch, setSubmittedSearch] = useState("");
+  const [currentPage, setCurrentPageState] = useState(1);
+  const [totalElements, setTotalElements] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
   const requestId = useRef(0);
   const debouncedSearch = useDebouncedValue(search.trim());
 
@@ -22,6 +28,9 @@ export function useBodySplashFacade() {
       .then(catalog => {
         if (currentRequestId !== requestId.current) return;
         setItems(catalog.page.content);
+        setCurrentPageState(1);
+        setTotalElements(catalog.page.totalElements);
+        setTotalPages(Math.max(1, catalog.page.totalPages));
         setProductOptions(catalog.productOptions);
         setError(catalog.productOptionsError ?? "");
       })
@@ -33,15 +42,17 @@ export function useBodySplashFacade() {
       });
   }, []);
 
-  const searchBy = async (busca: string) => {
+  const loadPage = async (page: number, busca: string) => {
     const currentRequestId = ++requestId.current;
-    setSubmittedSearch(busca);
     setIsLoading(true);
     setError("");
     try {
-      const catalog = await fetchBodySplashCatalog({ busca, page: 0, size: 10 });
+      const catalog = await fetchBodySplashCatalog({ busca, page: page - 1, size: DEFAULT_PAGE_SIZE });
       if (currentRequestId !== requestId.current) return;
       setItems(catalog.page.content);
+      setCurrentPageState(page);
+      setTotalElements(catalog.page.totalElements);
+      setTotalPages(Math.max(1, catalog.page.totalPages));
       setProductOptions(catalog.productOptions);
       setError(catalog.productOptionsError ?? "");
     } catch {
@@ -51,6 +62,12 @@ export function useBodySplashFacade() {
       if (currentRequestId === requestId.current) setIsLoading(false);
     }
   };
+
+  const searchBy = async (busca: string) => {
+    setSubmittedSearch(busca);
+    await loadPage(1, busca);
+  };
+  const setCurrentPage = (page: number) => loadPage(page, submittedSearch);
 
   const submitSearch = () => searchBy(search.trim());
 
@@ -69,7 +86,10 @@ export function useBodySplashFacade() {
         setItems(prev => prev.map(item => item.id === saved.id ? saved : item));
       } else {
         const saved = await createBodySplash(values);
-        setItems(prev => [...prev, saved]);
+        setItems(prev => [...prev, saved].slice(0, DEFAULT_PAGE_SIZE));
+        setTotalElements(totalElements + 1);
+        setTotalPages(Math.max(1, Math.ceil((totalElements + 1) / DEFAULT_PAGE_SIZE)));
+        if (totalElements >= DEFAULT_PAGE_SIZE || submittedSearch) await loadPage(1, submittedSearch);
       }
       setEditItem(null);
       setShowModal(false);
@@ -85,12 +105,18 @@ export function useBodySplashFacade() {
     try {
       const deletedId = await removeBodySplash(deleteItem);
       setItems(prev => prev.filter(item => item.id !== deletedId));
+      const remaining = Math.max(0, totalElements - 1);
+      const remainingPages = Math.max(1, Math.ceil(remaining / DEFAULT_PAGE_SIZE));
+      setTotalElements(remaining);
+      setTotalPages(remainingPages);
+      if (totalElements > DEFAULT_PAGE_SIZE || submittedSearch) await loadPage(Math.min(currentPage, remainingPages), submittedSearch);
       setDeleteItem(null);
     } catch {
       setError("Não foi possível excluir o Body Splash.");
     }
   };
   return {
+    canManagePrices: currentUser?.cargo === "Administrador",
     items,
     productOptions,
     isLoading,
@@ -105,6 +131,12 @@ export function useBodySplashFacade() {
     setSearch,
     submitSearch,
     filtered,
+    currentPage,
+    setCurrentPage,
+    totalElements,
+    totalPages,
+    firstItem: filtered.length === 0 ? 0 : (currentPage - 1) * DEFAULT_PAGE_SIZE + 1,
+    lastItem: Math.min((currentPage - 1) * DEFAULT_PAGE_SIZE + filtered.length, totalElements),
     handleSave,
     fmt,
     confirmDelete

@@ -1,6 +1,10 @@
 import { act, renderHook, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+vi.mock("../../../core/store/AppContext", () => ({
+  useApp: () => ({ currentUser: { cargo: "Administrador" } }),
+}));
+
 const {
   createBodySplashMock,
   fetchBodySplashCatalogMock,
@@ -58,6 +62,21 @@ const productOptions = [
 ];
 
 describe("useBodySplashFacade", () => {
+  it("consulta paginas remotas e retorna ao inicio ao buscar", async () => {
+    fetchBodySplashCatalogMock.mockImplementation(async ({ page = 0 } = {}) => ({
+      page: { content: page === 2 ? [created] : [original], number: page, totalElements: 21, totalPages: 3 }, productOptions,
+    }));
+    const { result } = renderHook(() => useBodySplashFacade());
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    await act(async () => { await result.current.setCurrentPage(3); });
+    expect(fetchBodySplashCatalogMock).toHaveBeenLastCalledWith({ busca: "", page: 2, size: 10 });
+    expect(result.current).toMatchObject({ currentPage: 3, totalPages: 3, totalElements: 21, firstItem: 21, lastItem: 21 });
+    act(() => result.current.setSearch("Rosa"));
+    await act(async () => { await result.current.submitSearch(); });
+    expect(result.current.currentPage).toBe(1);
+    expect(fetchBodySplashCatalogMock).toHaveBeenLastCalledWith({ busca: "Rosa", page: 0, size: 10 });
+  });
+
   beforeEach(() => {
     vi.resetAllMocks();
     fetchBodySplashCatalogMock.mockResolvedValue({
@@ -76,6 +95,24 @@ describe("useBodySplashFacade", () => {
     expect(result.current.items).toEqual([original]);
     expect(result.current.productOptions).toEqual(productOptions);
     expect(result.current.error).toBe("");
+  });
+
+  it("volta a pagina anterior ao excluir o unico item da ultima pagina", async () => {
+    let records = [...Array.from({ length: 10 }, (_, index) => ({ ...original, id: index + 100 })), created];
+    fetchBodySplashCatalogMock.mockImplementation(async ({ page = 0, size = 10 } = {}) => ({
+      page: { content: records.slice(page * size, (page + 1) * size), number: page, totalElements: records.length, totalPages: Math.ceil(records.length / size) }, productOptions,
+    }));
+    removeBodySplashMock.mockImplementation(async item => {
+      records = records.filter(record => record.id !== item.id);
+      return item.id;
+    });
+    const { result } = renderHook(() => useBodySplashFacade());
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    await act(async () => { await result.current.setCurrentPage(2); });
+    act(() => result.current.setDeleteItem(created));
+    await act(async () => { await result.current.confirmDelete(); });
+    expect(result.current).toMatchObject({ currentPage: 1, totalPages: 1, totalElements: 10, firstItem: 1, lastItem: 10 });
+    expect(result.current.filtered).toHaveLength(10);
   });
 
   it("shows category option failures without hiding prices on mount or search", async () => {

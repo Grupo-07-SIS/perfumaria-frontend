@@ -67,6 +67,27 @@ describe("clientesRepository", () => {
     });
   });
 
+  it("carrega clientes alem dos primeiros 100 preservando os filtros", async () => {
+    const clientes = Array.from({ length: 101 }, (_, index) => ({ ...response, id: index + 1 }));
+    apiClientGetMock.mockResolvedValueOnce({ data: { content: clientes.slice(0, 100), totalPages: 2 } })
+      .mockResolvedValueOnce({ data: { content: clientes.slice(100), totalPages: 2 } });
+    await expect(clientesRepository.listClientes({ busca: "Ana", status: 1 })).resolves.toEqual(clientes);
+    expect(apiClientGetMock).toHaveBeenNthCalledWith(2, "/clientes", { params: { page: 1, size: 100, busca: "Ana", status: 1 } });
+    expect(apiClientGetMock).toHaveBeenCalledTimes(2);
+  });
+
+  it("interrompe a paginacao se o servidor repetir a mesma pagina", async () => {
+    apiClientGetMock.mockResolvedValue({ data: { content: [response], totalPages: 3 } });
+    await expect(clientesRepository.listClientes()).resolves.toEqual([response]);
+    expect(apiClientGetMock).toHaveBeenCalledTimes(2);
+  });
+
+  it("nao apresenta uma lista parcial como completa se uma pagina falhar", async () => {
+    apiClientGetMock.mockResolvedValueOnce({ data: { content: [response], totalPages: 2 } })
+      .mockRejectedValueOnce(axiosError(503));
+    await expect(clientesRepository.listClientes()).rejects.toThrow("PEOPLE_CLIENTS_LIST_FAILED:503");
+  });
+
   it("cria, atualiza e exclui usando exatamente o contrato OpenAPI", async () => {
     apiClientPostMock.mockResolvedValue({ data: response });
     apiClientPutMock.mockResolvedValue({ data: { ...response, nome: "Ana Revisada" } });

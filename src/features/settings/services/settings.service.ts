@@ -4,6 +4,7 @@ import type { AuthSession, AuthenticatedUser } from "../../../core/auth/auth.typ
 import { authService } from "../../../core/services/auth.service";
 import { settingsRepository } from "../repository/settings.repository";
 import type { AccountSessionResponseDto } from "../repository/dto/account-settings.dto";
+import { isStrongPassword, STRONG_PASSWORD_MESSAGE } from "../../../shared/utils/password";
 
 function mapAccountSession(response: AccountSessionResponseDto): AuthSession {
   const role = response.usuario.tipoUsuario.trim().toUpperCase();
@@ -51,7 +52,7 @@ export function validatePasswordChange({
 }: Pick<SettingsFormValues, "senhaAtual" | "novaSenha" | "confirmSenha">) {
   const errors: Record<string, string> = {};
   if (!senhaAtual) errors.senhaAtual = "Informe a senha atual.";
-  if (!novaSenha) errors.novaSenha = "Informe a nova senha.";else if (novaSenha.length < 6) errors.novaSenha = "Mínimo de 6 caracteres.";
+  if (!novaSenha) errors.novaSenha = "Informe a nova senha.";else if (!isStrongPassword(novaSenha)) errors.novaSenha = STRONG_PASSWORD_MESSAGE;
   if (novaSenha !== confirmSenha) errors.confirmSenha = "As senhas não coincidem.";
   return errors;
 }

@@ -19,8 +19,8 @@ export function useRastreioModalForm() {
   };
   const confirmar = (onConfirm: (codigo: string) => void) => {
     const normalizedCode = form.getValues("codigo").trim();
-    if (!normalizedCode) {
-      form.setError("codigo", { type: "required", message: "Informe o código de rastreio para finalizar." });
+    if (normalizedCode.length > 100) {
+      form.setError("codigo", { type: "maxLength", message: "Máximo de 100 caracteres." });
       return;
     }
     onConfirm(normalizedCode);

@@ -1,6 +1,7 @@
 import type { Fornecedor, FornecedorModalFormValues } from "../../models/people.models";
 import { onlyDigits } from "../../../../shared/utils/digits";
 import type { FornecedorRequestDto, FornecedorResponseDto } from "../dto/fornecedor.dto";
+import { EMPTY_ENDERECO } from "../../config/people.config";
 
 export function toFornecedorModel(dto: FornecedorResponseDto): Fornecedor {
   return {
@@ -9,7 +10,7 @@ export function toFornecedorModel(dto: FornecedorResponseDto): Fornecedor {
     cnpj: dto.cnpj,
     telefone: dto.telefone,
     email: dto.email,
-    endereco: dto.endereco,
+    endereco: { ...EMPTY_ENDERECO, ...dto.endereco },
     totalCompras: dto.totalCompras ?? 0,
   };
 }

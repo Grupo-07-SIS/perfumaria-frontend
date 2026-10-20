@@ -75,8 +75,7 @@ Products, Categories and Login:
 Only layers with an existing responsibility are created. No HTTP endpoints,
 DTOs, mappers or persistence contracts were invented for local demo data.
 Dashboard keeps its existing compatibility entry without adding a new route.
-The shared store and Botpress implementation live in `core/store` and
-`core/services`; old `app/context` and `app/services` paths reexport them.
+The shared store lives in `core/store`; the old `app/context` path reexports it.
 
 The boundary tests guard composition-only entries and prevent direct runtime
 imports from repositories or the shared store inside feature components.

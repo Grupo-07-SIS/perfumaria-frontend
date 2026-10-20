@@ -29,6 +29,12 @@ export interface DashboardPeriodData {
   dataFim: string;
 }
 
+export interface DashboardSalesByChannelResponseDto {
+  presencial: number;
+  whatsapp: number;
+  site: number;
+}
+
 export interface DashboardKpisResponseDto {
   vendasPeriodo: { vendas: number; comparacaoPeriodoAnterior: number };
   faturamentoPeriodo: { valor: number; comparacaoAnterior: number };

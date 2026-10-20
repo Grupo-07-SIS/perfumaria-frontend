@@ -7,7 +7,8 @@ export interface ClienteRequestDto {
   endereco: Endereco;
 }
 
-export interface ClienteResponseDto extends ClienteRequestDto {
+export interface ClienteResponseDto extends Omit<ClienteRequestDto, "endereco"> {
+  endereco?: Partial<Endereco> | null;
   id: number;
   status: number;
   totalPedidos: number;
@@ -15,4 +16,5 @@ export interface ClienteResponseDto extends ClienteRequestDto {
 
 export interface ClientePageDto {
   content: ClienteResponseDto[];
+  totalPages?: number;
 }

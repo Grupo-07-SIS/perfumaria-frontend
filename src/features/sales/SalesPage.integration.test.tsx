@@ -2,11 +2,9 @@ import { act, fireEvent, render, screen, waitFor, within } from "@testing-librar
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { apiClient } from "../../core/services/http-client";
-import { triggerBotpressPresencialFlow } from "../../core/services/botpress";
 import { SalesPage } from "./SalesPage";
 
 vi.mock("../../core/services/http-client", () => ({ apiClient: { get: vi.fn(), post: vi.fn() } }));
-vi.mock("../../core/services/botpress", () => ({ triggerBotpressPresencialFlow: vi.fn() }));
 
 const product = { id: 42, nome: "Perfume remoto", precoVenda: 45, estoqueAtual: 4, status: 1 };
 const customer = { id: 81, nome: "Cliente remoto", email: "cliente@example.test", telefone: "11999998888", status: 1 };
@@ -263,7 +261,6 @@ describe("Sales backend integration", () => {
     expect(apiClient.post).toHaveBeenCalledExactlyOnceWith("/vendas", { clienteId: 81, forma: "Pix", tipoVenda: "PRESENCIAL", desconto: 10, tipoDesconto: "PERCENTUAL", itens: [{ produtoId: 42, quantidade: 2 }] });
     expect(screen.getByText("Nenhum item adicionado ainda.")).toBeInTheDocument();
     expect(screen.getByRole("combobox")).toHaveValue("");
-    expect(triggerBotpressPresencialFlow).not.toHaveBeenCalled();
     await user.type(screen.getByPlaceholderText("Buscar produto..."), "Perfume");
     await user.click(screen.getByRole("button", { name: /^Perfume remoto/ }));
     expect(screen.getByText("4 em estoque")).toBeInTheDocument();

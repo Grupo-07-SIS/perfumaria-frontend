@@ -1,6 +1,7 @@
 import type { Cliente, ClienteModalFormValues, Endereco, Fornecedor, FornecedorModalFormValues, Funcionario, FuncionarioModalFormValues, PeopleListParams, StatusFiltro } from "../models/people.models";
 import { onlyDigits } from "../../../shared/utils/digits";
 import axios from "axios";
+import { isStrongPassword, STRONG_PASSWORD_MESSAGE } from "../../../shared/utils/password";
 
 const CNPJ_DIGITS = 14;
 const CEP_DIGITS = 8;
@@ -12,7 +13,6 @@ const SUPPLIER_NAME_MAX_LENGTH = 45;
 const SUPPLIER_EMAIL_MAX_LENGTH = 45;
 const EMPLOYEE_NAME_MAX_LENGTH = 45;
 const EMPLOYEE_EMAIL_MAX_LENGTH = 45;
-const EMPLOYEE_PASSWORD_MAX_LENGTH = 100;
 const ADDRESS_TEXT_MAX_LENGTH = 45;
 
 export function peopleErrorMessage(error: unknown, fallback: string) {
@@ -24,6 +24,9 @@ export function peopleErrorMessage(error: unknown, fallback: string) {
   const responseMessage = (response?.data as { message?: unknown } | undefined)?.message;
   const detail = typeof responseMessage === "string" ? responseMessage : technicalError?.[3];
 
+  if (status === 409 && /^(?:este )?telefone\b.*cadastrad/i.test(detail ?? "")) {
+    return "Este telefone já está cadastrado. Informe outro telefone.";
+  }
   if (status === 409 && (operation.includes("EMPLOYEES") || /e-?mail.*(cadastrad|exist)|email.*(cadastrad|exist)/i.test(detail ?? ""))) {
     return "Este e-mail já está cadastrado. Informe outro e-mail.";
   }
@@ -38,6 +41,24 @@ export function peopleErrorMessage(error: unknown, fallback: string) {
   if (detail && !/exception|error|failed|\b\d{3}\b/i.test(detail)) return detail;
   if (message && !technicalError) return message;
   return fallback;
+}
+
+export function peopleFormErrors(error: unknown, fallback: string, aliases: Record<string, string> = {}): Record<string, string> {
+  const response = axios.isAxiosError(error) ? error.response : undefined;
+  const metadata = error && typeof error === "object" ? error as { status?: number; fields?: unknown } : undefined;
+  const status = response?.status ?? metadata?.status;
+  const fields = response?.data?.fields ?? metadata?.fields;
+  const allowedFields = ["nome", "email", "telefone", "senha", "cnpj", "endereco.cep", "endereco.logradouro", "endereco.numero", "endereco.complemento", "endereco.bairro", "endereco.cidade", "endereco.uf"];
+  if ([400, 409, 422].includes(status ?? 0) && fields && typeof fields === "object") {
+    const errors = Object.fromEntries(Object.entries(fields)
+      .filter(([key, value]) => allowedFields.includes(key) && typeof value === "string")
+      .map(([key, value]) => [aliases[key] ?? key.replace(/^endereco\./, ""), value as string]));
+    if (Object.keys(errors).length) return errors;
+  }
+  const message = peopleErrorMessage(error, fallback);
+  if (message.startsWith("Este e-mail já está cadastrado")) return { email: message };
+  if (message.startsWith("Este telefone já está cadastrado")) return { telefone: message };
+  return { form: message };
 }
 
 function validateOptionalTelefone(telefone: string) {
@@ -70,8 +91,9 @@ export function buildSearchParams(busca: string): PeopleListParams {
   return busca ? { busca } : {};
 }
 
-export function formatEndereco(e: Endereco) {
-  const parts = [e.logradouro, e.numero ? `nº ${e.numero}` : "", e.complemento, e.bairro, e.cidade && e.uf ? `${e.cidade}/${e.uf}` : e.cidade || e.uf, e.cep ? `CEP ${e.cep}` : ""].filter(Boolean);
+export function formatEndereco(endereco?: Partial<Endereco> | null) {
+  if (!endereco) return "—";
+  const parts = [endereco.logradouro, endereco.numero ? `nº ${endereco.numero}` : "", endereco.complemento, endereco.bairro, endereco.cidade && endereco.uf ? `${endereco.cidade}/${endereco.uf}` : endereco.cidade || endereco.uf, endereco.cep ? `CEP ${endereco.cep}` : ""].filter(Boolean);
   return parts.join(", ") || "—";
 }
 export function selectPeople({
@@ -109,7 +131,8 @@ export function validateCliente({
   const telefoneError = telefone.trim() ? validateOptionalTelefone(telefone) : "Obrigatório.";
   if (telefoneError) errors.telefone = telefoneError;
   const trimmedEmail = email?.trim() ?? "";
-  if (trimmedEmail.length > CUSTOMER_EMAIL_MAX_LENGTH) errors.email = `Máximo de ${CUSTOMER_EMAIL_MAX_LENGTH} caracteres.`;
+  if (!trimmedEmail) errors.email = "Informe o e-mail do cliente.";
+  else if (trimmedEmail.length > CUSTOMER_EMAIL_MAX_LENGTH) errors.email = `Máximo de ${CUSTOMER_EMAIL_MAX_LENGTH} caracteres.`;
   else {
     const emailError = validateOptionalEmail(trimmedEmail);
     if (emailError) errors.email = emailError;
@@ -160,8 +183,7 @@ export function validateFuncionario({
   else if (email.trim().length > EMPLOYEE_EMAIL_MAX_LENGTH) errors.email = `Máximo de ${EMPLOYEE_EMAIL_MAX_LENGTH} caracteres.`;
   else if (!EMAIL_PATTERN.test(email.trim())) errors.email = "Informe um e-mail válido.";
   if (isNew && !senha) errors.senha = "Defina uma senha de acesso.";
-  if (senha && senha.length < 6) errors.senha = "Mínimo de 6 caracteres.";
-  else if (senha && senha.length > EMPLOYEE_PASSWORD_MAX_LENGTH) errors.senha = `Máximo de ${EMPLOYEE_PASSWORD_MAX_LENGTH} caracteres.`;
+  if (senha && !isStrongPassword(senha)) errors.senha = STRONG_PASSWORD_MESSAGE;
   if (senha && senha !== confirmSenha) errors.confirmSenha = "As senhas não coincidem.";
   return errors;
 }

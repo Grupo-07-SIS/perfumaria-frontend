@@ -125,18 +125,22 @@ describe("SalesHistory: caracterizacao do historico", () => {
     expect(screen.getByRole("dialog", { name: "Recibo da Venda" })).toHaveTextContent("Cancelado");
   });
 
-  it("exibe rastreio somente para WhatsApp com codigo e usa canal neutro na edicao", async () => {
+  it("permite editar rastreio do WhatsApp e usa canal neutro na edicao", async () => {
     const user = userEvent.setup();
     render(<AppProvider><SalesHistoryPage /></AppProvider>);
     await waitFor(() => expect(saleRow("V-1040")).toBeInTheDocument());
     await user.click(within(saleRow("V-1040")).getByRole("button", { name: "Editar" }));
     const dialog = within(screen.getByRole("dialog", { name: "Editar Venda" }));
 
-    expect(dialog.getByText("Código de rastreio")).toBeInTheDocument();
-    expect(dialog.getByText("BR123456789XX")).toHaveClass("break-all");
+    const trackingInput = dialog.getByLabelText("Código de rastreio (opcional)");
+    expect(trackingInput).toHaveValue("BR123456789XX");
     expect(dialog.getByText("WhatsApp")).toHaveClass("peract-font-color-default", "peract-bg-card");
     expect(dialog.getByText("WhatsApp")).not.toHaveClass("bg-green-100", "text-green-700");
-    expect(dialog.queryByRole("textbox")).not.toBeInTheDocument();
+    await user.clear(trackingInput);
+    await user.type(trackingInput, " NOVO123456789 ");
+    await user.click(dialog.getByRole("button", { name: "Salvar alterações" }));
+    await waitFor(() => expect(updateSaleMock).toHaveBeenCalledWith(expect.objectContaining({ id: "V-1040", codigoRastreio: "NOVO123456789" })));
+    expect(screen.queryByRole("dialog", { name: "Editar Venda" })).not.toBeInTheDocument();
   });
 
   it("preserva o azul do Site na lista do historico", async () => {
@@ -146,13 +150,50 @@ describe("SalesHistory: caracterizacao do historico", () => {
     expect(within(saleRow("V-1040")).getByText("Site")).toHaveClass("bg-blue-100", "text-blue-600");
   });
 
-  it("omite rastreio de WhatsApp quando a venda nao tem codigo", async () => {
+  it("permite adicionar rastreio quando o pedido foi finalizado sem codigo", async () => {
     listSalesMock.mockResolvedValue([{ ...sales[2], codigoRastreio: undefined }]);
     const user = userEvent.setup();
     render(<AppProvider><SalesHistoryPage /></AppProvider>);
     await waitFor(() => expect(saleRow("V-1040")).toBeInTheDocument());
     await user.click(within(saleRow("V-1040")).getByRole("button", { name: "Editar" }));
-    expect(within(screen.getByRole("dialog", { name: "Editar Venda" })).queryByText("Código de rastreio")).not.toBeInTheDocument();
+    const dialog = within(screen.getByRole("dialog", { name: "Editar Venda" }));
+    const trackingInput = dialog.getByLabelText("Código de rastreio (opcional)");
+    expect(trackingInput).toHaveValue("");
+    await user.type(trackingInput, "BR123456789BR");
+    await user.click(dialog.getByRole("button", { name: "Salvar alterações" }));
+    await waitFor(() => expect(updateSaleMock).toHaveBeenCalledWith(expect.objectContaining({ codigoRastreio: "BR123456789BR", enviado: true })));
+  });
+
+  it("permite remover o rastreio e desabilita o campo fora do status finalizado", async () => {
+    const user = userEvent.setup();
+    render(<AppProvider><SalesHistoryPage /></AppProvider>);
+    await waitFor(() => expect(saleRow("V-1040")).toBeInTheDocument());
+    await user.click(within(saleRow("V-1040")).getByRole("button", { name: "Editar" }));
+    const dialog = within(screen.getByRole("dialog", { name: "Editar Venda" }));
+    const trackingInput = dialog.getByLabelText("Código de rastreio (opcional)");
+    await user.click(dialog.getByRole("button", { name: "Pendente", exact: true }));
+    expect(trackingInput).toBeDisabled();
+    await user.click(dialog.getByRole("button", { name: "Finalizado", exact: true }));
+    await user.clear(trackingInput);
+    await user.click(dialog.getByRole("button", { name: "Salvar alterações" }));
+    await waitFor(() => expect(updateSaleMock).toHaveBeenCalledWith(expect.objectContaining({ codigoRastreio: "", enviado: true })));
+  });
+
+  it("preserva o rastreio digitado quando a gravacao falha e permite repetir", async () => {
+    updateSaleMock.mockRejectedValueOnce(new Error("offline"));
+    const user = userEvent.setup();
+    render(<AppProvider><SalesHistoryPage /></AppProvider>);
+    await waitFor(() => expect(saleRow("V-1040")).toBeInTheDocument());
+    await user.click(within(saleRow("V-1040")).getByRole("button", { name: "Editar" }));
+    const dialog = within(screen.getByRole("dialog", { name: "Editar Venda" }));
+    const trackingInput = dialog.getByLabelText("Código de rastreio (opcional)");
+    await user.clear(trackingInput);
+    await user.type(trackingInput, "NOVO123456789");
+    await user.click(dialog.getByRole("button", { name: "Salvar alterações" }));
+    expect(await dialog.findByRole("alert")).toHaveTextContent("Não foi possível atualizar a venda.");
+    expect(trackingInput).toHaveValue("NOVO123456789");
+    await user.click(dialog.getByRole("button", { name: "Salvar alterações" }));
+    await waitFor(() => expect(screen.queryByRole("dialog", { name: "Editar Venda" })).not.toBeInTheDocument());
   });
 
   it("avisa sobre estoque insuficiente ao reativar e mantem a venda cancelada", async () => {

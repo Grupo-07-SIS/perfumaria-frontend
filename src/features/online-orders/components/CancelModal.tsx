@@ -5,15 +5,18 @@ import { PeractButtonPrimitive } from "../../../shared/components/peract-button"
 export function CancelModal({
   venda,
   error,
+  isSaving = false,
   onClose,
   onConfirm
 }: {
   venda: Venda;
   error?: string;
+  isSaving?: boolean;
   onClose: () => void;
   onConfirm: () => void;
 }) {
-  return <PeractModal className="peract-bg-card peract-radius-lg shadow-2xl max-w-sm" onClose={onClose}>
+    return <PeractModal className="peract-bg-card peract-radius-lg shadow-2xl max-w-sm" onClose={() => { if (!isSaving) onClose(); }}>
+      <fieldset disabled={isSaving} className="contents" aria-busy={isSaving}>
         <div className="p-4 border-b peract-border-color flex items-center gap-2">
           <XCircle size={18} className="text-red-500 shrink-0" />
           <PeractModalTitle className="peract-font-color-default">Cancelar Pedido</PeractModalTitle>
@@ -44,8 +47,9 @@ export function CancelModal({
             Fechar
           </PeractButtonPrimitive>
           <PeractButtonPrimitive onClick={onConfirm} className="flex-1 px-4 py-2 rounded-lg text-sm text-white bg-red-600 hover:bg-red-700 flex items-center justify-center gap-1.5" variant="plain" size="plain">
-            <XCircle size={14} /> Cancelar pedido
+            <XCircle size={14} /> {isSaving ? "Cancelando..." : "Cancelar pedido"}
           </PeractButtonPrimitive>
         </div>
+        </fieldset>
       </PeractModal>;
 }

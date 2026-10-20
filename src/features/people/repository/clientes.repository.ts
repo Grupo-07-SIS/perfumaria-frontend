@@ -8,9 +8,11 @@ async function requestData<T>(request: Promise<AxiosResponse<T>>, errorCode: str
     return (await request).data;
   } catch (error) {
     if (axios.isAxiosError(error)) {
-      const data = error.response?.data as { message?: unknown } | undefined;
+      const data = error.response?.data as { message?: unknown; fields?: unknown } | undefined;
       const detail = typeof data?.message === "string" ? `|${data.message}` : "";
-      throw new Error(`${errorCode}:${error.response?.status ?? "unknown"}${detail}`);
+      throw Object.assign(new Error(`${errorCode}:${error.response?.status ?? "unknown"}${detail}`), {
+        status: error.response?.status, fields: data?.fields,
+      });
     }
     throw error;
   }
@@ -18,10 +20,20 @@ async function requestData<T>(request: Promise<AxiosResponse<T>>, errorCode: str
 
 export const clientesRepository = {
   async listClientes(params: PeopleListParams = {}): Promise<ClienteResponseDto[]> {
-    const page = await requestData(apiClient.get<ClientePageDto>("/clientes", {
-      params: { page: 0, size: 100, ...params },
-    }), "PEOPLE_CLIENTS_LIST_FAILED");
-    return page.content;
+    const clientes = new Map<number, ClienteResponseDto>();
+    const size = 100;
+    let page = 0;
+    while (true) {
+      const response = await requestData(apiClient.get<ClientePageDto>("/clientes", {
+        params: { ...params, page, size },
+      }), "PEOPLE_CLIENTS_LIST_FAILED");
+      const previousCount = clientes.size;
+      response.content.forEach(cliente => clientes.set(cliente.id, cliente));
+      if (clientes.size === previousCount || (response.totalPages !== undefined
+        ? page + 1 >= response.totalPages : response.content.length < size)) break;
+      page += 1;
+    }
+    return [...clientes.values()];
   },
   createCliente(payload: ClienteRequestDto): Promise<ClienteResponseDto> {
     return requestData(apiClient.post<ClienteResponseDto>("/clientes", payload), "PEOPLE_CLIENTS_CREATE_FAILED");

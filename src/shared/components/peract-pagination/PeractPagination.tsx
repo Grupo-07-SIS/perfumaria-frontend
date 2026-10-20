@@ -4,7 +4,7 @@ import {
   PeractPaginationItem as PaginationItem,
 } from "./PeractPaginationPrimitives";
 import { PeractButton } from "../peract-button";
-import type { PeractPaginationProps } from "./PeractPagination.types";
+import type { PeractPaginationFooterProps, PeractPaginationProps } from "./PeractPagination.types";
 
 function createPages(currentPage: number, totalPages: number) {
   const visibleCount = Math.min(4, totalPages);
@@ -25,7 +25,7 @@ export function PeractPagination({ currentPage, onPageChange, targetSelection, t
 
   return (
     <Pagination className="justify-end">
-      <PaginationContent>
+      <PaginationContent className="flex-wrap justify-end">
         <PaginationItem>
           <PeractButton
             action={() => handlePageChange(Math.max(1, currentPage - 1))}
@@ -64,4 +64,11 @@ export function PeractPagination({ currentPage, onPageChange, targetSelection, t
       </PaginationContent>
     </Pagination>
   );
+}
+
+export function PeractPaginationFooter({ firstItem, lastItem, totalItems, children, className, ...pagination }: PeractPaginationFooterProps) {
+  return <div className={`flex min-w-0 flex-col gap-3 sm:flex-row sm:items-center sm:justify-between ${className ?? ""}`}>
+    <p className="text-xs peract-font-color-muted">Exibindo {firstItem} a {lastItem} de {totalItems} {children}</p>
+    <PeractPagination {...pagination} />
+  </div>;
 }

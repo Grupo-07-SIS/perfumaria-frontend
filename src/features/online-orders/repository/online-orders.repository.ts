@@ -51,5 +51,3 @@ export const onlineOrdersRepository = {
     return toVenda(data);
   },
 };
-
-export { triggerBotpressOnlineFlow } from "../../../core/services/botpress";

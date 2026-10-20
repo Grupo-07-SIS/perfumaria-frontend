@@ -7,9 +7,11 @@ async function requestData<T>(request: Promise<AxiosResponse<T>>, errorCode: str
     return (await request).data;
   } catch (error) {
     if (axios.isAxiosError(error)) {
-      const data = error.response?.data as { message?: unknown } | undefined;
+      const data = error.response?.data as { message?: unknown; fields?: unknown } | undefined;
       const detail = typeof data?.message === "string" ? `|${data.message}` : "";
-      throw new Error(`${errorCode}:${error.response?.status ?? "unknown"}${detail}`);
+      throw Object.assign(new Error(`${errorCode}:${error.response?.status ?? "unknown"}${detail}`), {
+        status: error.response?.status, fields: data?.fields,
+      });
     }
     throw error;
   }
