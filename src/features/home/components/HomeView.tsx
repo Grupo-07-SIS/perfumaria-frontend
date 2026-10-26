@@ -244,11 +244,13 @@ export function HomeView({
         </PeractCard>
 
         {/* Distribuição por Categoria */}
-        <PeractCard className="peract-bg-card rounded-xl border peract-border-color p-4 shadow-sm">
+        <PeractCard className="peract-bg-card rounded-xl border peract-border-color p-4 shadow-sm flex flex-col">
           <h2 className="text-sm mb-4 peract-font-color-default">Distribuição por Categoria — {customRangeActive ? periodLabel : PERIOD_LABELS[period]}</h2>
-          {categoriaData.length === 0 ? <EmptyChart icon={<Package size={22} />} message={failedSections.includes("categoryData") ? "Distribuição por categoria indisponível" : "Sem vendas por categoria no período"} /> : <ResponsiveContainer width="100%" height={200}>
-              <PieChart>
-                <Pie data={categoriaData} dataKey="receita" nameKey="categoria" cx="50%" cy="50%" innerRadius={50} outerRadius={80} paddingAngle={3}>
+          {categoriaData.length === 0 ? <EmptyChart icon={<Package size={22} />} message={failedSections.includes("categoryData") ? "Distribuição por categoria indisponível" : "Sem vendas por categoria no período"} /> : <div className="flex flex-1 min-h-[360px] items-center justify-center">
+            <div className="h-[320px] w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                <Pie data={categoriaData} dataKey="receita" nameKey="categoria" cx="50%" cy="45%" innerRadius="58%" outerRadius="78%" paddingAngle={3}>
                   {categoriaData.map((entry, i) => <Cell key={`cat-${entry.categoria}`} fill={CAT_COLORS[i % CAT_COLORS.length]} />)}
                 </Pie>
                 <Tooltip contentStyle={{
@@ -262,11 +264,13 @@ export function HomeView({
               color: "#ffffff"
             }} formatter={v => [fmtBRL(Number(v)), "Receita"]} />
                 <Legend iconType="circle" iconSize={8} formatter={value => <span style={{
-              fontSize: 11,
+              fontSize: 13,
               color: "#6b6b68"
             }}>{value}</span>} />
-              </PieChart>
-            </ResponsiveContainer>}
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          </div>}
         </PeractCard>
       </div>}
 
