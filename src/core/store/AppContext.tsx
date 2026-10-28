@@ -262,10 +262,10 @@ const INITIAL_PRODUCTS: Product[] = [
 ];
 
 const INITIAL_CATEGORIES: Category[] = [
-  { id: 1, nome: "Perfumes" },
-  { id: 2, nome: "Body Splash" },
-  { id: 3, nome: "Colônias" },
-  { id: 4, nome: "Kits" },
+  { id: 1, nome: "Amadeirados" },
+  { id: 2, nome: "Ambarados" },
+  { id: 3, nome: "Cítricos" },
+  { id: 4, nome: "Florais" },
 ];
 
 const INITIAL_CLIENTES: Cliente[] = [

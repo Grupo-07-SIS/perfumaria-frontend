@@ -12,6 +12,20 @@ export interface BodySplashProductOption {
   id: number;
   nome: string;
 }
+
+export interface BodySplashCategoryOption {
+  id: number;
+  nome: string;
+}
+
+export interface BodySplashNewProductForm {
+  categoriaId: string;
+  estoqueAtual: string;
+  marca: string;
+  nome: string;
+  precoVenda: string;
+  volume: string;
+}
 export interface ModalProps {
   onClose: () => void;
   onSave: (values: BodySplashModalFormValues) => Promise<void>;

@@ -19,6 +19,7 @@ interface FetchProductsParams {
   nome?: string;
   ordenacao?: string;
   page?: number;
+  tipoProduto?: string;
 }
 
 export async function fetchProducts(params: FetchProductsParams = {}) {

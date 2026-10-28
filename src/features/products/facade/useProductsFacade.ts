@@ -92,6 +92,7 @@ export function useProductsFacade() {
 
     try {
       const productsResult = await fetchProducts({
+        tipoProduto: "PERFUME",
         categoriaId: selectedCategory === "todos" ? undefined : Number(selectedCategory),
         ...getStockFilters(statusFilter, criticalThreshold),
         nome: submittedSearch,

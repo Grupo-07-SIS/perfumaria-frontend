@@ -1,6 +1,14 @@
 import { apiClient } from "../../../core/services/http-client";
 import { useApp } from "../../../core/store/AppContext";
+import type { Venda } from "../../../core/store/AppContext";
 import { formatPaymentLabel } from "../../../shared/utils/payment";
+import type { SalesHistoryQuery, SalesHistorySummary } from "../models/sales-history.models";
+
+export interface SalesHistoryPage {
+  items: Venda[];
+  totalItems: number;
+  totalPages: number;
+}
 
 export interface SaleResponseDto {
   canalVendaOnline?: "WHATSAPP" | "SITE" | null;
@@ -30,13 +38,37 @@ export interface SaleItemResponseDto {
 
 interface SalesPageDto {
   content: SaleResponseDto[];
+  totalElements?: number;
   totalPages?: number;
 }
 
 type SalesListResponse = SaleResponseDto[] | SalesPageDto;
 
+interface SalesSummaryDto {
+  vendasFinalizadas?: number | null;
+  vendasCanceladas?: number | null;
+  faturamentoTotal?: number | null;
+}
+
 function normalizedPayment(value: string) {
   return value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase().replace(/[^A-Z0-9]+/g, "_").replace(/^_|_$/g, "");
+}
+
+function toPaymentCode(label: string) {
+  return normalizedPayment(label)
+    .replace("CARTAO_DE_CREDITO", "CARTAO_CREDITO")
+    .replace("CARTAO_DE_DEBITO", "CARTAO_DEBITO");
+}
+
+function toListParams({ page, size, search, pagamento, tipo, status }: SalesHistoryQuery) {
+  const params: Record<string, string | number | boolean> = { page: Math.max(0, page - 1), size, excluirPendentes: true };
+  const busca = search.trim();
+  if (busca) params.busca = busca;
+  if (pagamento !== "todos") params.formaPagamento = toPaymentCode(pagamento);
+  if (tipo !== "todos") params.tipoVenda = tipo.toUpperCase();
+  if (status === "finalizado") params.vendaFinalizada = true;
+  if (status === "cancelado") params.vendaCancelada = true;
+  return params;
 }
 
 function formatSaleDate(dataHoraVenda: string) {
@@ -85,24 +117,29 @@ function getNumericSaleId(id: string) {
 }
 
 export const salesHistoryRepository = {
-  async listSales() {
-    const sales = new Map<number, SaleResponseDto>();
-    let page = 0;
-    let hasMore = true;
-    const size = 100;
-
-    while (hasMore) {
-      const { data } = await apiClient.get<SalesListResponse>("/vendas", { params: { page, size } });
-      const content = Array.isArray(data) ? data : data.content;
-      const previousCount = sales.size;
-      content.forEach((sale) => sales.set(sale.id, sale));
-      hasMore = Array.isArray(data)
-        ? content.length === size && sales.size > previousCount
-        : page + 1 < (data.totalPages ?? 1);
-      page += 1;
+  async listSales(query: SalesHistoryQuery): Promise<SalesHistoryPage> {
+    const { data } = await apiClient.get<SalesListResponse>("/vendas", { params: toListParams(query) });
+    if (Array.isArray(data)) {
+      return { items: data.map(toVenda), totalItems: data.length, totalPages: 1 };
     }
+    const totalItems = data.totalElements ?? data.content.length;
+    return {
+      items: data.content.map(toVenda),
+      totalItems,
+      totalPages: Math.max(1, data.totalPages ?? Math.ceil(totalItems / query.size)),
+    };
+  },
 
-    return [...sales.values()].map(toVenda);
+  async getSummary(): Promise<SalesHistorySummary> {
+    const { data } = await apiClient.get<SalesSummaryDto>("/vendas/resumo");
+    const finalizadas = data.vendasFinalizadas ?? 0;
+    const canceladas = data.vendasCanceladas ?? 0;
+    return {
+      totalVendas: finalizadas + canceladas,
+      finalizadas,
+      canceladas,
+      faturamento: data.faturamentoTotal ?? 0,
+    };
   },
 
   async getSaleDetails(id: string) {
@@ -116,9 +153,7 @@ export const salesHistoryRepository = {
       : venda.tipoVenda === "presencial" || venda.enviado
         ? "FINALIZADA"
         : "PENDENTE";
-    const tipoPagamento = normalizedPayment(venda.pagamento)
-      .replace("CARTAO_DE_CREDITO", "CARTAO_CREDITO")
-      .replace("CARTAO_DE_DEBITO", "CARTAO_DEBITO");
+    const tipoPagamento = toPaymentCode(venda.pagamento);
     const canHaveTracking = venda.tipoVenda === "online" && venda.canalOnline === "whatsapp";
     const trackingCode = venda.codigoRastreio?.trim();
     const clearWhatsappTracking = canHaveTracking && (status !== "FINALIZADA" || trackingCode === "");

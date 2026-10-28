@@ -1,4 +1,4 @@
-import type { BodySplashModalFormValues, BodySplashItem } from "../models/body-splash.models";
+import type { BodySplashModalFormValues, BodySplashItem, BodySplashNewProductForm, BodySplashCategoryOption } from "../models/body-splash.models";
 import { VOLUMES } from "../config/body-splash.config";
 import { bodySplashRepository } from "../repository/body-splash.repository";
 import { toBodySplashModel, toBodySplashProductOption, toBodySplashRequestDto } from "../repository/mapper/body-splash.mapper";
@@ -46,6 +46,26 @@ export async function fetchBodySplashCatalog(params: { page?: number; size?: num
       ? "Os preços foram carregados, mas não foi possível carregar os produtos Body Splash para vínculo."
       : "",
   };
+}
+
+export async function fetchBodySplashCategories(): Promise<BodySplashCategoryOption[]> {
+  return (await bodySplashRepository.listCategories())
+    .sort((left, right) => left.nome.localeCompare(right.nome, "pt-BR"));
+}
+
+export async function createBodySplashStockItem(values: BodySplashNewProductForm) {
+  const precoVenda = Number(values.precoVenda.replace(",", "."));
+  const volume = values.volume.trim() ? Number(values.volume.replace(",", ".")) : undefined;
+  return bodySplashRepository.createProduct({
+    estoqueAtual: Number(values.estoqueAtual),
+    fkCategoria: Number(values.categoriaId),
+    marca: values.marca.trim() || undefined,
+    medida: volume === undefined ? undefined : "ML",
+    nome: values.nome.trim(),
+    precoVenda,
+    tipoProduto: "BODY_SPLASH",
+    volume,
+  });
 }
 
 export async function createBodySplash(values: BodySplashModalFormValues) {

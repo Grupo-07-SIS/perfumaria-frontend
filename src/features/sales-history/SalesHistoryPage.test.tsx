@@ -1,12 +1,15 @@
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { AppProvider } from "../../core/store/AppContext";
+import { AppProvider, type Venda } from "../../core/store/AppContext";
 import { sessionService } from "../../core/auth/session.service";
 import { SalesHistoryPage } from "./SalesHistoryPage";
+import { getVendaStatus } from "./services/sales-history.service";
+import type { SalesHistoryQuery } from "./models/sales-history.models";
 
-const { getSaleDetailsMock, listSalesMock, updateSaleMock } = vi.hoisted(() => ({
+const { getSaleDetailsMock, getSummaryMock, listSalesMock, updateSaleMock } = vi.hoisted(() => ({
   getSaleDetailsMock: vi.fn(),
+  getSummaryMock: vi.fn(),
   listSalesMock: vi.fn(),
   updateSaleMock: vi.fn(),
 }));
@@ -22,6 +25,7 @@ vi.mock("./repository/sales-history.repository", async (importOriginal) => {
     salesHistoryRepository: {
       ...actual.salesHistoryRepository,
       getSaleDetails: getSaleDetailsMock,
+      getSummary: getSummaryMock,
       listSales: listSalesMock,
       updateSale: updateSaleMock,
     },
@@ -36,6 +40,35 @@ const sales = [
   { id: "V-1038", data: "22/03/2026 15:00", cliente: "Juliana Santos", pagamento: "Cartão de débito", total: 345, tipoVenda: "presencial" as const, itens: [] },
 ];
 
+// In-memory stand-in for the paginated /vendas and /vendas/resumo endpoints.
+let serverSales: Venda[] = [];
+
+function fakeListSales({ page, size, search, pagamento, tipo, status }: SalesHistoryQuery) {
+  const term = search.trim().toLowerCase();
+  const filtered = serverSales.filter((sale) => {
+    const saleStatus = getVendaStatus(sale);
+    if (saleStatus === "Pendente") return false;
+    if (status === "finalizado" && saleStatus !== "Finalizado") return false;
+    if (status === "cancelado" && saleStatus !== "Cancelado") return false;
+    if (pagamento !== "todos" && sale.pagamento !== pagamento) return false;
+    if (tipo !== "todos" && sale.tipoVenda !== tipo) return false;
+    return !term || sale.cliente.toLowerCase().includes(term) || sale.id.toLowerCase() === term;
+  });
+  const start = (page - 1) * size;
+  return { items: filtered.slice(start, start + size), totalItems: filtered.length, totalPages: Math.max(1, Math.ceil(filtered.length / size)) };
+}
+
+function fakeSummary() {
+  const finalizadas = serverSales.filter((sale) => getVendaStatus(sale) === "Finalizado");
+  const canceladas = serverSales.filter((sale) => getVendaStatus(sale) === "Cancelado");
+  return {
+    totalVendas: finalizadas.length + canceladas.length,
+    finalizadas: finalizadas.length,
+    canceladas: canceladas.length,
+    faturamento: finalizadas.reduce((acc, sale) => acc + sale.total, 0),
+  };
+}
+
 function saleRow(id: string) {
   return within(screen.getByRole("table")).getByRole("row", { name: new RegExp(id) });
 }
@@ -43,13 +76,18 @@ function saleRow(id: string) {
 describe("SalesHistory: caracterizacao do historico", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    listSalesMock.mockResolvedValue(sales);
+    serverSales = [...sales];
+    listSalesMock.mockImplementation(async (query: SalesHistoryQuery) => fakeListSales(query));
+    getSummaryMock.mockImplementation(async () => fakeSummary());
     getSaleDetailsMock.mockImplementation(async (id: string) => ({
       ...sales.find((sale) => sale.id === id),
       ...(updateSaleMock.mock.calls.length > 0 && id === "V-1041" ? { cancelada: true, pagamento: "Pix" } : {}),
       itens: [{ nome: "Decant Creed Aventus 3ml", categoria: "Perfume", volume: "3ml", quantidade: 3, valorUnitario: 28, tipoItem: "DECANT" as const }],
     }));
-    updateSaleMock.mockImplementation(async (sale: (typeof sales)[number]) => sale);
+    updateSaleMock.mockImplementation(async (sale: Venda) => {
+      serverSales = serverSales.map((current) => current.id === sale.id ? { ...current, ...sale } : current);
+      return sale;
+    });
     vi.mocked(sessionService.restore).mockReturnValue({
       accessToken: "test-only", expiresAt: "2099-01-01T00:00:00Z",
       user: { id: "qa-admin", nome: "Admin teste", email: "admin@example.test", cargo: "Administrador" },
@@ -61,6 +99,9 @@ describe("SalesHistory: caracterizacao do historico", () => {
     render(<AppProvider><SalesHistoryPage /></AppProvider>);
     await waitFor(() => expect(saleRow("V-1040")).toBeInTheDocument());
     expect(listSalesMock).toHaveBeenCalledOnce();
+    expect(listSalesMock).toHaveBeenCalledWith({ page: 1, size: 10, search: "", pagamento: "todos", tipo: "todos", status: "todos" });
+    expect(getSummaryMock).toHaveBeenCalledOnce();
+    expect(screen.getByText("Total de vendas").parentElement).toHaveTextContent("4");
     expect(screen.queryByRole("cell", { name: "V-1042" })).not.toBeInTheDocument();
     expect(saleRow("V-1040")).toHaveTextContent("Finalizado");
     expect(within(saleRow("V-1040")).getByText("WhatsApp")).toHaveClass("bg-green-100", "text-green-700");
@@ -73,12 +114,13 @@ describe("SalesHistory: caracterizacao do historico", () => {
     await user.click(within(screen.getByRole("dialog", { name: "Recibo da Venda" })).getAllByRole("button", { name: "Fechar" }).at(-1)!);
     await user.click(screen.getByRole("button", { name: "Presencial", exact: true }));
     await user.selectOptions(screen.getByRole("combobox"), "Dinheiro");
+    await waitFor(() => expect(screen.queryByRole("cell", { name: "V-1041" })).not.toBeInTheDocument());
     expect(saleRow("V-1039")).toHaveTextContent("Pedro Alves");
-    expect(screen.queryByRole("cell", { name: "V-1041" })).not.toBeInTheDocument();
     await user.type(screen.getByPlaceholderText("Buscar venda ou cliente..."), "inexistente");
-    expect(within(screen.getByRole("table")).getByText("Nenhuma venda encontrada.")).toBeInTheDocument();
+    await waitFor(() => expect(within(screen.getByRole("table")).getByText("Nenhuma venda encontrada.")).toBeInTheDocument());
+    expect(listSalesMock).toHaveBeenLastCalledWith({ page: 1, size: 10, search: "inexistente", pagamento: "Dinheiro", tipo: "presencial", status: "todos" });
     await user.clear(screen.getByPlaceholderText("Buscar venda ou cliente..."));
-    expect(saleRow("V-1039")).toBeInTheDocument();
+    await waitFor(() => expect(saleRow("V-1039")).toBeInTheDocument());
   });
 
   it("funcionario consulta vendas sem editar nem visualizar faturamento", async () => {
@@ -95,6 +137,7 @@ describe("SalesHistory: caracterizacao do historico", () => {
     const user = userEvent.setup();
     render(<AppProvider><SalesHistoryPage /></AppProvider>);
     await waitFor(() => expect(saleRow("V-1041")).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText("Faturamento").parentElement).toHaveTextContent("R$ 801"));
     const initialRevenue = screen.getByText("Faturamento").parentElement?.textContent;
     await user.click(within(saleRow("V-1041")).getByRole("button", { name: "Editar" }));
     let dialog = within(screen.getByRole("dialog", { name: "Editar Venda" }));
@@ -114,10 +157,10 @@ describe("SalesHistory: caracterizacao do historico", () => {
     expect(saleRow("V-1041")).toHaveTextContent("Cancelado");
     expect(saleRow("V-1041")).toHaveTextContent("Pix");
     expect(saleRow("V-1041")).toHaveTextContent("R$ 156,00");
-    expect(screen.getByText("Faturamento").parentElement?.textContent).not.toBe(initialRevenue);
+    await waitFor(() => expect(screen.getByText("Faturamento").parentElement?.textContent).not.toBe(initialRevenue));
     expect(screen.getByText("Faturamento").parentElement).toHaveTextContent("R$ 645");
     await user.click(screen.getByRole("button", { name: "Cancelado", exact: true }));
-    expect(screen.queryByRole("cell", { name: "V-1040" })).not.toBeInTheDocument();
+    await waitFor(() => expect(screen.queryByRole("cell", { name: "V-1040" })).not.toBeInTheDocument());
     await user.click(within(saleRow("V-1041")).getByRole("button", { name: "Ver recibo" }));
     await waitFor(() => expect(getSaleDetailsMock).toHaveBeenCalledWith("V-1041"));
     expect(screen.getByRole("dialog", { name: "Recibo da Venda" })).toHaveTextContent("Carlos Mendes");
@@ -144,14 +187,14 @@ describe("SalesHistory: caracterizacao do historico", () => {
   });
 
   it("preserva o azul do Site na lista do historico", async () => {
-    listSalesMock.mockResolvedValue([{ ...sales[2], canalOnline: "site" }]);
+    serverSales = [{ ...sales[2], canalOnline: "site" }];
     render(<AppProvider><SalesHistoryPage /></AppProvider>);
     await waitFor(() => expect(saleRow("V-1040")).toBeInTheDocument());
     expect(within(saleRow("V-1040")).getByText("Site")).toHaveClass("bg-blue-100", "text-blue-600");
   });
 
   it("permite adicionar rastreio quando o pedido foi finalizado sem codigo", async () => {
-    listSalesMock.mockResolvedValue([{ ...sales[2], codigoRastreio: undefined }]);
+    serverSales = [{ ...sales[2], codigoRastreio: undefined }];
     const user = userEvent.setup();
     render(<AppProvider><SalesHistoryPage /></AppProvider>);
     await waitFor(() => expect(saleRow("V-1040")).toBeInTheDocument());
@@ -197,7 +240,7 @@ describe("SalesHistory: caracterizacao do historico", () => {
   });
 
   it("avisa sobre estoque insuficiente ao reativar e mantem a venda cancelada", async () => {
-    listSalesMock.mockResolvedValue([{ ...sales[1], cancelada: true }]);
+    serverSales = [{ ...sales[1], cancelada: true }];
     updateSaleMock.mockRejectedValueOnce({ isAxiosError: true, response: { status: 400, data: { message: "Estoque insuficiente para o produto 42" } } });
     const user = userEvent.setup();
     render(<AppProvider><SalesHistoryPage /></AppProvider>);
@@ -217,7 +260,7 @@ describe("SalesHistory: caracterizacao do historico", () => {
   });
 
   it("permite repetir a reativacao depois de uma falha de estoque", async () => {
-    listSalesMock.mockResolvedValue([{ ...sales[1], cancelada: true }]);
+    serverSales = [{ ...sales[1], cancelada: true }];
     updateSaleMock.mockRejectedValueOnce({ isAxiosError: true, response: { status: 400, data: { message: "Estoque insuficiente para o produto 42" } } });
     const user = userEvent.setup();
     render(<AppProvider><SalesHistoryPage /></AppProvider>);
@@ -244,26 +287,49 @@ describe("SalesHistory: caracterizacao do historico", () => {
     await waitFor(() => expect(screen.queryByRole("cell", { name: "V-1040" })).not.toBeInTheDocument());
   });
 
-  it("paginates the filtered sales and reports the visible range", async () => {
+  it("requests only the selected page from the server and reports the visible range", async () => {
     const user = userEvent.setup();
-    const pagedSales = Array.from({ length: 25 }, (_, index) => ({
+    serverSales = Array.from({ length: 25 }, (_, index) => ({
       ...sales[1],
       id: `V-${2000 + index}`,
       cliente: `Cliente ${index + 1}`,
       itens: [],
     }));
-    listSalesMock.mockResolvedValue(pagedSales);
 
     render(<AppProvider><SalesHistoryPage /></AppProvider>);
     await waitFor(() => expect(saleRow("V-2000")).toBeInTheDocument());
     expect(screen.getAllByText("Exibindo 1 a 10 de 25 venda(s)")).toHaveLength(2);
+    expect(within(screen.getByRole("table")).getAllByRole("row")).toHaveLength(11);
     const secondPageButtons = screen.getAllByRole("button", { name: "2", exact: true });
     expect(secondPageButtons).toHaveLength(2);
 
     await user.click(secondPageButtons[0]);
 
-    expect(saleRow("V-2010")).toBeInTheDocument();
+    await waitFor(() => expect(saleRow("V-2010")).toBeInTheDocument());
+    expect(listSalesMock).toHaveBeenLastCalledWith(expect.objectContaining({ page: 2, size: 10 }));
     expect(screen.queryByRole("cell", { name: "V-2000" })).not.toBeInTheDocument();
     expect(screen.getAllByText("Exibindo 11 a 20 de 25 venda(s)")).toHaveLength(2);
+  });
+
+  it("volta para a primeira pagina ao buscar sem repetir a requisicao", async () => {
+    const user = userEvent.setup();
+    serverSales = Array.from({ length: 25 }, (_, index) => ({
+      ...sales[1],
+      id: `V-${2000 + index}`,
+      cliente: `Cliente ${index + 1}`,
+      itens: [],
+    }));
+
+    render(<AppProvider><SalesHistoryPage /></AppProvider>);
+    await waitFor(() => expect(saleRow("V-2000")).toBeInTheDocument());
+    await user.click(screen.getAllByRole("button", { name: "3", exact: true })[0]);
+    await waitFor(() => expect(saleRow("V-2020")).toBeInTheDocument());
+    const callsBeforeSearch = listSalesMock.mock.calls.length;
+
+    await user.type(screen.getByPlaceholderText("Buscar venda ou cliente..."), "Cliente 2");
+
+    await waitFor(() => expect(listSalesMock).toHaveBeenLastCalledWith(expect.objectContaining({ page: 1, search: "Cliente 2" })));
+    expect(listSalesMock.mock.calls.length).toBe(callsBeforeSearch + 1);
+    await waitFor(() => expect(saleRow("V-2001")).toBeInTheDocument());
   });
 });

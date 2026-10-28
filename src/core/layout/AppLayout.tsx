@@ -2,7 +2,7 @@ import { PeractButtonPrimitive } from "../../shared/components/peract-button";
 import { useState } from "react";
 import { Navigate, Outlet, NavLink, useLocation } from "react-router";
 import logoImg from "figma:asset/19603bc35fe7f283ff1a83c590f928c9d0bfe9cf.png";
-import { LayoutDashboard, Package, ChevronDown, ChevronRight, Menu, X, ChevronLeft, Droplets, ShoppingBag, Users, Settings, LogOut, ShieldCheck, UserCheck, Sparkles } from "lucide-react";
+import { LayoutDashboard, Package, ChevronDown, ChevronRight, Menu, X, ChevronLeft, Droplets, ShoppingBag, Users, Settings, LogOut, ShieldCheck, UserCheck, Sparkles, FlaskConical, Tags, ClipboardPlus, History, ShoppingCart } from "lucide-react";
 import { useApp } from "../store/AppContext";
 import { PeractButton } from "../../shared/components/peract-button";
 import { PeractTag } from "../../shared/components/peract-tag";
@@ -22,6 +22,7 @@ interface NavItem {
   children?: {
     label: string;
     path: string;
+    icon?: React.ReactNode;
     adminOnly?: boolean;
   }[];
 }
@@ -32,38 +33,44 @@ const ALL_NAV_ITEMS: NavItem[] = [{
 }, {
   label: "Estoque",
   icon: <Package size={20} />,
-  adminOnly: true,
   children: [{
-    label: "Produtos",
-    path: "/estoque/produtos"
+    label: "Perfumes",
+    path: "/estoque/produtos",
+    icon: <FlaskConical size={16} />,
+    adminOnly: true
+  }, {
+    label: "Body Splash",
+    path: "/bodysplash",
+    icon: <Sparkles size={16} />
+  }, {
+    label: "Decants",
+    path: "/decants",
+    icon: <Droplets size={16} />
   }, {
     label: "Categorias",
-    path: "/estoque/categorias"
+    path: "/estoque/categorias",
+    icon: <Tags size={16} />,
+    adminOnly: true
   }]
-}, {
-  label: "Decants",
-  icon: <Droplets size={20} />,
-  path: "/decants"
-}, {
-  label: "Body Splash",
-  icon: <Sparkles size={20} />,
-  path: "/bodysplash"
 }, {
   label: "Vendas",
   icon: <ShoppingBag size={20} />,
   children: [{
     label: "Registrar Venda",
-    path: "/vendas/registrar"
+    path: "/vendas/registrar",
+    icon: <ClipboardPlus size={16} />
   }, {
     label: "Histórico de Vendas",
     path: "/vendas/historico",
+    icon: <History size={16} />,
     adminOnly: true
   }, {
     label: "Pedidos Online",
-    path: "/vendas/pedidos"
+    path: "/vendas/pedidos",
+    icon: <ShoppingCart size={16} />
   }]
 }, {
-  label: "Gestão de Pessoas",
+  label: "Gerenciamento",
   icon: <Users size={20} />,
   path: "/clientes",
   adminOnly: true
@@ -130,8 +137,11 @@ function SidebarItem({
       } : {
         color: C.textMid
       }} to={child.path}>
-              {child.label}
-            </NavLink>)}
+             <span className="flex items-center gap-2">
+               {child.icon ? <span className="shrink-0">{child.icon}</span> : null}
+               {child.label}
+             </span>
+           </NavLink>)}
         </div> : null}
     </div>;
 }
@@ -160,14 +170,14 @@ export function AppLayout() {
   const getPageTitle = () => {
     const path = location.pathname;
     if (path === "/") return "Início";
-    if (path === "/estoque/produtos") return "Estoque – Produtos";
+    if (path === "/estoque/produtos") return "Estoque – Perfumes";
     if (path === "/estoque/categorias") return "Categorias";
     if (path === "/decants") return "Decants";
     if (path === "/bodysplash") return "Body Splash";
     if (path === "/vendas/registrar") return "Registrar Venda";
     if (path === "/vendas/historico") return "Histórico de Vendas";
     if (path === "/vendas/pedidos") return "Pedidos Online";
-    if (path === "/clientes") return "Gestão de Pessoas";
+    if (path === "/clientes") return "Gerenciamento";
     if (path === "/configuracoes") return "Configurações";
     return "Canal Perfumado Decants";
   };

@@ -1,5 +1,6 @@
 import type { useBodySplashFacade } from "../facade/useBodySplashFacade";
 import { BodySplashModal } from "./BodySplashModal";
+import { BodySplashProductModal } from "./BodySplashProductModal";
 import { DeleteConfirm } from "./DeleteConfirm";
 import { PeractButtonPrimitive } from "../../../shared/components/peract-button";
 import { exportCSV } from "../services/body-splash.service";
@@ -20,10 +21,13 @@ import { PeractPaginationFooter } from "../../../shared/components/peract-pagina
 export function BodySplashView({
   confirmDelete,
   productOptions,
+  categories,
   isLoading,
   error,
   showModal,
   setShowModal,
+  showProductModal,
+  setShowProductModal,
   editItem,
   setEditItem,
   deleteItem,
@@ -33,6 +37,7 @@ export function BodySplashView({
   submitSearch,
   filtered,
   handleSave,
+  handleCreateProduct,
   fmt,
   canManagePrices,
   currentPage,
@@ -47,6 +52,7 @@ export function BodySplashView({
       setShowModal(false);
       setEditItem(null);
     }} onSave={handleSave} productOptions={productOptions} edit={editItem ?? undefined} />}
+    {canManagePrices && showProductModal && <BodySplashProductModal categories={categories} onClose={() => setShowProductModal(false)} onSave={handleCreateProduct} />}
       {canManagePrices && deleteItem && <DeleteConfirm nome={deleteItem.produto} onClose={() => setDeleteItem(null)} onConfirm={confirmDelete} />}
 
       {/* Header */}
@@ -59,8 +65,11 @@ export function BodySplashView({
           <PeractButtonPrimitive onClick={() => exportCSV(filtered)} className="flex items-center gap-2 px-4 py-2 rounded-lg border peract-border-color text-sm text-gray-700 hover:bg-gray-50 transition-colors" variant="plain" size="plain">
             <Download size={15} /> Exportar Tabela
           </PeractButtonPrimitive>
+          {canManagePrices && <PeractButtonPrimitive onClick={() => setShowProductModal(true)} className="flex items-center gap-2 px-4 py-2 rounded-lg border peract-border-color text-sm peract-font-color-default" variant="plain" size="plain">
+            <Plus size={16} /> Novo Body Splash
+          </PeractButtonPrimitive>}
           {canManagePrices && <PeractButtonPrimitive onClick={() => setShowModal(true)} className="flex items-center gap-2 px-4 py-2 rounded-lg text-white text-sm hover:opacity-90 peract-bg-primary" variant="plain" size="plain">
-            <Plus size={16} /> Cadastrar Body Splash
+            <Plus size={16} /> Cadastrar preços
           </PeractButtonPrimitive>}
         </div>
       </div>

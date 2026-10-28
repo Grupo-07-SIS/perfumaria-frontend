@@ -50,14 +50,14 @@ describe("AppLayout", () => {
 
   it.each([
     ["/", "Início"],
-    ["/estoque/produtos", "Estoque – Produtos"],
+    ["/estoque/produtos", "Estoque – Perfumes"],
     ["/estoque/categorias", "Categorias"],
     ["/decants", "Decants"],
     ["/bodysplash", "Body Splash"],
     ["/vendas/registrar", "Registrar Venda"],
     ["/vendas/historico", "Histórico de Vendas"],
     ["/vendas/pedidos", "Pedidos Online"],
-    ["/clientes", "Gestão de Pessoas"],
+    ["/clientes", "Gerenciamento"],
     ["/configuracoes", "Configurações"],
   ])("shows the correct page title for %s", (path, title) => {
     useAppMock.mockReturnValue({
@@ -84,11 +84,13 @@ describe("AppLayout", () => {
 
     renderLayout("/vendas/registrar");
 
-    expect(screen.queryByText("Gestão de Pessoas")).not.toBeInTheDocument();
+    expect(screen.queryByText("Gerenciamento")).not.toBeInTheDocument();
     expect(screen.queryByText("Configurações")).not.toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Registrar Venda" })).toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "Histórico de Vendas" })).not.toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Pedidos Online" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Registrar Venda" }).querySelector("svg")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Pedidos Online" }).querySelector("svg")).toBeInTheDocument();
     expect(screen.queryByText(/Você está logado como/)).not.toBeInTheDocument();
   });
 
@@ -159,9 +161,14 @@ describe("AppLayout", () => {
 
     renderLayout("/estoque/produtos");
 
-    expect(screen.getByRole("link", { name: "Gestão de Pessoas" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Gerenciamento" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Configurações" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Produtos" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Perfumes" })).toBeInTheDocument();
+
+    const inventoryLinks = within(screen.getByRole("navigation")).getAllByRole("link")
+      .map(link => link.textContent?.trim());
+    const inventoryOrder = ["Perfumes", "Body Splash", "Decants", "Categorias"];
+    expect(inventoryLinks.filter(label => inventoryOrder.includes(label ?? ""))).toEqual(inventoryOrder);
 
     expect(screen.queryByRole("button", { name: "Notificações" })).not.toBeInTheDocument();
     expect(screen.queryByText("Produto em estoque baixo")).not.toBeInTheDocument();
@@ -174,6 +181,36 @@ describe("AppLayout", () => {
     expect(markAllRead).not.toHaveBeenCalled();
     expect(dismissNotification).not.toHaveBeenCalled();
     expect(logout).toHaveBeenCalled();
+  });
+
+  it("shows icons for the sales navigation options", () => {
+    useAppMock.mockReturnValue({
+      currentUser: { cargo: "Administrador", nome: "Admin", id: "admin" },
+      notifications: [],
+      logout: vi.fn(),
+    });
+
+    renderLayout("/vendas/historico");
+
+    for (const label of ["Registrar Venda", "Histórico de Vendas", "Pedidos Online"]) {
+      expect(screen.getByRole("link", { name: label }).querySelector("svg")).toBeInTheDocument();
+    }
+  });
+
+  it("keeps Body Splash and Decants available under inventory for employees", () => {
+    useAppMock.mockReturnValue({
+      currentUser: { cargo: "Funcionário", nome: "Funcionário", id: "employee" },
+      notifications: [],
+      logout: vi.fn(),
+    });
+
+    renderLayout("/decants");
+
+    const navigation = within(screen.getByRole("navigation"));
+    expect(navigation.getByRole("link", { name: "Body Splash" })).toBeInTheDocument();
+    expect(navigation.getByRole("link", { name: "Decants" })).toBeInTheDocument();
+    expect(navigation.queryByRole("link", { name: "Perfumes" })).not.toBeInTheDocument();
+    expect(navigation.queryByRole("link", { name: "Categorias" })).not.toBeInTheDocument();
   });
 
   it("keeps the mobile tour menu bounded and closes the sidebar when starting", async () => {
@@ -211,7 +248,7 @@ describe("AppLayout", () => {
     const tourMenu = within(screen.getByRole("dialog"));
     if (cargo === "Funcionário") {
       expect(tourMenu.queryByRole("button", { name: /^Estoque/ })).not.toBeInTheDocument();
-      expect(tourMenu.queryByRole("button", { name: /^Gestão de Pessoas/ })).not.toBeInTheDocument();
+      expect(tourMenu.queryByRole("button", { name: /^Gerenciamento/ })).not.toBeInTheDocument();
       expect(tourMenu.queryByRole("button", { name: /^Configurações/ })).not.toBeInTheDocument();
     } else {
       expect(tourMenu.getByRole("button", { name: /^Estoque Tour completo/ })).toBeInTheDocument();

@@ -121,7 +121,7 @@ export function getSystemTourSections(isAdmin: boolean): SystemTourSection[] {
         title: "Pessoas · Clientes",
         description: "Busca, status e manutenção de clientes.",
         steps: [
-          tourStep("/clientes", "tour-people-heading", "Gestão de Pessoas", "Administre clientes, fornecedores e funcionários da organização."),
+          tourStep("/clientes", "tour-people-heading", "Gerenciamento", "Administre clientes, fornecedores e funcionários da organização."),
           tourStep("/clientes", "tour-people-tabs", "Abas de cadastro", "As abas separam os tipos de cadastro; o contador mostra a quantidade de cada grupo."),
           tourStep("/clientes", "tour-people-search", "Busca e status", "Pesquise clientes e filtre registros ativos, inativos ou todos."),
           tourStep("/clientes", "tour-people-results", "Clientes", "Consulte contatos, pedidos e status; as ações permitem editar, inativar ou reativar."),
@@ -205,7 +205,7 @@ export function getSystemTourSections(isAdmin: boolean): SystemTourSection[] {
   ));
 
   if (isAdmin) {
-    groupedSections.push(groupSections("people", "Gestão de Pessoas", "Clientes, fornecedores e funcionários.", ["people-clients", "people-suppliers", "people-employees"]));
+    groupedSections.push(groupSections("people", "Gerenciamento", "Clientes, fornecedores e funcionários.", ["people-clients", "people-suppliers", "people-employees"]));
     groupedSections.push(groupSections("settings", "Configurações", "Parâmetros de estoque e segurança da conta.", ["settings-stock", "settings-security"]));
   }
 

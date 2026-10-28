@@ -12,6 +12,7 @@ interface ListProductsParams {
   nome?: string;
   ordenacao?: string;
   page?: number;
+  tipoProduto?: string;
 }
 
 async function requestData<T>(request: Promise<AxiosResponse<T>>, errorCode: string): Promise<T> {
@@ -49,7 +50,7 @@ export const productsRepository = {
     );
   },
 
-  async listProducts({ categoriaId, estoqueMin, estoqueMax, nome, ordenacao = "nome,asc", page = 0 }: ListProductsParams = {}): Promise<ProductPageDto> {
+  async listProducts({ categoriaId, estoqueMin, estoqueMax, nome, ordenacao = "nome,asc", page = 0, tipoProduto }: ListProductsParams = {}): Promise<ProductPageDto> {
     const params: Record<string, number | string> = {
       ordenacao,
       page,
@@ -63,6 +64,7 @@ export const productsRepository = {
     if (categoriaId !== undefined) params.categoriaId = categoriaId;
     if (estoqueMin !== undefined) params.estoqueMin = estoqueMin;
     if (estoqueMax !== undefined) params.estoqueMax = estoqueMax;
+    if (tipoProduto) params.tipoProduto = tipoProduto;
 
     return requestData(
       apiClient.get<ProductPageDto>("/produtos", { params }),

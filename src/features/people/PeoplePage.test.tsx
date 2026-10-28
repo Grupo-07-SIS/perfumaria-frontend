@@ -116,6 +116,7 @@ const fornecedoresRemotos: Fornecedor[] = [{
 
 async function renderPeople() {
   render(<AppProvider><PeoplePage /></AppProvider>);
+  expect(screen.getByRole("heading", { name: "Gerenciamento" })).toBeInTheDocument();
   await screen.findByText("Ana Lima");
   await waitFor(() => expect(screen.queryByText("Carregando pessoas...")).not.toBeInTheDocument());
 }
