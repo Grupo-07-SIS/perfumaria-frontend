@@ -18,10 +18,11 @@ vi.mock("../logging/logger", () => ({ logger: { info: vi.fn(), warn: vi.fn() } }
 import { AppProvider, useApp } from "./AppContext";
 
 function SessionView() {
-  const { currentUser, isLoggedIn, logout } = useApp();
+  const { categories, currentUser, isLoggedIn, logout } = useApp();
   return <>
     <p>{isLoggedIn ? "authenticated" : "signed-out"}</p>
     <p>{currentUser?.nome ?? "no-user"}</p>
+    <p>{categories.map(category => category.nome).join(", ")}</p>
     <button onClick={() => void logout()}>Logout</button>
   </>;
 }
@@ -54,5 +55,11 @@ describe("AppProvider session lifecycle", () => {
     await user.click(screen.getByRole("button", { name: "Logout" }));
     await waitFor(() => expect(screen.getByText("signed-out")).toBeInTheDocument());
     expect(screen.getByText("no-user")).toBeInTheDocument();
+  });
+
+  it("initializes the selected mock categories", () => {
+    render(<AppProvider><SessionView /></AppProvider>);
+
+    expect(screen.getByText("Amadeirados, Ambarados, Cítricos, Florais")).toBeInTheDocument();
   });
 });
