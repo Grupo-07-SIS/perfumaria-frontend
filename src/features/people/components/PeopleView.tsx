@@ -66,7 +66,7 @@ export function PeopleView({
 
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
         <div>
-          <h1 data-tour="tour-people-heading" className="peract-font-color-default">Gestão de Pessoas</h1>
+          <h1 data-tour="tour-people-heading" className="peract-font-color-default">Gerenciamento</h1>
           <p className="text-xs peract-font-color-muted mt-0.5">Clientes, fornecedores e equipe</p>
         </div>
         <PeractButtonPrimitive onClick={openNew} className="hidden sm:flex items-center gap-2 px-4 py-2 rounded-lg text-white text-sm hover:opacity-90 self-start peract-bg-accent" variant="plain" size="plain">

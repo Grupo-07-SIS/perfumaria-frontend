@@ -54,7 +54,7 @@ describe("ProductsPage", () => {
 
     render(<ProductsPage />);
 
-    expect(screen.getByRole("heading", { name: "Estoque – Produtos" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Estoque – Perfumes" })).toBeInTheDocument();
     expect(screen.getAllByText("Chance")).not.toHaveLength(0);
 
     fireEvent.click(screen.getByRole("button", { name: /Novo produto/i }));
