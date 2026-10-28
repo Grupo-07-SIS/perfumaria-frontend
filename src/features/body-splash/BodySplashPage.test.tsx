@@ -4,12 +4,16 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const {
   createBodySplashMock,
+  createBodySplashStockItemMock,
+  fetchBodySplashCategoriesMock,
   fetchBodySplashCatalogMock,
   removeBodySplashMock,
   useAppMock,
   updateBodySplashMock,
 } = vi.hoisted(() => ({
   createBodySplashMock: vi.fn(),
+  createBodySplashStockItemMock: vi.fn(),
+  fetchBodySplashCategoriesMock: vi.fn(),
   fetchBodySplashCatalogMock: vi.fn(),
   removeBodySplashMock: vi.fn(),
   useAppMock: vi.fn(),
@@ -21,6 +25,8 @@ vi.mock("../../core/store/AppContext", () => ({ useApp: useAppMock }));
 vi.mock("./services/body-splash.service", async importOriginal => ({
   ...await importOriginal<typeof import("./services/body-splash.service")>(),
   createBodySplash: createBodySplashMock,
+  createBodySplashStockItem: createBodySplashStockItemMock,
+  fetchBodySplashCategories: fetchBodySplashCategoriesMock,
   fetchBodySplashCatalog: fetchBodySplashCatalogMock,
   removeBodySplash: removeBodySplashMock,
   updateBodySplash: updateBodySplashMock,
@@ -101,6 +107,8 @@ describe("BodySplash: caracterizacao do catalogo", () => {
       },
       productOptions,
     });
+    fetchBodySplashCategoriesMock.mockResolvedValue([{ id: 1, nome: "Amadeirados" }]);
+    createBodySplashStockItemMock.mockResolvedValue({ id: 9, nome: "Body Splash independente" });
     createBodySplashMock.mockImplementation(async (values: BodySplashModalFormValues) => itemFromForm(4, values));
     updateBodySplashMock.mockImplementation(async (item: BodySplashItem, values: BodySplashModalFormValues) => itemFromForm(item.id, values));
     removeBodySplashMock.mockImplementation(async (item: BodySplashItem) => item.id);
@@ -145,7 +153,7 @@ describe("BodySplash: caracterizacao do catalogo", () => {
   it("exige produto e cinco precos positivos antes de cadastrar com valores por volume", async () => {
     const user = userEvent.setup();
     await renderLoadedPage();
-    await user.click(screen.getByRole("button", { name: "Cadastrar Body Splash" }));
+    await user.click(screen.getByRole("button", { name: "Cadastrar preços" }));
     const dialog = within(screen.getByRole("dialog", { name: "Cadastrar Body Splash" }));
     const save = dialog.getByRole("button", { name: "Cadastrar Body Splash" });
     await user.click(save);

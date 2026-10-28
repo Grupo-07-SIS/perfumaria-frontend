@@ -2,16 +2,18 @@ import { useEffect, useRef, useState } from "react";
 import { useApp } from "../../../core/store/AppContext";
 import { useDebouncedValue } from "../../../shared/hooks/useDebouncedValue";
 import { DEFAULT_PAGE_SIZE } from "../../../shared/hooks/usePagination";
-import type { BodySplashItem, BodySplashModalFormValues, BodySplashProductOption } from "../models/body-splash.models";
-import { createBodySplash, fetchBodySplashCatalog, removeBodySplash, updateBodySplash } from "../services/body-splash.service";
+import type { BodySplashCategoryOption, BodySplashItem, BodySplashModalFormValues, BodySplashNewProductForm, BodySplashProductOption } from "../models/body-splash.models";
+import { createBodySplash, createBodySplashStockItem, fetchBodySplashCatalog, fetchBodySplashCategories, removeBodySplash, updateBodySplash } from "../services/body-splash.service";
 
 export function useBodySplashFacade() {
   const { currentUser } = useApp();
   const [items, setItems] = useState<BodySplashItem[]>([]);
   const [productOptions, setProductOptions] = useState<BodySplashProductOption[]>([]);
+  const [categories, setCategories] = useState<BodySplashCategoryOption[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
   const [showModal, setShowModal] = useState(false);
+  const [showProductModal, setShowProductModal] = useState(false);
   const [editItem, setEditItem] = useState<BodySplashItem | null>(null);
   const [deleteItem, setDeleteItem] = useState<BodySplashItem | null>(null);
   const [search, setSearch] = useState("");
@@ -23,6 +25,14 @@ export function useBodySplashFacade() {
   const debouncedSearch = useDebouncedValue(search.trim());
 
   useEffect(() => {
+    let isMounted = true;
+    fetchBodySplashCategories()
+      .then(result => {
+        if (isMounted) setCategories(result);
+      })
+      .catch(() => {
+        if (isMounted) setError("Não foi possível carregar as famílias olfativas.");
+      });
     const currentRequestId = ++requestId.current;
     fetchBodySplashCatalog()
       .then(catalog => {
@@ -40,6 +50,10 @@ export function useBodySplashFacade() {
       .finally(() => {
         if (currentRequestId === requestId.current) setIsLoading(false);
       });
+    return () => {
+      isMounted = false;
+      requestId.current += 1;
+    };
   }, []);
 
   const loadPage = async (page: number, busca: string) => {
@@ -98,6 +112,19 @@ export function useBodySplashFacade() {
       throw requestError;
     }
   };
+  const handleCreateProduct = async (values: BodySplashNewProductForm) => {
+    setError("");
+    try {
+      await createBodySplashStockItem(values);
+      const catalog = await fetchBodySplashCatalog({ page: currentPage - 1, size: DEFAULT_PAGE_SIZE });
+      setProductOptions(catalog.productOptions);
+      setError(catalog.productOptionsError ?? "");
+      setShowProductModal(false);
+    } catch (requestError) {
+      setError("Não foi possível cadastrar o Body Splash no estoque.");
+      throw requestError;
+    }
+  };
   const fmt = (v: number) => `R$ ${v.toFixed(2).replace(".", ",")}`;
   const confirmDelete = async () => {
     if (!deleteItem) return;
@@ -119,10 +146,13 @@ export function useBodySplashFacade() {
     canManagePrices: currentUser?.cargo === "Administrador",
     items,
     productOptions,
+    categories,
     isLoading,
     error,
     showModal,
     setShowModal,
+    showProductModal,
+    setShowProductModal,
     editItem,
     setEditItem,
     deleteItem,
@@ -138,6 +168,7 @@ export function useBodySplashFacade() {
     firstItem: filtered.length === 0 ? 0 : (currentPage - 1) * DEFAULT_PAGE_SIZE + 1,
     lastItem: Math.min((currentPage - 1) * DEFAULT_PAGE_SIZE + filtered.length, totalElements),
     handleSave,
+    handleCreateProduct,
     fmt,
     confirmDelete
   };

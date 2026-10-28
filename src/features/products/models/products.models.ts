@@ -1,6 +1,7 @@
 export type ProductStockStatus = "ok" | "critico" | "esgotado";
 
 export type ProductMeasure = "ML" | "L" | "G" | "UNIDADE";
+export type ProductType = "PERFUME" | "BODY_SPLASH" | "OUTRO";
 
 export type ProductStatusFilter = "todos" | ProductStockStatus;
 
@@ -31,6 +32,7 @@ export interface Product {
   marca: string;
   medida?: ProductMeasure;
   nome: string;
+  tipoProduto?: ProductType;
   precoCompra?: number;
   precoVenda: number;
   volume?: number;

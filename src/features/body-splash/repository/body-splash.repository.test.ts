@@ -70,23 +70,33 @@ describe("bodySplashRepository", () => {
     });
   });
 
-  it("loads product options from the encoded Body Splash category with the required pagination and ordering", async () => {
+  it("loads active Body Splash product options by type", async () => {
     const productPage = { ...emptyPage, content: [{ id: 7, nome: "Lavanda & Ylang" }], size: 100 };
     apiClientGetMock.mockResolvedValue({ data: productPage });
 
     await expect(bodySplashRepository.listProducts()).resolves.toEqual(productPage);
-    expect(apiClientGetMock).toHaveBeenCalledWith("/produtos/categoria/Body%20Splash", {
-      params: { page: 0, size: 100, ordenacao: "nome,asc" },
+    expect(apiClientGetMock).toHaveBeenCalledWith("/produtos", {
+      params: { page: 0, size: 100, ordenacao: "nome,asc", status: 1, tipoProduto: "BODY_SPLASH" },
     });
   });
 
-  it.each([
-    { products: [{ id: 7, nome: "Lavanda & Ylang" }] },
-    { products: [] },
-  ])("normalizes a direct category list into product content: $products", async ({ products }) => {
-    apiClientGetMock.mockResolvedValue({ data: products });
+  it("loads fragrance families and creates an independent Body Splash stock item", async () => {
+    const categories = [{ id: 2, nome: "Amadeirados" }];
+    const product = { id: 8, nome: "Body Splash próprio" };
+    const request = {
+      estoqueAtual: 6,
+      fkCategoria: 2,
+      nome: "Body Splash próprio",
+      precoVenda: 89.9,
+      tipoProduto: "BODY_SPLASH" as const,
+    };
+    apiClientGetMock.mockResolvedValue({ data: categories });
+    apiClientPostMock.mockResolvedValue({ data: product });
 
-    await expect(bodySplashRepository.listProducts()).resolves.toEqual({ content: products });
+    await expect(bodySplashRepository.listCategories()).resolves.toEqual(categories);
+    await expect(bodySplashRepository.createProduct(request)).resolves.toEqual(product);
+    expect(apiClientGetMock).toHaveBeenCalledWith("/categorias");
+    expect(apiClientPostMock).toHaveBeenCalledWith("/produtos", request);
   });
 
   it("creates, updates and deletes with the flat OpenAPI payload", async () => {
@@ -107,6 +117,7 @@ describe("bodySplashRepository", () => {
   it.each([
     ["list", "BODY_SPLASH_LIST_FAILED", () => bodySplashRepository.listBodySplashes(), apiClientGetMock],
     ["products list", "BODY_SPLASH_PRODUCTS_LIST_FAILED", () => bodySplashRepository.listProducts(), apiClientGetMock],
+    ["category list", "BODY_SPLASH_CATEGORIES_LIST_FAILED", () => bodySplashRepository.listCategories(), apiClientGetMock],
     ["create", "BODY_SPLASH_CREATE_FAILED", () => bodySplashRepository.createBodySplash(payload), apiClientPostMock],
     ["update", "BODY_SPLASH_UPDATE_FAILED", () => bodySplashRepository.updateBodySplash(11, payload), apiClientPutMock],
     ["delete", "BODY_SPLASH_DELETE_FAILED", () => bodySplashRepository.deleteBodySplash(11), apiClientDeleteMock],

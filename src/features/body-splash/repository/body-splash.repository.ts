@@ -3,6 +3,21 @@ import { apiClient } from "../../../core/services/http-client";
 import type { BodySplashRequestDto } from "./dto/body-splash-request.dto";
 import type { BodySplashPageDto, BodySplashProductDto, BodySplashProductPageDto, BodySplashResponseDto } from "./dto/body-splash-response.dto";
 
+export interface CreateBodySplashProductDto {
+  estoqueAtual: number;
+  fkCategoria: number;
+  marca?: string;
+  medida?: "ML" | "L" | "G" | "UNIDADE";
+  nome: string;
+  precoVenda: number;
+  tipoProduto: "BODY_SPLASH";
+  volume?: number;
+}
+export interface BodySplashCategoryDto {
+  id: number;
+  nome: string;
+}
+
 interface ListBodySplashesParams {
   page?: number;
   size?: number;
@@ -28,10 +43,18 @@ export const bodySplashRepository = {
     }), "BODY_SPLASH_LIST_FAILED");
   },
   async listProducts(): Promise<BodySplashProductPageDto> {
-    const response = await requestData(apiClient.get<BodySplashProductDto[] | BodySplashProductPageDto>("/produtos/categoria/Body%20Splash", {
-      params: { page: 0, size: 100, ordenacao: "nome,asc" },
+    const response = await requestData<{
+      content: BodySplashProductDto[];
+    }>(apiClient.get("/produtos", {
+      params: { page: 0, size: 100, ordenacao: "nome,asc", status: 1, tipoProduto: "BODY_SPLASH" },
     }), "BODY_SPLASH_PRODUCTS_LIST_FAILED");
-    return Array.isArray(response) ? { content: response } : response;
+    return response;
+  },
+  async listCategories(): Promise<BodySplashCategoryDto[]> {
+    return requestData(apiClient.get<BodySplashCategoryDto[]>("/categorias"), "BODY_SPLASH_CATEGORIES_LIST_FAILED");
+  },
+  async createProduct(payload: CreateBodySplashProductDto): Promise<BodySplashProductDto> {
+    return requestData(apiClient.post<BodySplashProductDto>("/produtos", payload), "BODY_SPLASH_PRODUCT_CREATE_FAILED");
   },
   createBodySplash(payload: BodySplashRequestDto): Promise<BodySplashResponseDto> {
     return requestData(apiClient.post<BodySplashResponseDto>("/body-splash", payload), "BODY_SPLASH_CREATE_FAILED");

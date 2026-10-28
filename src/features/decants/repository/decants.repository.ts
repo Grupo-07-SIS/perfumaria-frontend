@@ -28,10 +28,12 @@ export const decantsRepository = {
     }), "DECANTS_LIST_FAILED");
   },
   async listPerfumeProducts(): Promise<PerfumeProductPageDto> {
-    const response = await requestData(apiClient.get<PerfumeProductDto[] | PerfumeProductPageDto>("/produtos/categoria/Perfume", {
-      params: { page: 0, size: 100, ordenacao: "nome,asc" },
+    const response = await requestData<{
+      content: PerfumeProductDto[];
+    }>(apiClient.get("/produtos", {
+      params: { page: 0, size: 100, ordenacao: "nome,asc", status: 1, tipoProduto: "PERFUME" },
     }), "DECANTS_PRODUCTS_LIST_FAILED");
-    return Array.isArray(response) ? { content: response } : response;
+    return response;
   },
   createDecant(payload: DecantRequestDto): Promise<DecantResponseDto> {
     return requestData(apiClient.post<DecantResponseDto>("/decants", payload), "DECANTS_CREATE_FAILED");

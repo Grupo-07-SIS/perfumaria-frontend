@@ -7,11 +7,15 @@ vi.mock("../../../core/store/AppContext", () => ({
 
 const {
   createBodySplashMock,
+  createBodySplashStockItemMock,
+  fetchBodySplashCategoriesMock,
   fetchBodySplashCatalogMock,
   removeBodySplashMock,
   updateBodySplashMock,
 } = vi.hoisted(() => ({
   createBodySplashMock: vi.fn(),
+  createBodySplashStockItemMock: vi.fn(),
+  fetchBodySplashCategoriesMock: vi.fn(),
   fetchBodySplashCatalogMock: vi.fn(),
   removeBodySplashMock: vi.fn(),
   updateBodySplashMock: vi.fn(),
@@ -19,6 +23,8 @@ const {
 
 vi.mock("../services/body-splash.service", () => ({
   createBodySplash: createBodySplashMock,
+  createBodySplashStockItem: createBodySplashStockItemMock,
+  fetchBodySplashCategories: fetchBodySplashCategoriesMock,
   fetchBodySplashCatalog: fetchBodySplashCatalogMock,
   removeBodySplash: removeBodySplashMock,
   updateBodySplash: updateBodySplashMock,
@@ -79,6 +85,7 @@ describe("useBodySplashFacade", () => {
 
   beforeEach(() => {
     vi.resetAllMocks();
+    fetchBodySplashCategoriesMock.mockResolvedValue([]);
     fetchBodySplashCatalogMock.mockResolvedValue({
       page: { content: [original], number: 0, totalElements: 1, totalPages: 1 },
       productOptions,

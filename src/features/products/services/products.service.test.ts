@@ -39,12 +39,17 @@ describe("productsService", () => {
 
   it("maps listed products and categories", async () => {
     listProductsMock.mockResolvedValue({
-      content: [{ id: 2, nome: "Libre", categoriaNome: "Perfumes", fkCategoria: 1, estoqueAtual: 7, precoVenda: 160, status: 1 }],
+      content: [{ id: 2, nome: "Libre", categoriaNome: "Amadeirados", fkCategoria: 1, estoqueAtual: 7, precoVenda: 160, status: 1 }],
       number: 1,
       totalElements: 23,
       totalPages: 3,
     });
-    listCategoriesMock.mockResolvedValue([{ id: 2, nome: "Body Splash" }, { id: 1, nome: "Perfumes" }]);
+    listCategoriesMock.mockResolvedValue([
+      { id: 1, nome: "Amadeirados" },
+      { id: 2, nome: "Ambarados" },
+      { id: 3, nome: "Cítricos" },
+      { id: 4, nome: "Florais" },
+    ]);
 
     await expect(fetchProducts({ nome: "Libre", ordenacao: "nome,desc", page: 1 })).resolves.toEqual({
       number: 1,
@@ -54,7 +59,8 @@ describe("productsService", () => {
       {
         ativo: 1,
         categoriaId: 1,
-        categoriaNome: "Perfumes",
+        categoriaNome: "Amadeirados",
+        dataCadastro: undefined,
         estoqueAtual: 7,
         id: 2,
         margem: undefined,
@@ -63,25 +69,28 @@ describe("productsService", () => {
         nome: "Libre",
         precoCompra: undefined,
         precoVenda: 160,
+        tipoProduto: "PERFUME",
         volume: undefined,
       },
     ] });
     expect(listProductsMock).toHaveBeenCalledWith({ nome: "Libre", ordenacao: "nome,desc", page: 1 });
     await expect(fetchProductCategories()).resolves.toEqual([
-      { id: 2, nome: "Body Splash" },
-      { id: 1, nome: "Perfumes" },
+      { id: 1, nome: "Amadeirados" },
+      { id: 2, nome: "Ambarados" },
+      { id: 3, nome: "Cítricos" },
+      { id: 4, nome: "Florais" },
     ]);
   });
 
   it("creates and updates products with parsed request payloads", async () => {
-    createProductMock.mockResolvedValue({ id: 5, nome: "Sauvage", categoriaNome: "Perfumes", fkCategoria: 1, estoqueAtual: 8, precoVenda: 150, status: 1 });
-    updateProductMock.mockResolvedValue({ id: 5, nome: "Sauvage Elixir", categoriaNome: "Perfumes", fkCategoria: 1, estoqueAtual: 4, precoVenda: 180, status: 1 });
+    createProductMock.mockResolvedValue({ id: 5, nome: "Sauvage", categoriaNome: "Amadeirados", fkCategoria: 1, estoqueAtual: 8, precoVenda: 150, status: 1 });
+    updateProductMock.mockResolvedValue({ id: 5, nome: "Sauvage Elixir", categoriaNome: "Amadeirados", fkCategoria: 1, estoqueAtual: 4, precoVenda: 180, status: 1 });
 
     const created = await createProduct({ categoriaId: "1", estoqueAtual: "8", hasVolume: false, marca: "Dior", medida: "ML", nome: "Sauvage", precoCompra: "", precoVenda: "150", volume: "" });
     const updated = await updateProduct({ ativo: 1, categoriaId: 1, categoriaNome: "Perfumes", estoqueAtual: 8, id: 5, marca: "Dior", nome: "Sauvage", precoVenda: 150 }, { categoriaId: "1", estoqueAtual: "4", hasVolume: false, marca: "Dior", medida: "ML", nome: "Sauvage Elixir", precoCompra: "", precoVenda: "180", volume: "" });
 
-    expect(createProductMock).toHaveBeenCalledWith({ estoqueAtual: 8, fkCategoria: 1, marca: "Dior", nome: "Sauvage", precoVenda: 150 });
-    expect(updateProductMock).toHaveBeenCalledWith(5, { estoqueAtual: 4, fkCategoria: 1, marca: "Dior", nome: "Sauvage Elixir", precoVenda: 180 });
+    expect(createProductMock).toHaveBeenCalledWith({ estoqueAtual: 8, fkCategoria: 1, marca: "Dior", nome: "Sauvage", precoVenda: 150, tipoProduto: "PERFUME" });
+    expect(updateProductMock).toHaveBeenCalledWith(5, { estoqueAtual: 4, fkCategoria: 1, marca: "Dior", nome: "Sauvage Elixir", precoVenda: 180, tipoProduto: "PERFUME" });
     expect(created.nome).toBe("Sauvage");
     expect(updated.nome).toBe("Sauvage Elixir");
   });

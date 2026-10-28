@@ -20,6 +20,7 @@ describe("productMapper", () => {
         precoCompra: 120,
         precoVenda: 180,
         status: 1,
+        tipoProduto: "BODY_SPLASH",
         volume: 100,
       }),
     ).toEqual({
@@ -34,6 +35,7 @@ describe("productMapper", () => {
       nome: "Chanel N°5",
       precoCompra: 120,
       precoVenda: 180,
+      tipoProduto: "BODY_SPLASH",
       volume: 100,
     });
   });
@@ -60,6 +62,7 @@ describe("productMapper", () => {
       nome: "Sauvage",
       precoCompra: 90.5,
       precoVenda: 150.4,
+      tipoProduto: "PERFUME",
       volume: 100,
     });
   });
