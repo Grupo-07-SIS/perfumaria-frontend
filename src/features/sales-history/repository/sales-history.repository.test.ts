@@ -34,44 +34,62 @@ describe("salesHistoryRepository", () => {
     vi.clearAllMocks();
   });
 
-  it("loads /vendas and maps API fields to the history model", async () => {
-    apiClientGetMock.mockResolvedValue({ data: [saleDto] });
+  it("loads a single page from /vendas and maps API fields to the history model", async () => {
+    apiClientGetMock.mockResolvedValue({ data: { content: [saleDto], totalElements: 31, totalPages: 4 } });
 
-    await expect(salesHistoryRepository.listSales()).resolves.toEqual([
-      expect.objectContaining({
-        id: "V-19",
-        data: "08/04/2026 14:30",
-        cliente: "Maria Silva",
-        pagamento: "Cartão de crédito",
-        total: 705,
-        tipoVenda: "online",
-        canalOnline: "whatsapp",
-        codigoRastreio: "BR123456789XX",
-        enviado: true,
-        itens: [],
-      }),
-    ]);
-    expect(apiClientGetMock).toHaveBeenCalledWith("/vendas", { params: { page: 0, size: 100 } });
+    await expect(salesHistoryRepository.listSales({ page: 1, size: 10, search: "", pagamento: "todos", tipo: "todos", status: "todos" })).resolves.toEqual({
+      totalItems: 31,
+      totalPages: 4,
+      items: [
+        expect.objectContaining({
+          id: "V-19",
+          data: "08/04/2026 14:30",
+          cliente: "Maria Silva",
+          pagamento: "Cartão de crédito",
+          total: 705,
+          tipoVenda: "online",
+          canalOnline: "whatsapp",
+          codigoRastreio: "BR123456789XX",
+          enviado: true,
+          itens: [],
+        }),
+      ],
+    });
+    expect(apiClientGetMock).toHaveBeenCalledOnce();
+    expect(apiClientGetMock).toHaveBeenCalledWith("/vendas", { params: { page: 0, size: 10, excluirPendentes: true } });
   });
 
-  it("reads all pages and preserves fractional item type and volume", async () => {
-    apiClientGetMock
-      .mockResolvedValueOnce({ data: { content: [saleDto], totalPages: 2 } })
-      .mockResolvedValueOnce({ data: { content: [{
-        ...saleDto,
-        id: 20,
-        status: "CANCELADA",
-        itens: [{ produtoNome: "Sauvage", categoriaNome: "Perfume", quantidade: 2, valorUnitario: 25, tipoItem: "DECANT", volumeMl: 5 }],
-      }], totalPages: 2 } });
+  it("sends filters to the server and preserves fractional item type and volume", async () => {
+    apiClientGetMock.mockResolvedValue({ data: { content: [{
+      ...saleDto,
+      id: 20,
+      status: "CANCELADA",
+      itens: [{ produtoNome: "Sauvage", categoriaNome: "Perfume", quantidade: 2, valorUnitario: 25, tipoItem: "DECANT", volumeMl: 5 }],
+    }], totalElements: 1, totalPages: 1 } });
 
-    const result = await salesHistoryRepository.listSales();
+    const result = await salesHistoryRepository.listSales({ page: 3, size: 10, search: "  Maria ", pagamento: "Cartão de crédito", tipo: "online", status: "cancelado" });
 
-    expect(apiClientGetMock).toHaveBeenNthCalledWith(2, "/vendas", { params: { page: 1, size: 100 } });
-    expect(result[1]).toEqual(expect.objectContaining({
+    expect(apiClientGetMock).toHaveBeenCalledWith("/vendas", { params: {
+      page: 2,
+      size: 10,
+      excluirPendentes: true,
+      busca: "Maria",
+      formaPagamento: "CARTAO_CREDITO",
+      tipoVenda: "ONLINE",
+      vendaCancelada: true,
+    } });
+    expect(result.items[0]).toEqual(expect.objectContaining({
       id: "V-20",
       cancelada: true,
       itens: [expect.objectContaining({ nome: "Sauvage", categoria: "Perfume", tipoItem: "DECANT", volume: "5ml" })],
     }));
+  });
+
+  it("loads the history summary from /vendas/resumo ignoring pending sales in the total", async () => {
+    apiClientGetMock.mockResolvedValue({ data: { totalVendas: 12, vendasFinalizadas: 9, vendasCanceladas: 1, vendasPendentes: 2, faturamentoTotal: 1500.5 } });
+
+    await expect(salesHistoryRepository.getSummary()).resolves.toEqual({ totalVendas: 10, finalizadas: 9, canceladas: 1, faturamento: 1500.5 });
+    expect(apiClientGetMock).toHaveBeenCalledWith("/vendas/resumo");
   });
 
   it("loads detail by numeric ID and patches status and payment", async () => {

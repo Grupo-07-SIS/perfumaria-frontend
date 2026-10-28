@@ -36,11 +36,11 @@ export function SalesHistoryView({
   setViewVenda,
   editVenda,
   setEditVenda,
-  vendasExibidas,
-  finalizadas,
-  canceladas,
+  totalVendas,
+  totalFinalizadas,
+  totalCanceladas,
   totalFaturamento,
-  filtered,
+  totalItems,
   handleSaveEdit
 }: ReturnType<typeof useSalesHistoryFacade>) {
   return <div className="p-4 lg:p-6 max-w-[1400px] mx-auto" id="sales-history-section">
@@ -58,15 +58,15 @@ export function SalesHistoryView({
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
         <PeractCard className="peract-bg-card rounded-xl border peract-border-color p-3 shadow-sm">
           <p className="text-xs peract-font-color-muted">Total de vendas</p>
-          <p className="text-2xl font-semibold mt-1 peract-font-color-default">{vendasExibidas.length}</p>
+          <p className="text-2xl font-semibold mt-1 peract-font-color-default">{totalVendas}</p>
         </PeractCard>
         <PeractCard className="peract-bg-card rounded-xl border peract-border-color p-3 shadow-sm">
           <p className="text-xs peract-font-color-muted">Finalizadas</p>
-          <p className="text-2xl font-semibold mt-1 text-green-600">{finalizadas.length}</p>
+          <p className="text-2xl font-semibold mt-1 text-green-600">{totalFinalizadas}</p>
         </PeractCard>
         <PeractCard className="peract-bg-card rounded-xl border peract-border-color p-3 shadow-sm">
           <p className="text-xs peract-font-color-muted">Canceladas</p>
-          <p className="text-2xl font-semibold mt-1 text-red-500">{canceladas.length}</p>
+          <p className="text-2xl font-semibold mt-1 text-red-500">{totalCanceladas}</p>
         </PeractCard>
         {isAdmin && <PeractCard className="peract-bg-card rounded-xl border peract-border-color p-3 shadow-sm">
             <p className="text-xs peract-font-color-muted">Faturamento</p>
@@ -135,7 +135,7 @@ export function SalesHistoryView({
               </PeractTableRow>
             </PeractTableHeader>
             <PeractTableBody className="divide-y divide-gray-50">
-              {filtered.length === 0 ? <PeractTableRow><PeractTableCell colSpan={8} className="text-center py-12 peract-font-color-muted text-sm">Nenhuma venda encontrada.</PeractTableCell></PeractTableRow> : paginatedSales.map(venda => {
+              {paginatedSales.length === 0 ? <PeractTableRow><PeractTableCell colSpan={8} className="text-center py-12 peract-font-color-muted text-sm">Nenhuma venda encontrada.</PeractTableCell></PeractTableRow> : paginatedSales.map(venda => {
               const status = getVendaStatus(venda);
               return <PeractTableRow key={venda.id} className={`hover:bg-gray-50/50 transition-colors ${status === "Cancelado" ? "opacity-60" : ""}`}>
                     <PeractTableCell className="px-4 py-3"><span className="text-sm font-mono font-medium text-gray-700">{venda.id}</span></PeractTableCell>
@@ -157,7 +157,7 @@ export function SalesHistoryView({
           </PeractTableRoot>
         </div>
         <div className="px-4 py-3 border-t border-gray-50">
-          <PeractPaginationFooter currentPage={currentPage} onPageChange={setCurrentPage} totalPages={totalPages} firstItem={firstSaleOnPage} lastItem={lastSaleOnPage} totalItems={filtered.length}>venda(s)</PeractPaginationFooter>
+          <PeractPaginationFooter currentPage={currentPage} onPageChange={setCurrentPage} totalPages={totalPages} firstItem={firstSaleOnPage} lastItem={lastSaleOnPage} totalItems={totalItems}>venda(s)</PeractPaginationFooter>
         </div>
       </PeractCard>
 
@@ -190,10 +190,10 @@ export function SalesHistoryView({
               </div>
             </div>;
       })}
-        {filtered.length === 0 && <PeractCard className="text-center py-12 peract-font-color-muted text-sm peract-bg-card rounded-xl border peract-border-color">Nenhuma venda encontrada.</PeractCard>}
+        {paginatedSales.length === 0 && <PeractCard className="text-center py-12 peract-font-color-muted text-sm peract-bg-card rounded-xl border peract-border-color">Nenhuma venda encontrada.</PeractCard>}
       </div>
       <div className="mt-4 md:hidden">
-        <PeractPaginationFooter currentPage={currentPage} onPageChange={setCurrentPage} totalPages={totalPages} firstItem={firstSaleOnPage} lastItem={lastSaleOnPage} totalItems={filtered.length}>venda(s)</PeractPaginationFooter>
+        <PeractPaginationFooter currentPage={currentPage} onPageChange={setCurrentPage} totalPages={totalPages} firstItem={firstSaleOnPage} lastItem={lastSaleOnPage} totalItems={totalItems}>venda(s)</PeractPaginationFooter>
       </div>
       </div>
     </div>;
