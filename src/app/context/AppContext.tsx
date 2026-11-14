@@ -4,6 +4,7 @@ import {
   useState,
   ReactNode,
   useCallback,
+  useRef,
   Dispatch,
   SetStateAction,
 } from "react";
@@ -11,6 +12,7 @@ import type { AuthSession, AuthenticatedUser } from "../../core/auth/auth.types"
 import { sessionService } from "../../core/auth/session.service";
 import { authService } from "../../core/services/auth.service";
 import { logger } from "../../core/logging/logger";
+import { useSecurityQuestionsStatus, type SecurityWarningState } from "../../core/security/useSecurityQuestionsStatus";
 
 /* ─── Types ─── */
 export type StockStatus = "ok" | "critico" | "esgotado";
@@ -586,6 +588,11 @@ interface AppContextType {
   currentUser: AuthenticatedUser | null;
   applyAuthSession: (session: AuthSession) => void;
   logout: () => Promise<void>;
+  invalidateAuthSession: () => void;
+  securityQuestions: SecurityWarningState;
+  refreshSecurityQuestionsStatus: () => Promise<void>;
+  dismissSecurityQuestionsWarning: () => void;
+  markSecurityQuestionsComplete: () => void;
 
   // Products
   products: Product[];
@@ -643,12 +650,21 @@ interface AppContextType {
 const AppContext = createContext<AppContextType | null>(null);
 
 export function AppProvider({ children }: { children: ReactNode }) {
-  const restoredSession = sessionService.restore();
+  const [restoredSession] = useState(() => sessionService.restore());
 
   const [isLoggedIn, setIsLoggedIn] = useState(Boolean(restoredSession));
   const [currentUser, setCurrentUser] = useState<AuthenticatedUser | null>(
     restoredSession?.user ?? null,
   );
+  const endSecuritySession = useRef<() => void>(() => {});
+  const invalidateAuthSession = useCallback(() => {
+    endSecuritySession.current();
+    sessionService.clear();
+    setIsLoggedIn(false);
+    setCurrentUser(null);
+  }, []);
+  const security = useSecurityQuestionsStatus(currentUser?.id, invalidateAuthSession);
+  endSecuritySession.current = security.endSession;
 
   const [products, setProducts] = useState<Product[]>(INITIAL_PRODUCTS);
   const [categories, setCategories] = useState<Category[]>(INITIAL_CATEGORIES);
@@ -666,17 +682,21 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [vendaIdCounter, setVendaIdCounter] = useState(1043);
 
   const applyAuthSession = useCallback((session: AuthSession) => {
+    security.beginSession(session.user.id);
     setIsLoggedIn(true);
     setCurrentUser(session.user);
     logger.info("Usuário autenticado", { email: session.user.email });
-  }, []);
+  }, [security.beginSession]);
 
   const logout = useCallback(async () => {
-    await authService.logout();
+    security.endSession();
+    try { await authService.logout(); }
+    catch { /* Local session is cleared by authService even if the server is unavailable. */ }
+    // Do not expose a new login while the old logout can still clear its cookies.
     setIsLoggedIn(false);
     setCurrentUser(null);
     logger.info("Sessão encerrada");
-  }, []);
+  }, [security.endSession]);
 
   const getStockStatus = useCallback(
     (qty: number): StockStatus => {
@@ -902,6 +922,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
         currentUser,
         applyAuthSession,
         logout,
+        invalidateAuthSession,
+        securityQuestions: security.state,
+        refreshSecurityQuestionsStatus: security.refresh,
+        dismissSecurityQuestionsWarning: security.dismiss,
+        markSecurityQuestionsComplete: security.markComplete,
         products,
         addProduct,
         updateProduct,

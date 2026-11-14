@@ -9,6 +9,7 @@ import {
 import { useApp } from "../../app/context/AppContext";
 import { PeractButton } from "../../shared/components/peract-button";
 import { PeractTag } from "../../shared/components/peract-tag";
+import { SecurityQuestionsWarningBanner } from "./SecurityQuestionsWarningBanner";
 
 const C = {
   accent: "var(--color-sidebar-primary)",
@@ -49,7 +50,7 @@ const ALL_NAV_ITEMS: NavItem[] = [
     ],
   },
   { label: "Gestão de Pessoas", icon: <Users size={20} />, path: "/clientes", adminOnly: true },
-  { label: "Configurações", icon: <Settings size={20} />, path: "/configuracoes", adminOnly: true },
+  { label: "Configurações", icon: <Settings size={20} />, path: "/configuracoes?secao=seguranca" },
 ];
 
 function SidebarItem({ item, collapsed, onMobileClose }: { item: NavItem; collapsed: boolean; onMobileClose?: () => void }) {
@@ -264,6 +265,8 @@ export function AppLayout() {
             </div>
           </div>
         </header>
+
+        <SecurityQuestionsWarningBanner />
 
         {!isAdmin ? (
           <div className="shrink-0 border-b px-4 py-1.5 text-xs text-[#4f46e5]" style={{ background: "rgba(99,102,241,0.07)", borderColor: "rgba(99,102,241,0.15)" }}>

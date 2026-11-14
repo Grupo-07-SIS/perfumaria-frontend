@@ -1,3 +1,6 @@
 export const environment = {
-  backendUrl: "http://localhost:8080",
+  backendUrl: import.meta.env.VITE_BACKEND_URL || "http://localhost:8080",
+  features: {
+    securityQuestionsEnabled: import.meta.env.VITE_SECURITY_QUESTIONS_ENABLED !== "false",
+  },
 } as const;
