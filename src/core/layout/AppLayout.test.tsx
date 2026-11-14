@@ -75,7 +75,8 @@ describe("AppLayout", () => {
     renderLayout("/vendas/registrar");
 
     expect(screen.queryByText("Gestão de Pessoas")).not.toBeInTheDocument();
-    expect(screen.queryByText("Configurações")).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Configurações" })).toHaveAttribute("href", "/configuracoes?secao=seguranca");
+    expect(screen.queryByText("Estoque")).not.toBeInTheDocument();
     expect(screen.getByText(/Você está logado como/)).toBeInTheDocument();
   });
 
