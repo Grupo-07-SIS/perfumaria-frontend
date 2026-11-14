@@ -1,0 +1,1 @@
+export { PasswordRecoveryPage as RecuperarSenha } from "../../features/password-recovery/PasswordRecoveryPage";

@@ -1,0 +1,2 @@
+export const RECOVERY_UNAVAILABLE = "Se a recuperação estiver indisponível para esta conta, procure o administrador. Não há recuperação sem três perguntas cadastradas.";
+export const RECOVERY_INVALID_ANSWERS = "Não foi possível validar as respostas. Confira as três respostas exatas ou reinicie a recuperação.";

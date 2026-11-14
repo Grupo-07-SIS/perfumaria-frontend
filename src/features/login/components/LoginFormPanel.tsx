@@ -1,4 +1,6 @@
 import { Controller } from "react-hook-form";
+import { Link, useInRouterContext } from "react-router";
+import { environment } from "../../../environment";
 import { AlertCircle, Eye, EyeOff, Lock, Mail } from "lucide-react";
 import logoImg from "figma:asset/19603bc35fe7f283ff1a83c590f928c9d0bfe9cf.png";
 import { PeractButton } from "../../../shared/components/peract-button";
@@ -11,6 +13,7 @@ interface LoginFormPanelProps {
 }
 
 export function LoginFormPanel({ facade }: LoginFormPanelProps) {
+  const inRouter = useInRouterContext();
   return (
     <div className="relative flex flex-1 items-center justify-center overflow-hidden bg-white px-6 py-12">
       <div className="pointer-events-none absolute -right-32 -top-32 h-96 w-96 rounded-full" style={{ background: "radial-gradient(circle, rgba(194,153,88,0.06) 0%, transparent 70%)" }} />
@@ -101,6 +104,10 @@ export function LoginFormPanel({ facade }: LoginFormPanelProps) {
             {facade.loading ? "Verificando..." : "Entrar no sistema"}
           </PeractButton>
         </form>
+
+        {environment.features.securityQuestionsEnabled && <div className="mt-4 text-center text-sm peract-font-color-accent">
+          {inRouter ? <Link to="/recuperar-senha" className="underline focus-visible:outline">Esqueci minha senha</Link> : <a href="/recuperar-senha" className="underline focus-visible:outline">Esqueci minha senha</a>}
+        </div>}
 
         <p className="mt-6 text-center text-xs tracking-[0.06em] text-[#c8c8c5]">© 2026 CANAL PERFUMADO DECANTS</p>
       </PeractCard>
