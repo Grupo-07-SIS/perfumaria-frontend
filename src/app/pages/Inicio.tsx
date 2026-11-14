@@ -105,10 +105,6 @@ const TOP_PRODUTOS = [
 
 const CAT_COLORS = [ACC, "#b07d40", "#8c6030", "#6b4620"];
 
-const TOOLTIP_STYLE = {
-  contentStyle: { background: DARK, border: "none", borderRadius: "8px", color: "white", fontSize: "12px" },
-};
-
 function fmtBRL(v: number) {
   return `R$ ${v.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }

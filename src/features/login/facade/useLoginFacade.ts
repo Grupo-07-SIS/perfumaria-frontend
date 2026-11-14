@@ -13,7 +13,6 @@ export function useLoginFacade(): LoginFormFacade {
     control,
     formState: { errors },
     handleSubmit,
-    setValue,
   } = useForm<LoginFormData>({
     defaultValues: {
       email: "",

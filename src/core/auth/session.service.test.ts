@@ -44,7 +44,7 @@ describe("sessionService", () => {
         user: {
           cargo: "Administrador",
           email: "admin@canalperfumado.com.br",
-          id: 1,
+          id: "1",
           nome: "Admin",
         },
       },
@@ -57,7 +57,7 @@ describe("sessionService", () => {
       JSON.stringify({
         cargo: "Administrador",
         email: "admin@canalperfumado.com.br",
-        id: 1,
+        id: "1",
         nome: "Admin",
       }),
       { maxAge: 1800 },

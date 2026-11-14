@@ -7,7 +7,7 @@ import react from '@vitejs/plugin-react'
 function figmaAssetResolver() {
   return {
     name: 'figma-asset-resolver',
-    resolveId(id) {
+    resolveId(id: string) {
       if (id.startsWith('figma:asset/')) {
         const filename = id.replace('figma:asset/', '')
         return path.resolve(__dirname, 'src/assets', filename)
@@ -51,12 +51,23 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       reporter: ['text', 'html'],
-      include: ['src/core/**/*.{ts,tsx}', 'src/features/login/**/*.{ts,tsx}'],
+      include: [
+        'src/core/**/*.{ts,tsx}',
+        'src/features/login/**/*.{ts,tsx}',
+        'src/features/settings/**/*.{ts,tsx}',
+        'src/features/password-recovery/**/*.{ts,tsx}',
+      ],
       exclude: [
         'src/core/auth/auth.types.ts',
         'src/features/login/config/**',
         'src/features/login/models/**',
         'src/features/login/repository/dto/**',
+        'src/features/settings/config/**',
+        'src/features/settings/models/**',
+        'src/features/settings/repository/dto/**',
+        'src/features/password-recovery/config/**',
+        'src/features/password-recovery/models/**',
+        'src/features/password-recovery/repository/dto/**',
       ],
       thresholds: {
         lines: 80,

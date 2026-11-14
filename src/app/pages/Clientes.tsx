@@ -8,7 +8,6 @@ import { useApp, Cliente, Fornecedor, Funcionario, CargoFuncionario, Endereco } 
 
 const ACC  = "#c29958";
 const DARK = "#050300";
-const WARM = "#f5ede0";
 
 type Aba = "clientes" | "fornecedores" | "funcionarios";
 type StatusFiltro = "todos" | "ativos" | "inativos";
