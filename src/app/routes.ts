@@ -1,4 +1,5 @@
-import { createBrowserRouter } from "react-router";
+import { createBrowserRouter, type RouteObject } from "react-router";
+import { ProtectedRoute, LoginRoute, RecoveryRoute, AdminRoute } from "../core/guard/AuthGuards";
 import { Layout } from "./components/Layout";
 import { Inicio } from "./pages/Inicio";
 import { Decants } from "./pages/Decants";
@@ -7,14 +8,22 @@ import { VendasPDV } from "./pages/VendasPDV";
 import { VendasHistorico } from "./pages/VendasHistorico";
 import { PedidosOnline } from "./pages/PedidosOnline";
 import { Clientes } from "./pages/Clientes";
-import { Configuracoes } from "./pages/Configuracoes";
-
-export const router = createBrowserRouter([
+export const appRoutes: RouteObject[] = [
+  { Component: LoginRoute, children: [{ path: "/login", lazy: async () => {
+    const { LoginPage } = await import("../features/login/LoginPage");
+    return { Component: LoginPage };
+  } }] },
+  { Component: RecoveryRoute, children: [{ path: "/recuperar-senha", lazy: async () => {
+    const { PasswordRecoveryPage } = await import("../features/password-recovery/PasswordRecoveryPage");
+    return { Component: PasswordRecoveryPage };
+  } }] },
+  { Component: ProtectedRoute, children: [
   {
     path: "/",
     Component: Layout,
     children: [
       { index: true, Component: Inicio },
+      { Component: AdminRoute, children: [
       {
         path: "estoque/produtos",
         lazy: async () => {
@@ -29,13 +38,19 @@ export const router = createBrowserRouter([
           return { Component: CategoriesPage };
         },
       },
+      { path: "clientes", Component: Clientes },
+      ] },
       { path: "decants",            Component: Decants },
       { path: "bodysplash",         Component: BodySplash },
       { path: "vendas/registrar",   Component: VendasPDV },
       { path: "vendas/historico",   Component: VendasHistorico },
       { path: "vendas/pedidos",     Component: PedidosOnline },
-      { path: "clientes",           Component: Clientes },
-      { path: "configuracoes",      Component: Configuracoes },
+      { path: "configuracoes", lazy: async () => {
+        const { SettingsPage } = await import("../features/settings/SettingsPage");
+        return { Component: SettingsPage };
+      } },
     ],
   },
-]);
+  ] },
+];
+export const router = createBrowserRouter(appRoutes);
