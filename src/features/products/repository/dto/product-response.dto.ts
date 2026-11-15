@@ -1,4 +1,4 @@
-import type { ProductMeasure } from "../../models/products.models";
+import type { ProductMeasure, ProductType } from "../../models/products.models";
 
 export interface ProductResponseDto {
   categoriaNome: string;
@@ -16,6 +16,7 @@ export interface ProductResponseDto {
   precoCompra?: number | null;
   precoVenda: number;
   status: number;
+  tipoProduto?: ProductType;
   volume?: number | null;
 }
 

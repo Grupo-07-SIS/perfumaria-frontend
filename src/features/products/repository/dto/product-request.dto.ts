@@ -1,4 +1,4 @@
-import type { ProductMeasure } from "../../models/products.models";
+import type { ProductMeasure, ProductType } from "../../models/products.models";
 
 export interface ProductRequestDto {
   estoqueAtual: number;
@@ -8,5 +8,6 @@ export interface ProductRequestDto {
   nome: string;
   precoCompra?: number;
   precoVenda: number;
+  tipoProduto: ProductType;
   volume?: number;
 }

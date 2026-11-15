@@ -5,4 +5,7 @@ export type {
   PeractInputProps,
   PeractInputType,
   PeractValidationState,
-} from "./PeractInput.types";
+} from "./PeractInput.types";export {
+  PeractInputControl,
+} from "./PeractInputPrimitives";
+export type { PeractInputControlProps } from "./PeractInputPrimitives.types";

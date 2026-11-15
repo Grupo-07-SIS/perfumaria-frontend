@@ -16,6 +16,7 @@ export type PeractValidationState = "non-validation" | "invalid" | "valid";
 
 export interface PeractInputProps
   extends Omit<InputHTMLAttributes<HTMLInputElement>, "children" | "onChange" | "type"> {
+  children?: ReactNode;
   errorText?: string;
   icon?: ReactNode;
   iconClassName?: string;

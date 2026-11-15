@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
-import { useApp } from "../../../app/context/AppContext";
+import { useApp } from "../../../core/store/AppContext";
 import type { LoginFormData, LoginFormFacade } from "../models/login.models";
 import { executeLogin, hasAuthenticatedSession } from "../services/login.service";
 
@@ -38,7 +38,7 @@ export function useLoginFacade(): LoginFormFacade {
       applyAuthSession(hasLoggedIn);
       setLoading(false);
     } catch {
-      setAuthError("Não foi possível autenticar com o backend.");
+      setAuthError("Não foi possível entrar agora. Verifique sua conexão e tente novamente.");
       setLoading(false);
     }
   });

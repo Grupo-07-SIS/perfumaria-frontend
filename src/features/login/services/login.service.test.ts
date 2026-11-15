@@ -63,6 +63,7 @@ describe("loginService", () => {
       expiresIn: 3600,
       user: {
         cargo: "Administrador",
+        donoOrganizacao: false,
         email: "admin@canalperfumado.com.br",
         id: "uuid-1",
         nome: "Admin",

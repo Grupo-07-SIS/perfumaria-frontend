@@ -1,0 +1,743 @@
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { AppProvider } from "../../core/store/AppContext";
+import { sessionService } from "../../core/auth/session.service";
+import type { Cliente, Fornecedor, Funcionario } from "./models/people.models";
+import { createCliente, fetchClientes, reactivateCliente, removeCliente, updateCliente } from "./services/clientes.service";
+import { createFuncionario, fetchFuncionarios, removeFuncionario, updateFuncionario } from "./services/funcionarios.service";
+import { fetchCepAddress } from "./services/cep.service";
+import { PeoplePage } from "./PeoplePage";
+import { toClienteModel } from "./repository/mapper/cliente.mapper";
+import { toFornecedorModel } from "./repository/mapper/fornecedor.mapper";
+
+const {
+  createFornecedorMock,
+  fetchFornecedoresMock,
+  removeFornecedorMock,
+  updateFornecedorMock,
+} = vi.hoisted(() => ({
+  createFornecedorMock: vi.fn(),
+  fetchFornecedoresMock: vi.fn(),
+  removeFornecedorMock: vi.fn(),
+  updateFornecedorMock: vi.fn(),
+}));
+
+vi.mock("../../core/auth/session.service", async importOriginal => {
+  const original = await importOriginal<typeof import("../../core/auth/session.service")>();
+  return { sessionService: { ...original.sessionService, restore: vi.fn(), clear: vi.fn(), subscribeToClear: vi.fn(() => () => {}) } };
+});
+vi.mock("../../core/services/security-questions-status.service", () => ({
+  getSecurityQuestionsStatus: vi.fn(async () => ({ quantidade: 3, completo: true })),
+}));
+vi.mock("./services/clientes.service", () => ({
+  fetchClientes: vi.fn(),
+  createCliente: vi.fn(),
+  updateCliente: vi.fn(),
+  removeCliente: vi.fn(),
+  reactivateCliente: vi.fn(),
+}));
+vi.mock("./services/funcionarios.service", () => ({
+  fetchFuncionarios: vi.fn(),
+  createFuncionario: vi.fn(),
+  updateFuncionario: vi.fn(),
+  removeFuncionario: vi.fn(),
+}));
+vi.mock("./services/cep.service", () => ({ fetchCepAddress: vi.fn() }));
+vi.mock("./services/fornecedores.service", () => ({
+  fetchFornecedores: fetchFornecedoresMock,
+  createFornecedor: createFornecedorMock,
+  updateFornecedor: updateFornecedorMock,
+  removeFornecedor: removeFornecedorMock,
+}));
+
+const clientesRemotos: Cliente[] = [
+  {
+    id: 1,
+    nome: "Ana Lima",
+    email: "ana@email.com",
+    telefone: "(11) 99999-1111",
+    endereco: { cep: "01310-100", logradouro: "Rua das Flores", numero: "100", bairro: "Bela Vista", cidade: "São Paulo", uf: "SP" },
+    totalPedidos: 12,
+  },
+  {
+    id: 2,
+    nome: "Carlos Mendes",
+    email: "carlos@email.com",
+    telefone: "(21) 98888-2222",
+    endereco: { cep: "22070-010", logradouro: "Av. Atlântica", numero: "200", bairro: "Copacabana", cidade: "Rio de Janeiro", uf: "RJ" },
+    totalPedidos: 8,
+  },
+  {
+    id: 3,
+    nome: "Mariana Costa",
+    email: "mariana@email.com",
+    telefone: "(31) 97777-3333",
+    endereco: { cep: "30130-170", logradouro: "Rua Ouro Preto", numero: "50", bairro: "Funcionários", cidade: "Belo Horizonte", uf: "MG" },
+    totalPedidos: 20,
+  },
+  {
+    id: 4,
+    nome: "Pedro Alves",
+    email: "pedro@email.com",
+    telefone: "(85) 96666-6666",
+    endereco: { cep: "60165-121", logradouro: "Av. Beira Mar", numero: "80", bairro: "Meireles", cidade: "Fortaleza", uf: "CE" },
+    totalPedidos: 5,
+  },
+  {
+    id: 5,
+    nome: "Juliana Santos",
+    email: "juliana@email.com",
+    telefone: "(47) 95555-8888",
+    endereco: { cep: "89010-002", logradouro: "Rua XV de Novembro", numero: "300", bairro: "Centro", cidade: "Blumenau", uf: "SC" },
+    totalPedidos: 15,
+  },
+  {
+    id: 6,
+    nome: "Roberta Nunes",
+    email: "roberta@email.com",
+    telefone: "(11) 94444-7777",
+    endereco: { cep: "04001-000", logradouro: "Rua Vergueiro", numero: "25", bairro: "Paraíso", cidade: "São Paulo", uf: "SP" },
+    totalPedidos: 3,
+    ativo: false,
+  },
+];
+
+const funcionariosRemotos: Funcionario[] = [
+  { id: "1", nome: "Administrador", cargo: "Administrador", email: "admin@canalperfumado.com.br", senha: "admin123", donoOrganizacao: true },
+  { id: "2", nome: "Beatriz Oliveira", cargo: "Funcionário", email: "beatriz@canalperfumado.com.br", senha: "func123" },
+];
+
+const fornecedoresRemotos: Fornecedor[] = [{
+  id: 4,
+  razaoSocial: "FrascosBR Ltda",
+  cnpj: "12.345.678/0001-90",
+  email: "vendas@frascosbr.com.br",
+  telefone: "(11) 3333-4444",
+  endereco: { cep: "01001-000", logradouro: "Rua dos Frascos", numero: "50", bairro: "Centro", cidade: "São Paulo", uf: "SP" },
+  totalCompras: 8,
+}];
+
+async function renderPeople() {
+  render(<AppProvider><PeoplePage /></AppProvider>);
+  expect(screen.getByRole("heading", { name: "Gerenciamento" })).toBeInTheDocument();
+  await screen.findByText("Ana Lima");
+  await waitFor(() => expect(screen.queryByText("Carregando pessoas...")).not.toBeInTheDocument());
+}
+
+function clienteCard(nome: string) {
+  const row = screen.getByText(nome).closest("tr");
+  if (!row) throw new Error(`Linha do cliente ${nome} não encontrada.`);
+  return within(row);
+}
+
+describe("People: caracterizacao de filtros e permissoes", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(fetchCepAddress).mockReset();
+    vi.mocked(fetchCepAddress).mockResolvedValue({ logradouro: "Praça da Sé", bairro: "Sé", cidade: "São Paulo", uf: "SP" });
+    vi.mocked(sessionService.restore).mockReturnValue({
+      accessToken: "test-only", expiresAt: "2099-01-01T00:00:00Z",
+      user: { id: "qa-admin", nome: "Admin teste", email: "admin@example.test", cargo: "Administrador", donoOrganizacao: true },
+    });
+    vi.mocked(fetchClientes).mockResolvedValue(clientesRemotos.map(cliente => ({ ...cliente, endereco: { ...cliente.endereco } })));
+    fetchFornecedoresMock.mockResolvedValue(fornecedoresRemotos.map(fornecedor => ({ ...fornecedor, endereco: { ...fornecedor.endereco } })));
+    vi.mocked(fetchFuncionarios).mockResolvedValue(funcionariosRemotos.map(funcionario => ({ ...funcionario })));
+    vi.mocked(createCliente).mockImplementation(async values => ({ id: 7, ...values, totalPedidos: 0, ativo: true }));
+    vi.mocked(updateCliente).mockImplementation(async (cliente, values) => ({ ...cliente, ...values }));
+    vi.mocked(removeCliente).mockImplementation(async cliente => cliente.id);
+    vi.mocked(reactivateCliente).mockImplementation(async cliente => ({ ...cliente, ativo: true }));
+    createFornecedorMock.mockImplementation(async values => ({ id: 5, ...values, totalCompras: 0 }));
+    updateFornecedorMock.mockImplementation(async (fornecedor, values) => ({ ...fornecedor, ...values }));
+    removeFornecedorMock.mockImplementation(async fornecedor => fornecedor.id);
+    vi.mocked(createFuncionario).mockImplementation(async values => ({ id: "3", ...values }));
+    vi.mocked(updateFuncionario).mockImplementation(async (funcionario, values) => ({ ...funcionario, ...values }));
+    vi.mocked(removeFuncionario).mockImplementation(async funcionario => funcionario.id);
+  });
+
+  it("identifica o dono e impede suas acoes de edicao e exclusao", async () => {
+    vi.mocked(fetchFuncionarios).mockResolvedValue([
+      { id: "owner", nome: "Dono teste", email: "admin@perfumaria.com", cargo: "Administrador", donoOrganizacao: true },
+      { id: "normal", nome: "Admin comum", email: "normal@example.test", cargo: "Administrador", donoOrganizacao: false },
+    ]);
+    const user = userEvent.setup();
+    await renderPeople();
+    await user.click(screen.getByRole("button", { name: /^Funcionários/ }));
+    const table = within(screen.getByRole("table"));
+    const owner = within(table.getByRole("row", { name: /Dono teste/ }));
+    expect(owner.getByText("Administrador (dono)")).toBeInTheDocument();
+    expect(owner.getByText("Conta protegida")).toBeInTheDocument();
+    expect(owner.queryByRole("button", { name: "Editar" })).not.toBeInTheDocument();
+    expect(owner.queryByRole("button", { name: "Excluir" })).not.toBeInTheDocument();
+    const normal = within(table.getByRole("row", { name: /Admin comum/ }));
+    expect(normal.getByRole("button", { name: "Editar" })).toBeInTheDocument();
+    expect(normal.getByRole("button", { name: "Excluir" })).toBeInTheDocument();
+    expect(removeFuncionario).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    { tipo: "cliente", endereco: null },
+    { tipo: "cliente", endereco: undefined },
+    { tipo: "fornecedor", endereco: null },
+    { tipo: "fornecedor", endereco: undefined },
+  ])("lista e edita $tipo com endereco $endereco retornado pela API", async ({ tipo, endereco }) => {
+    vi.mocked(fetchClientes).mockResolvedValue([toClienteModel({ ...clientesRemotos[0], status: 1, endereco })]);
+    fetchFornecedoresMock.mockResolvedValue([toFornecedorModel({ ...fornecedoresRemotos[0], nome: fornecedoresRemotos[0].razaoSocial, endereco })]);
+    const user = userEvent.setup();
+    await renderPeople();
+    if (tipo === "fornecedor") await user.click(screen.getByRole("button", { name: /^Fornecedores/ }));
+    const table = within(screen.getByRole("table", { name: tipo === "cliente" ? "Clientes" : "Fornecedores" }));
+    const row = within(table.getByRole("row", { name: tipo === "cliente" ? /Ana Lima/ : /FrascosBR Ltda/ }));
+    expect(row.getByRole("cell", { name: "—", exact: true })).toBeInTheDocument();
+    await user.click(row.getByRole("button", { name: "Editar" }));
+    const dialog = within(screen.getByRole("dialog", { name: tipo === "cliente" ? "Editar Cliente" : "Editar Fornecedor" }));
+    expect(dialog.getByLabelText("Logradouro")).toHaveValue("");
+    expect(dialog.getByLabelText("Cidade")).toHaveValue("");
+    expect(dialog.getByLabelText("CEP")).toHaveValue("");
+  });
+
+  it("organiza clientes em tabela com contato, status, pedidos e acoes", async () => {
+    await renderPeople();
+    const table = within(screen.getByRole("table", { name: "Clientes" }));
+    expect(table.getAllByRole("columnheader").map(header => header.textContent)).toEqual(["Nome", "Status", "Telefone", "E-mail", "Endereço", "Pedidos", "Ações"]);
+    const row = within(table.getByRole("row", { name: /Ana Lima/ }));
+    expect(row.getByText("Ativo")).toBeInTheDocument();
+    expect(row.getByText("(11) 99999-1111")).toBeInTheDocument();
+    expect(row.getByText("ana@email.com")).toBeInTheDocument();
+    expect(row.getByText("12", { exact: true })).toBeInTheDocument();
+    expect(row.getByRole("button", { name: "Editar" })).toBeInTheDocument();
+    expect(row.getByRole("button", { name: "Excluir cliente" })).toBeInTheDocument();
+  });
+
+  it("organiza fornecedores em tabela e preserva edicao e exclusao", async () => {
+    const user = userEvent.setup();
+    await renderPeople();
+    await user.click(screen.getByRole("button", { name: /^Fornecedores/ }));
+    const table = within(screen.getByRole("table", { name: "Fornecedores" }));
+    expect(table.getAllByRole("columnheader").map(header => header.textContent)).toEqual(["Razão social", "CNPJ", "Telefone", "E-mail", "Endereço", "Ações"]);
+    const row = within(table.getByRole("row", { name: /FrascosBR Ltda/ }));
+    expect(row.getByText("12.345.678/0001-90")).toBeInTheDocument();
+    expect(row.getByText("(11) 3333-4444")).toBeInTheDocument();
+    expect(row.getByText("vendas@frascosbr.com.br")).toBeInTheDocument();
+    expect(row.getByRole("button", { name: "Excluir" })).toBeInTheDocument();
+    await user.click(row.getByRole("button", { name: "Editar" }));
+    expect(screen.getByRole("dialog", { name: "Editar Fornecedor" })).toBeInTheDocument();
+  });
+
+  it.each(["cliente", "fornecedor", "funcionario"] as const)("bloqueia envio duplicado de %s e permite repetir apos falha", async tipo => {
+    let rejectSave!: (reason: Error) => void;
+    const pending = new Promise<void>((_resolve, reject) => { rejectSave = reject; });
+    const user = userEvent.setup();
+    await renderPeople();
+    if (tipo === "fornecedor") {
+      await user.click(screen.getByRole("button", { name: /^Fornecedores/ }));
+      createFornecedorMock.mockImplementationOnce(async values => { await pending; return { ...fornecedoresRemotos[0], ...values }; });
+      await user.click(screen.getAllByRole("button", { name: "Novo fornecedor" })[0]);
+      fireEvent.change(screen.getByPlaceholderText("Ex: Empresa Ltda"), { target: { value: "Fornecedor teste" } });
+      fireEvent.change(screen.getByPlaceholderText("00.000.000/0001-00"), { target: { value: "12345678000190" } });
+      fireEvent.change(screen.getByPlaceholderText("contato@empresa.com.br"), { target: { value: "fornecedor@example.test" } });
+    } else if (tipo === "funcionario") {
+      await user.click(screen.getByRole("button", { name: /^Funcionários/ }));
+      vi.mocked(createFuncionario).mockImplementationOnce(async values => { await pending; return { id: "999", ...values }; });
+      await user.click(screen.getAllByRole("button", { name: "Novo funcionário" })[0]);
+      fireEvent.change(screen.getByPlaceholderText("Ex: Beatriz Oliveira"), { target: { value: "Funcionario teste" } });
+      fireEvent.change(screen.getByPlaceholderText("usuario@canalperfumado.com.br"), { target: { value: "funcionario@example.test" } });
+      fireEvent.change(screen.getByPlaceholderText("Mínimo 6 caracteres"), { target: { value: "123456" } });
+      fireEvent.change(screen.getByPlaceholderText("Repita a senha"), { target: { value: "123456" } });
+    } else {
+      vi.mocked(createCliente).mockImplementationOnce(async values => { await pending; return { id: 999, ...values, totalPedidos: 0 }; });
+      await user.click(screen.getAllByRole("button", { name: "Novo cliente" })[0]);
+      fireEvent.change(screen.getByPlaceholderText("Ex: Ana Lima"), { target: { value: "Cliente teste" } });
+      fireEvent.change(screen.getByPlaceholderText("(11) 99999-9999"), { target: { value: "11912345678" } });
+      fireEvent.change(screen.getByPlaceholderText("cliente@email.com"), { target: { value: "cliente@example.test" } });
+    }
+    const dialog = within(screen.getByRole("dialog"));
+    const create = tipo === "cliente" ? createCliente : tipo === "fornecedor" ? createFornecedorMock : createFuncionario;
+    await user.dblClick(dialog.getByRole("button", { name: "Salvar" }));
+    expect(create).toHaveBeenCalledTimes(1);
+    expect(dialog.getByRole("button", { name: "Salvando..." })).toBeDisabled();
+    expect(dialog.getByRole("button", { name: "Cancelar" })).toBeDisabled();
+    await user.keyboard("{Escape}");
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
+    await act(async () => { rejectSave(new Error("Falha simulada")); });
+    expect(dialog.getByRole("button", { name: "Salvar" })).toBeEnabled();
+    await user.click(dialog.getByRole("button", { name: "Salvar" }));
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+    expect(create).toHaveBeenCalledTimes(2);
+  });
+
+  it.each(["clientes", "fornecedores", "funcionarios"] as const)("pagina a aba %s com o mesmo rodape do historico", async aba => {
+    const user = userEvent.setup();
+    const clients = Array.from({ length: 25 }, (_, index) => ({ ...clientesRemotos[0], id: index + 100, nome: index === 0 ? "Ana Lima" : `Cliente paginado ${index + 1}` }));
+    const suppliers = Array.from({ length: 25 }, (_, index) => ({ ...fornecedoresRemotos[0], id: index + 100, razaoSocial: `Fornecedor paginado ${index + 1}` }));
+    const employees = Array.from({ length: 25 }, (_, index) => ({ ...funcionariosRemotos[1], id: String(index + 100), nome: `Funcionario paginado ${index + 1}` }));
+    vi.mocked(fetchClientes).mockResolvedValue(clients);
+    fetchFornecedoresMock.mockResolvedValue(suppliers);
+    vi.mocked(fetchFuncionarios).mockResolvedValue(employees);
+    await renderPeople();
+    if (aba !== "clientes") await user.click(screen.getByRole("button", { name: aba === "fornecedores" ? /^Fornecedores/ : /^Funcionários/ }));
+    const label = aba === "clientes" ? "cliente(s)" : aba === "fornecedores" ? "fornecedor(es)" : "funcionário(s)";
+    expect(screen.getAllByText(`Exibindo 1 a 10 de 25 ${label}`).length).toBeGreaterThan(0);
+    expect(screen.getByRole("table").querySelectorAll("tbody tr")).toHaveLength(10);
+    await user.click(screen.getAllByRole("button", { name: "3", exact: true })[0]);
+    expect(screen.getAllByText(`Exibindo 21 a 25 de 25 ${label}`).length).toBeGreaterThan(0);
+    expect(screen.getByRole("table").querySelectorAll("tbody tr")).toHaveLength(5);
+    await user.type(screen.getByPlaceholderText(aba === "clientes" ? "Buscar cliente..." : aba === "fornecedores" ? "Buscar fornecedor..." : "Buscar funcionário..."), "p");
+    expect(screen.getAllByText(`Exibindo 1 a 10 de 25 ${label}`).length).toBeGreaterThan(0);
+  });
+
+  it("permite navegar ate clientes alem do registro 100", async () => {
+    const user = userEvent.setup();
+    vi.mocked(fetchClientes).mockResolvedValue(Array.from({ length: 105 }, (_, index) => ({ ...clientesRemotos[0], id: index + 100, nome: index === 0 ? "Ana Lima" : `Cliente paginado ${index + 1}` })));
+    await renderPeople();
+    for (const target of [4, 6, 8, 10, 11]) await user.click(screen.getByRole("button", { name: String(target), exact: true }));
+    expect(screen.getByText("Exibindo 101 a 105 de 105 cliente(s)")).toBeInTheDocument();
+    expect(screen.getByRole("table")).toHaveTextContent("Cliente paginado 105");
+  });
+
+  it("preenche endereco por CEP no cliente e salva com numero e complemento manuais", async () => {
+    const user = userEvent.setup();
+    await renderPeople();
+    await user.click(screen.getAllByRole("button", { name: "Novo cliente" })[0]);
+    const dialog = within(screen.getByRole("dialog", { name: "Novo Cliente" }));
+    await user.type(dialog.getByPlaceholderText("Ex: Ana Lima"), "Cliente CEP");
+    await user.type(dialog.getByPlaceholderText("cliente@email.com"), "cep@example.test");
+    await user.type(dialog.getByPlaceholderText("(11) 99999-9999"), "11912345678");
+    await user.type(dialog.getByLabelText("Número"), "100");
+    await user.type(dialog.getByLabelText("Complemento"), "Casa");
+    await user.type(dialog.getByLabelText("CEP"), "01001000");
+
+    await waitFor(() => expect(dialog.getByLabelText("Logradouro")).toHaveValue("Praça da Sé"));
+    expect(dialog.getByLabelText("Bairro")).toHaveValue("Sé");
+    expect(dialog.getByLabelText("Cidade")).toHaveValue("São Paulo");
+    expect(dialog.getByLabelText("UF")).toHaveValue("SP");
+    expect(dialog.getByLabelText("Número")).toHaveValue("100");
+    expect(dialog.getByLabelText("Complemento")).toHaveValue("Casa");
+    await user.click(dialog.getByRole("button", { name: "Salvar" }));
+    await waitFor(() => expect(createCliente).toHaveBeenCalledWith(expect.objectContaining({
+      endereco: expect.objectContaining({ cep: "01001-000", logradouro: "Praça da Sé", numero: "100", complemento: "Casa", cidade: "São Paulo", uf: "SP" }),
+    })));
+  });
+
+  it("preenche endereco por CEP tambem no formulario de fornecedor", async () => {
+    const user = userEvent.setup();
+    await renderPeople();
+    await user.click(screen.getByRole("button", { name: /^Fornecedores/ }));
+    await user.click(screen.getAllByRole("button", { name: "Novo fornecedor" })[0]);
+    const dialog = within(screen.getByRole("dialog", { name: "Novo Fornecedor" }));
+    await user.type(dialog.getByLabelText("CEP"), "01001000");
+    await waitFor(() => expect(dialog.getByLabelText("Cidade")).toHaveValue("São Paulo"));
+    expect(dialog.getByLabelText("Logradouro")).toHaveValue("Praça da Sé");
+    expect(dialog.getByLabelText("UF")).toHaveValue("SP");
+    expect(dialog.getByLabelText("Número")).toHaveValue("");
+    expect(dialog.getByLabelText("Complemento")).toHaveValue("");
+    expect(dialog.getByRole("button", { name: "Salvar" })).toBeEnabled();
+  });
+
+  it("permite salvar cliente com endereco manual quando o CEP nao e encontrado", async () => {
+    vi.mocked(fetchCepAddress).mockRejectedValueOnce(new Error("CEP_NOT_FOUND"));
+    const user = userEvent.setup();
+    await renderPeople();
+    await user.click(screen.getAllByRole("button", { name: "Novo cliente" })[0]);
+    const dialog = within(screen.getByRole("dialog", { name: "Novo Cliente" }));
+    await user.type(dialog.getByPlaceholderText("Ex: Ana Lima"), "Cliente manual");
+    await user.type(dialog.getByPlaceholderText("cliente@email.com"), "manual@example.test");
+    await user.type(dialog.getByPlaceholderText("(11) 99999-9999"), "11912345678");
+    await user.type(dialog.getByLabelText("CEP"), "99999999");
+    expect(await dialog.findByRole("status")).toHaveTextContent("CEP não encontrado");
+    expect(dialog.getByRole("button", { name: "Consultar CEP novamente" })).toBeEnabled();
+    await user.type(dialog.getByLabelText("Logradouro"), "Rua manual");
+    await user.type(dialog.getByLabelText("Número"), "10");
+    await user.type(dialog.getByLabelText("Bairro"), "Centro");
+    await user.type(dialog.getByLabelText("Cidade"), "São Paulo");
+    await user.selectOptions(dialog.getByLabelText("UF"), "SP");
+    await user.click(dialog.getByRole("button", { name: "Salvar" }));
+    await waitFor(() => expect(createCliente).toHaveBeenCalledWith(expect.objectContaining({
+      endereco: expect.objectContaining({ cep: "99999-999", logradouro: "Rua manual", numero: "10" }),
+    })));
+  });
+
+  it("preserva resultados ao digitar e consulta clientes somente ao submeter a busca", async () => {
+    const user = userEvent.setup();
+    await renderPeople();
+    vi.mocked(fetchClientes).mockClear();
+    const search = screen.getByPlaceholderText("Buscar cliente...");
+    await user.type(search, "inexistente");
+    expect(screen.getByText("Ana Lima")).toBeInTheDocument();
+    expect(screen.getByText("Carlos Mendes")).toBeInTheDocument();
+    expect(fetchClientes).not.toHaveBeenCalled();
+
+    vi.mocked(fetchClientes).mockResolvedValueOnce([]);
+    await user.type(search, "{Enter}");
+
+    await waitFor(() => expect(fetchClientes).toHaveBeenCalledWith({ busca: "inexistente" }));
+    expect(await screen.findByText("Nenhum cliente encontrado.")).toBeInTheDocument();
+  });
+
+  it("funcionario gerencia clientes sem acesso as abas administrativas", async () => {
+    const user = userEvent.setup();
+    const session = sessionService.restore()!;
+    vi.mocked(sessionService.restore).mockReturnValue({ ...session, user: { ...session.user, cargo: "Funcionário" } });
+    await renderPeople();
+    expect(screen.queryByRole("button", { name: /^Fornecedores/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /^Funcionários/ })).not.toBeInTheDocument();
+    await user.click(screen.getAllByRole("button", { name: "Novo cliente" })[0]);
+    expect(screen.getByRole("dialog", { name: "Novo Cliente" })).toBeInTheDocument();
+    await user.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Salvar" }));
+    expect(screen.getAllByText("Obrigatório.")).toHaveLength(2);
+    await user.type(screen.getByPlaceholderText("Ex: Ana Lima"), "Cliente teste");
+    await user.type(screen.getByPlaceholderText("(11) 99999-9999"), "11912345678");
+    await user.type(screen.getByPlaceholderText("cliente@email.com"), "cliente@example.test");
+    await user.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Salvar" }));
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+    expect(screen.getByText("Cliente teste")).toBeInTheDocument();
+    expect(createCliente).toHaveBeenCalledTimes(1);
+  });
+
+  it("admin submete busca somente para a aba ativa e limpa o texto ao trocar aba", async () => {
+    const user = userEvent.setup();
+    await renderPeople();
+    await user.click(screen.getByRole("button", { name: /^Fornecedores/ }));
+    expect(screen.getByPlaceholderText("Buscar fornecedor...")).toHaveValue("");
+    vi.clearAllMocks();
+    await user.type(screen.getByPlaceholderText("Buscar fornecedor..."), "vendas@fracsosbr.com.br");
+    expect(screen.getByText("FrascosBR Ltda")).toBeInTheDocument();
+    expect(fetchFornecedoresMock).not.toHaveBeenCalled();
+    await user.type(screen.getByPlaceholderText("Buscar fornecedor..."), "{Enter}");
+    await waitFor(() => expect(fetchFornecedoresMock).toHaveBeenCalledWith({ busca: "vendas@fracsosbr.com.br" }));
+    expect(fetchClientes).not.toHaveBeenCalled();
+    expect(fetchFuncionarios).not.toHaveBeenCalled();
+
+    await user.click(screen.getByRole("button", { name: /^Funcionários/ }));
+    expect(screen.getByPlaceholderText("Buscar funcionário...")).toHaveValue("");
+    vi.clearAllMocks();
+    await user.type(screen.getByPlaceholderText("Buscar funcionário..."), "ADMINISTRADOR");
+    expect(screen.getAllByText("Beatriz Oliveira").length).toBeGreaterThan(0);
+    expect(fetchFuncionarios).not.toHaveBeenCalled();
+    await user.type(screen.getByPlaceholderText("Buscar funcionário..."), "{Enter}");
+    await waitFor(() => expect(fetchFuncionarios).toHaveBeenCalledWith({ busca: "ADMINISTRADOR" }));
+    expect(fetchClientes).not.toHaveBeenCalled();
+    expect(fetchFornecedoresMock).not.toHaveBeenCalled();
+  });
+
+  it("bloqueia fornecedor com CNPJ incompleto ou e-mail invalido antes de chamar o backend", async () => {
+    const user = userEvent.setup();
+    await renderPeople();
+    await user.click(screen.getByRole("button", { name: /^Fornecedores/ }));
+    await user.click(screen.getAllByRole("button", { name: "Novo fornecedor" })[0]);
+    const dialog = within(screen.getByRole("dialog", { name: "Novo Fornecedor" }));
+    await user.type(dialog.getByPlaceholderText("Ex: Empresa Ltda"), "Teste");
+    await user.type(dialog.getByPlaceholderText("00.000.000/0001-00"), "31873921378");
+    await user.type(dialog.getByPlaceholderText("contato@empresa.com.br"), "teste@perfumaria,com");
+
+    await user.click(dialog.getByRole("button", { name: "Salvar" }));
+
+    expect(dialog.getByText("O CNPJ deve conter 14 dígitos.")).toBeInTheDocument();
+    expect(dialog.getByText("Informe um e-mail válido.")).toBeInTheDocument();
+    expect(createFornecedorMock).not.toHaveBeenCalled();
+  });
+
+  it("aplica mascara e limite de digitos nos campos do fornecedor", async () => {
+    const user = userEvent.setup();
+    await renderPeople();
+    await user.click(screen.getByRole("button", { name: /^Fornecedores/ }));
+    await user.click(screen.getAllByRole("button", { name: "Novo fornecedor" })[0]);
+    const dialog = within(screen.getByRole("dialog", { name: "Novo Fornecedor" }));
+    const cnpj = dialog.getByPlaceholderText("00.000.000/0001-00");
+    const telefone = dialog.getByPlaceholderText("(11) 3333-4444");
+    const cep = dialog.getByPlaceholderText("00000-000");
+    const numero = dialog.getByPlaceholderText("Ex: 100");
+
+    await user.type(cnpj, "12a345678000190999");
+    await user.type(telefone, "11991643000123");
+    await user.type(cep, "01001000999");
+    await user.type(numero, "12b3");
+
+    expect(cnpj).toHaveValue("12.345.678/0001-90");
+    expect(telefone).toHaveValue("(11) 99164-3000");
+    expect(cep).toHaveValue("01001-000");
+    expect(numero).toHaveValue("123");
+    expect(cnpj).toHaveAttribute("inputmode", "numeric");
+    expect(telefone).toHaveAttribute("type", "tel");
+    expect(cep).toHaveAttribute("inputmode", "numeric");
+  });
+
+  it("mostra no campo quando telefone ou CEP estao incompletos", async () => {
+    const user = userEvent.setup();
+    await renderPeople();
+    await user.click(screen.getByRole("button", { name: /^Fornecedores/ }));
+    await user.click(screen.getAllByRole("button", { name: "Novo fornecedor" })[0]);
+    const dialog = within(screen.getByRole("dialog", { name: "Novo Fornecedor" }));
+    await user.type(dialog.getByPlaceholderText("Ex: Empresa Ltda"), "Teste");
+    await user.type(dialog.getByPlaceholderText("00.000.000/0001-00"), "12345678000190");
+    await user.type(dialog.getByPlaceholderText("contato@empresa.com.br"), "teste@perfumaria.com");
+    await user.type(dialog.getByPlaceholderText("(11) 3333-4444"), "119916");
+    await user.type(dialog.getByPlaceholderText("00000-000"), "0100");
+
+    await user.click(dialog.getByRole("button", { name: "Salvar" }));
+
+    expect(dialog.getByText("Informe DDD + número (10 ou 11 dígitos).")).toBeInTheDocument();
+    expect(dialog.getByText("O CEP deve conter 8 dígitos.")).toBeInTheDocument();
+    expect(createFornecedorMock).not.toHaveBeenCalled();
+  });
+
+  it("admin cadastra fornecedor no backend e mantem o modal aberto quando a criacao falha", async () => {
+    const user = userEvent.setup();
+    await renderPeople();
+    await user.click(screen.getByRole("button", { name: /^Fornecedores/ }));
+    await user.click(screen.getAllByRole("button", { name: "Novo fornecedor" })[0]);
+    const dialog = within(screen.getByRole("dialog", { name: "Novo Fornecedor" }));
+    await user.type(dialog.getByPlaceholderText("Ex: Empresa Ltda"), "Essencias Ltda");
+    await user.type(dialog.getByPlaceholderText("00.000.000/0001-00"), "12.345.678/0001-99");
+    await user.type(dialog.getByPlaceholderText("contato@empresa.com.br"), "contato@essencias.test");
+
+    createFornecedorMock.mockRejectedValueOnce(new Error("PEOPLE_SUPPLIERS_CREATE_FAILED:500"));
+    await user.click(dialog.getByRole("button", { name: "Salvar" }));
+    expect(await dialog.findByRole("alert")).toHaveTextContent("O servidor está temporariamente indisponível. Tente novamente em instantes.");
+    expect(screen.getByRole("dialog", { name: "Novo Fornecedor" })).toBeInTheDocument();
+    expect(screen.queryByText("Essencias Ltda")).not.toBeInTheDocument();
+
+    await user.click(dialog.getByRole("button", { name: "Salvar" }));
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+    expect(screen.getByText("Essencias Ltda")).toBeInTheDocument();
+    expect(createFornecedorMock).toHaveBeenLastCalledWith(expect.objectContaining({
+      razaoSocial: "Essencias Ltda",
+      cnpj: "12.345.678/0001-99",
+      email: "contato@essencias.test",
+    }));
+  });
+
+  it("exibe a senha do funcionario sempre mascarada, pois o backend nao a retorna", async () => {
+    const user = userEvent.setup();
+    vi.mocked(fetchFuncionarios).mockResolvedValue(funcionariosRemotos.map(({ senha: _senha, ...funcionario }) => funcionario));
+    await renderPeople();
+    await user.click(screen.getByRole("button", { name: /^Funcionários/ }));
+
+    const table = within(screen.getByRole("table"));
+    expect(table.getAllByLabelText("Senha protegida")).toHaveLength(funcionariosRemotos.length);
+    expect(table.getAllByText("••••••")).toHaveLength(funcionariosRemotos.length);
+    expect(screen.queryByText("Não definida")).not.toBeInTheDocument();
+  });
+
+  it("permite ao dono visualizar a propria conta protegida e os funcionarios", async () => {
+    const user = userEvent.setup();
+    const session = sessionService.restore()!;
+    vi.mocked(sessionService.restore).mockReturnValue({
+      ...session,
+      user: { ...session.user, id: "1", email: "admin@canalperfumado.com.br" },
+    });
+    await renderPeople();
+    await user.click(screen.getByRole("button", { name: /^Funcionários/ }));
+
+    const table = within(screen.getByRole("table"));
+    expect(table.getByText("Administrador")).toBeInTheDocument();
+    expect(table.getByText("Administrador (dono)")).toBeInTheDocument();
+    expect(table.getByText("Beatriz Oliveira")).toBeInTheDocument();
+    expect(screen.getAllByText("Exibindo 1 a 2 de 2 funcionário(s)")).toHaveLength(2);
+  });
+
+  it("administrador comum visualiza apenas funcionarios mesmo se a resposta contiver admins", async () => {
+    const user = userEvent.setup();
+    const session = sessionService.restore()!;
+    vi.mocked(sessionService.restore).mockReturnValue({ ...session, user: { ...session.user, donoOrganizacao: false } });
+    vi.mocked(fetchFuncionarios).mockResolvedValue([
+      ...funcionariosRemotos,
+      { id: "normal", nome: "Outro administrador", email: "normal@example.test", cargo: "Administrador" },
+    ]);
+    await renderPeople();
+    await user.click(screen.getByRole("button", { name: /^Funcionários/ }));
+    const table = within(screen.getByRole("table"));
+    expect(table.queryByText("Administrador")).not.toBeInTheDocument();
+    expect(table.queryByText("Outro administrador")).not.toBeInTheDocument();
+    expect(table.getByText("Beatriz Oliveira")).toBeInTheDocument();
+    expect(screen.getAllByText("Exibindo 1 a 1 de 1 funcionário(s)")).toHaveLength(2);
+  });
+
+  it("mostra mensagem legivel quando a exclusao de funcionario falha", async () => {
+    const user = userEvent.setup();
+    vi.mocked(removeFuncionario).mockRejectedValueOnce(new Error("PEOPLE_EMPLOYEES_DELETE_FAILED:400"));
+    await renderPeople();
+    await user.click(screen.getByRole("button", { name: /^Funcionários/ }));
+    await user.click(within(screen.getByRole("table")).getAllByRole("button", { name: "Excluir" })[0]);
+    await user.click(within(screen.getByRole("dialog", { name: "Confirmar exclusão" })).getByRole("button", { name: "Excluir" }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("Confira os dados informados e corrija os campos destacados.");
+    expect(screen.queryByText("PEOPLE_EMPLOYEES_DELETE_FAILED:400")).not.toBeInTheDocument();
+  });
+
+  it("mostra conflito de e-mail duplicado no campo do novo funcionário", async () => {
+    const user = userEvent.setup();
+    vi.mocked(createFuncionario).mockRejectedValueOnce(new Error("PEOPLE_EMPLOYEES_CREATE_FAILED:409"));
+    await renderPeople();
+    await user.click(screen.getByRole("button", { name: /^Funcionários/ }));
+    await user.click(screen.getAllByRole("button", { name: "Novo funcionário" })[0]);
+    const dialog = within(screen.getByRole("dialog", { name: "Novo Funcionário" }));
+    await user.type(dialog.getByPlaceholderText("Ex: Beatriz Oliveira"), "Beatriz Oliveira");
+    await user.type(dialog.getByPlaceholderText("usuario@canalperfumado.com.br"), "duplicado@example.com");
+    await user.type(dialog.getByPlaceholderText("Mínimo 6 caracteres"), "SenhaForte12!");
+    await user.type(dialog.getByPlaceholderText("Repita a senha"), "SenhaForte12!");
+    await user.click(dialog.getByRole("button", { name: "Salvar" }));
+
+    expect(await dialog.findByText("Este e-mail já está cadastrado. Informe outro e-mail.")).toBeInTheDocument();
+    expect(dialog.queryByText("PEOPLE_EMPLOYEES_CREATE_FAILED:409")).not.toBeInTheDocument();
+    expect(screen.getAllByRole("alert")).toHaveLength(1);
+    expect(dialog.getByPlaceholderText("usuario@canalperfumado.com.br")).toHaveValue("duplicado@example.com");
+  });
+
+  it.each(["email", "telefone"])("destaca conflito remoto no campo %s do cliente e permite repetir", async field => {
+    const user = userEvent.setup();
+    const message = field === "email" ? "Este e-mail já está cadastrado." : "Este telefone já está cadastrado.";
+    vi.mocked(updateCliente).mockRejectedValueOnce(Object.assign(new Error("PEOPLE_CLIENTS_UPDATE_FAILED:409"), {
+      status: 409, fields: { [field]: message },
+    }));
+    await renderPeople();
+    await user.click(clienteCard("Ana Lima").getByRole("button", { name: "Editar" }));
+    const dialog = within(screen.getByRole("dialog", { name: "Editar Cliente" }));
+    await user.click(dialog.getByRole("button", { name: "Salvar" }));
+    expect(await dialog.findByText(message)).toBeInTheDocument();
+    expect(dialog.queryByText("Salvo!")).not.toBeInTheDocument();
+    expect(dialog.getByPlaceholderText("cliente@email.com")).toHaveValue("ana@email.com");
+    await user.click(dialog.getByRole("button", { name: "Salvar" }));
+    await waitFor(() => expect(screen.queryByRole("dialog", { name: "Editar Cliente" })).not.toBeInTheDocument());
+    expect(updateCliente).toHaveBeenCalledTimes(2);
+  });
+
+  it("aplica mascara no telefone do cliente e valida telefone e e-mail no campo", async () => {
+    const user = userEvent.setup();
+    await renderPeople();
+    await user.click(screen.getAllByRole("button", { name: "Novo cliente" })[0]);
+    const dialog = within(screen.getByRole("dialog", { name: "Novo Cliente" }));
+    const telefone = dialog.getByPlaceholderText("(11) 99999-9999");
+    const email = dialog.getByPlaceholderText("cliente@email.com");
+    await user.type(dialog.getByPlaceholderText("Ex: Ana Lima"), "Cliente teste");
+
+    await user.type(telefone, "11a9916");
+    await user.type(email, "cliente@perfumaria,com");
+    expect(telefone).toHaveValue("(11) 9916");
+    expect(telefone).toHaveAttribute("type", "tel");
+
+    await user.click(dialog.getByRole("button", { name: "Salvar" }));
+    expect(dialog.getByText("Informe DDD + número (10 ou 11 dígitos).")).toBeInTheDocument();
+    expect(dialog.getByText("Informe um e-mail válido.")).toBeInTheDocument();
+    expect(createCliente).not.toHaveBeenCalled();
+
+    await user.type(telefone, "43000999");
+    expect(telefone).toHaveValue("(11) 99164-3000");
+  });
+
+  it("exibe o telefone do cliente formatado no card", async () => {
+    vi.mocked(fetchClientes).mockResolvedValue([{ ...clientesRemotos[0], telefone: "11999991111" }]);
+    await renderPeople();
+
+    expect(clienteCard("Ana Lima").getByText("(11) 99999-1111")).toBeInTheDocument();
+  });
+
+  it("reativa cliente inativo com confirmacao e o devolve para os ativos", async () => {
+    const user = userEvent.setup();
+    await renderPeople();
+    await user.click(screen.getByRole("button", { name: /^Inativos/ }));
+    expect(clienteCard("Roberta Nunes").queryByRole("button", { name: "Excluir cliente" })).not.toBeInTheDocument();
+
+    await user.click(clienteCard("Roberta Nunes").getByRole("button", { name: "Reativar cliente" }));
+    await user.click(within(screen.getByRole("dialog", { name: "Reativar Cliente" })).getByRole("button", { name: "Cancelar" }));
+    expect(reactivateCliente).not.toHaveBeenCalled();
+
+    await user.click(clienteCard("Roberta Nunes").getByRole("button", { name: "Reativar cliente" }));
+    await user.click(within(screen.getByRole("dialog", { name: "Reativar Cliente" })).getByRole("button", { name: "Reativar" }));
+
+    await waitFor(() => expect(screen.queryByRole("dialog", { name: "Reativar Cliente" })).not.toBeInTheDocument());
+    expect(reactivateCliente).toHaveBeenCalledWith(expect.objectContaining({ id: 6, nome: "Roberta Nunes" }));
+    expect(screen.queryByText("Roberta Nunes")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^Ativos/ })).toHaveTextContent("6");
+    expect(screen.getByRole("button", { name: /^Inativos/ })).toHaveTextContent("0");
+  });
+
+  it("mostra no contador de inativos o cliente inativo encontrado pela busca", async () => {
+    const user = userEvent.setup();
+    await renderPeople();
+    vi.mocked(fetchClientes).mockImplementation(async (params = {}) => clientesRemotos
+      .filter(cliente => cliente.nome.toLowerCase().includes((params.busca ?? "").toLowerCase()))
+      .map(cliente => ({ ...cliente, endereco: { ...cliente.endereco } })));
+
+    await user.type(screen.getByPlaceholderText("Buscar cliente..."), "Roberta");
+
+    await waitFor(() => expect(screen.getByRole("button", { name: /^Ativos/ })).toHaveTextContent("0"));
+    expect(screen.getByRole("button", { name: /^Inativos/ })).toHaveTextContent("1");
+    expect(screen.getByRole("button", { name: /^Todos/ })).toHaveTextContent("1");
+    await user.click(screen.getByRole("button", { name: /^Inativos/ }));
+    expect(screen.getByText("Roberta Nunes")).toBeInTheDocument();
+  });
+
+  it("exige confirmacao para excluir cliente e permite cancelar", async () => {
+    const user = userEvent.setup();
+    await renderPeople();
+    await user.click(clienteCard("Ana Lima").getByRole("button", { name: "Excluir cliente" }));
+    await user.click(within(screen.getByRole("dialog", { name: "Confirmar exclusão" })).getByRole("button", { name: "Cancelar" }));
+    expect(removeCliente).not.toHaveBeenCalled();
+    expect(screen.getByText("Ana Lima")).toBeInTheDocument();
+
+    await user.click(clienteCard("Ana Lima").getByRole("button", { name: "Excluir cliente" }));
+    await user.click(within(screen.getByRole("dialog", { name: "Confirmar exclusão" })).getByRole("button", { name: "Excluir" }));
+    await waitFor(() => expect(screen.queryByText("Ana Lima")).not.toBeInTheDocument());
+    expect(removeCliente).toHaveBeenCalledWith(expect.objectContaining({ id: 1, nome: "Ana Lima" }));
+    expect(screen.queryByRole("dialog", { name: "Confirmar exclusão" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^Ativos/ })).toHaveTextContent("4");
+    expect(screen.getByRole("button", { name: /^Inativos/ })).toHaveTextContent("2");
+
+    await user.click(screen.getByRole("button", { name: /^Inativos/ }));
+    expect(screen.getByText("Ana Lima")).toBeInTheDocument();
+    expect(clienteCard("Ana Lima").getByText("Inativo")).toBeInTheDocument();
+  });
+
+  it("mantem cliente e modal de edicao abertos quando a atualizacao falha", async () => {
+    const user = userEvent.setup();
+    vi.mocked(updateCliente).mockRejectedValueOnce(new Error("PEOPLE_CLIENTS_UPDATE_FAILED:500"));
+    await renderPeople();
+    await user.click(clienteCard("Ana Lima").getByRole("button", { name: "Editar", exact: true }));
+    const dialog = screen.getByRole("dialog", { name: "Editar Cliente" });
+    await user.clear(within(dialog).getByPlaceholderText("Ex: Ana Lima"));
+    await user.type(within(dialog).getByPlaceholderText("Ex: Ana Lima"), "Ana com falha");
+    await user.click(within(dialog).getByRole("button", { name: "Salvar" }));
+
+    expect(await within(screen.getByRole("dialog", { name: "Editar Cliente" })).findByRole("alert")).toHaveTextContent("O servidor está temporariamente indisponível. Tente novamente em instantes.");
+    expect(screen.getByText("Ana Lima")).toBeInTheDocument();
+    expect(screen.getByRole("dialog", { name: "Editar Cliente" })).toBeInTheDocument();
+    expect(screen.getByPlaceholderText("Ex: Ana Lima")).toHaveValue("Ana com falha");
+  });
+
+  it("descarta edicao cancelada e restaura os dados do cliente ao reabrir", async () => {
+    await renderPeople();
+    fireEvent.click(clienteCard("Ana Lima").getByRole("button", { name: "Editar", exact: true }));
+    fireEvent.change(screen.getByPlaceholderText("Ex: Ana Lima"), { target: { value: "Rascunho descartado" } });
+    fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Cancelar" }));
+    fireEvent.click(clienteCard("Ana Lima").getByRole("button", { name: "Editar", exact: true }));
+    expect(screen.getByPlaceholderText("Ex: Ana Lima")).toHaveValue("Ana Lima");
+    fireEvent.change(screen.getByPlaceholderText("Ex: Ana Lima"), { target: { value: "Ana revisada" } });
+    fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Salvar" }));
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+    expect(screen.getByText("Ana revisada")).toBeInTheDocument();
+    expect(updateCliente).toHaveBeenCalledWith(expect.objectContaining({ id: 1 }), expect.objectContaining({ nome: "Ana revisada" }));
+  });
+
+  it("mantem um novo cadastro aberto depois de salvar o anterior", async () => {
+    await renderPeople();
+    vi.useFakeTimers();
+    try {
+      fireEvent.click(screen.getAllByRole("button", { name: "Novo cliente" })[0]);
+      fireEvent.change(screen.getByPlaceholderText("Ex: Ana Lima"), { target: { value: "Cliente salvo" } });
+      fireEvent.change(screen.getByPlaceholderText("(11) 99999-9999"), { target: { value: "11912345678" } });
+      fireEvent.change(screen.getByPlaceholderText("cliente@email.com"), { target: { value: "salvo@example.test" } });
+      fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Salvar" }));
+      await act(async () => {});
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+      fireEvent.click(screen.getAllByRole("button", { name: "Novo cliente" })[0]);
+      fireEvent.change(screen.getByPlaceholderText("Ex: Ana Lima"), { target: { value: "Segundo cadastro" } });
+      act(() => vi.advanceTimersByTime(1200));
+      expect(screen.getByRole("dialog", { name: "Novo Cliente" })).toBeInTheDocument();
+      expect(screen.getByPlaceholderText("Ex: Ana Lima")).toHaveValue("Segundo cadastro");
+    } finally {
+      vi.clearAllTimers();
+      vi.useRealTimers();
+    }
+  });
+});

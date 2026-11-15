@@ -1,7 +1,10 @@
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 const { restore, clear, logout, getStatus } = vi.hoisted(() => ({ restore: vi.fn(), clear: vi.fn(), logout: vi.fn(), getStatus: vi.fn() }));
-vi.mock("../../core/auth/session.service", () => ({ sessionService: { restore, clear } }));
+vi.mock("../../core/auth/session.service", async importOriginal => {
+  const original = await importOriginal<typeof import("../../core/auth/session.service")>();
+  return { sessionService: { ...original.sessionService, restore, clear } };
+});
 vi.mock("../../core/services/auth.service", () => ({ authService: { logout } }));
 vi.mock("../../core/services/security-questions-status.service", () => ({ getSecurityQuestionsStatus: getStatus }));
 vi.mock("../../core/logging/logger", () => ({ logger: { info: vi.fn() } }));

@@ -2,7 +2,7 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 const { load, save, useAppMock } = vi.hoisted(() => ({ load: vi.fn(), save: vi.fn(), useAppMock: vi.fn() }));
 vi.mock("../services/security-questions.service", () => ({ securityQuestionsService: { load, save } }));
-vi.mock("../../../app/context/AppContext", () => ({ useApp: useAppMock }));
+vi.mock("../../../core/store/AppContext", () => ({ useApp: useAppMock }));
 import { SecurityQuestionsForm } from "./SecurityQuestionsForm";
 
 beforeEach(() => {

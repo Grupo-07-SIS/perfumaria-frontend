@@ -32,6 +32,7 @@ export function toProductModel(dto: ProductResponseDto): Product {
     nome: dto.nome,
     precoCompra: dto.precoCompra ?? undefined,
     precoVenda: dto.precoVenda,
+    tipoProduto: dto.tipoProduto ?? "PERFUME",
     volume: dto.volume ?? undefined,
   };
 }
@@ -42,6 +43,7 @@ export function toProductRequestDto(formData: ProductFormData): ProductRequestDt
     fkCategoria: Number(formData.categoriaId),
     nome: formData.nome.trim(),
     precoVenda: parseDecimal(formData.precoVenda),
+    tipoProduto: "PERFUME",
   };
 
   const marca = formData.marca.trim();

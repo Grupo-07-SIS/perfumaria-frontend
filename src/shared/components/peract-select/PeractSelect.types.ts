@@ -7,6 +7,10 @@ export interface PeractSelectOption<TValue extends string = string> {
 }
 
 export interface PeractSelectProps<TValue extends string = string> {
+  children?: ReactNode;
+  disabled?: boolean;
+  id?: string;
+  name?: string;
   data: Array<PeractSelectOption<TValue>>;
   errorText?: string;
   icon?: ReactNode;

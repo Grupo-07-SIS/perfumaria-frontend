@@ -14,8 +14,10 @@ function mapRole(tipoUsuario: string): AuthenticatedUser["cargo"] {
 export function toAuthenticatedUser(loginResponse: LoginResponseDto): AuthenticatedUser {
   return {
     cargo: mapRole(loginResponse.usuario.tipoUsuario),
+    donoOrganizacao: loginResponse.usuario.donoOrganizacao === true,
     email: loginResponse.usuario.email,
     id: loginResponse.usuario.id,
+    idOrganizacao: loginResponse.usuario.idOrganizacao,
     nome: loginResponse.usuario.nome,
   };
 }

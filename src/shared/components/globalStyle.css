@@ -1,4 +1,10 @@
 @layer base {
+  :root {
+    --peract-layer-overlay: 50;
+    --peract-layer-modal: 51;
+    --peract-layer-popup: 60;
+  }
+
   @property --tw-font-weight {
     syntax: "*";
     inherits: false;
@@ -6,6 +12,153 @@
 }
 
 @layer components {
+  [data-slot="popover-content"],
+  [data-slot="dropdown-menu-content"],
+  [data-slot="context-menu-content"],
+  [data-slot="hover-card-content"],
+  [data-slot="tooltip-content"] {
+    animation-duration: 160ms;
+    animation-timing-function: cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+
+  [data-slot="dialog-overlay"],
+  [data-slot="alert-dialog-overlay"] {
+    animation-duration: 150ms;
+    animation-timing-function: ease-out;
+  }
+
+  [data-slot="dialog-content"],
+  [data-slot="alert-dialog-content"] {
+    animation-duration: 180ms;
+    animation-timing-function: cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+
+  .peract-popup-layer {
+    z-index: var(--peract-layer-popup);
+  }
+
+  @media (max-width: 767px) {
+    body:has([data-slot$="-overlay"][data-state="open"]) [vw],
+    body:has(.react-joyride__tooltip) [vw] {
+      display: none !important;
+    }
+  }
+
+  .peract-bg-accent {
+    background-color: var(--brand-accent);
+  }
+
+  .peract-border-color {
+    border-color: var(--border);
+  }
+
+  .peract-border-color-accent {
+    border-color: var(--brand-accent);
+  }
+
+  .peract-modal-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: var(--peract-layer-overlay);
+    background: rgb(0 0 0 / 50%);
+  }
+
+  .peract-modal-overlay[data-state="open"] {
+    animation: peract-overlay-in 150ms ease-out both;
+  }
+
+  .peract-modal-overlay[data-state="closed"] {
+    animation: peract-overlay-out 120ms ease-in both;
+  }
+
+  .peract-modal-surface {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    z-index: var(--peract-layer-modal);
+    transform: translate(-50%, -50%);
+    width: calc(100% - 2rem);
+    max-width: 32rem;
+    max-height: calc(100dvh - 2rem);
+    overflow-y: auto;
+    border-radius: var(--radius);
+    box-shadow: 0 24px 64px rgb(0 0 0 / 20%);
+  }
+
+  .peract-modal-surface[data-state="open"] {
+    animation: peract-modal-in 180ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  }
+
+  .peract-modal-surface[data-state="closed"] {
+    animation: peract-modal-out 130ms ease-in both;
+  }
+
+  .peract-feedback-enter {
+    animation: peract-feedback-in 180ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  }
+
+  .peract-field-control {
+    width: 100%;
+    min-width: 0;
+    min-height: 2.25rem;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--border);
+    border-radius: calc(var(--radius) - 2px);
+    background: var(--input-background);
+    color: var(--foreground);
+    font-family: inherit;
+    font-size: 0.875rem;
+    outline: none;
+  }
+
+  .peract-field-control:focus-visible {
+    border-color: var(--ring);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--ring) 18%, transparent);
+  }
+
+  .peract-field-control[aria-invalid="true"] {
+    border-color: var(--destructive);
+  }
+
+  .peract-field-control:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
+
+  .peract-field-control::placeholder {
+    color: var(--muted-foreground);
+  }
+
+  .peract-focus-ring:focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+
+  .peract-checkbox {
+    width: 1rem;
+    height: 1rem;
+    flex-shrink: 0;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    background: var(--input-background);
+  }
+
+  .peract-checkbox[data-state="checked"],
+  .peract-checkbox[data-state="indeterminate"] {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: var(--primary-foreground);
+  }
+
+  .peract-checkbox[aria-invalid="true"] {
+    border-color: var(--destructive);
+  }
+
+  .peract-checkbox:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
+
   .peract-font-color-default {
     color: var(--foreground);
   }
@@ -175,5 +328,47 @@
 
   .peract-interactive-hover:hover {
     background-color: var(--sidebar-accent);
+  }
+}
+
+@keyframes peract-overlay-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes peract-overlay-out {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+@keyframes peract-modal-in {
+  from { opacity: 0; transform: translate(-50%, -48%) scale(0.985); }
+  to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+
+@keyframes peract-modal-out {
+  from { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  to { opacity: 0; transform: translate(-50%, -48%) scale(0.985); }
+}
+
+@keyframes peract-feedback-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .peract-modal-overlay,
+  .peract-modal-surface,
+  .peract-feedback-enter,
+  [data-slot="popover-content"],
+  [data-slot="dropdown-menu-content"],
+  [data-slot="context-menu-content"],
+  [data-slot="hover-card-content"],
+  [data-slot="tooltip-content"],
+  [data-slot="dialog-overlay"],
+  [data-slot="dialog-content"],
+  [data-slot="alert-dialog-overlay"],
+  [data-slot="alert-dialog-content"] {
+    animation-duration: 1ms !important;
   }
 }

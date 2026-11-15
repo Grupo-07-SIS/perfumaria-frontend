@@ -11,14 +11,18 @@ describe("toAuthenticatedUser", () => {
         usuario: {
           email: "admin@canalperfumado.com.br",
           id: "uuid-1",
+          idOrganizacao: 7,
           nome: "Admin",
           tipoUsuario: "ADMIN",
+          donoOrganizacao: true,
         },
       }),
     ).toEqual({
       cargo: "Administrador",
+      donoOrganizacao: true,
       email: "admin@canalperfumado.com.br",
       id: "uuid-1",
+      idOrganizacao: 7,
       nome: "Admin",
     });
   });
@@ -38,6 +42,7 @@ describe("toAuthenticatedUser", () => {
       }),
     ).toEqual({
       cargo: "Funcionário",
+      donoOrganizacao: false,
       email: "beatriz@canalperfumado.com.br",
       id: "uuid-2",
       nome: "Beatriz",

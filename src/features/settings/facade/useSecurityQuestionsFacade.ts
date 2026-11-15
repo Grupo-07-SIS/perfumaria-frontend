@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
-import { useApp } from "../../../app/context/AppContext";
+import { useApp } from "../../../core/store/AppContext";
 import { securityErrorMessage, SecurityHttpError } from "../../../core/services/security-http";
 import { securityQuestionsService } from "../services/security-questions.service";
 import { emptySecurityQuestions } from "../config/security-questions.config";

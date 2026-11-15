@@ -1,6 +1,6 @@
 import { sessionService } from "../auth/session.service";
 import type { AuthenticatedUser } from "../auth/auth.types";
-import { environment } from "../../environment";
+import { apiClient } from "./http-client";
 
 export const authService = {
   restoreSession() {
@@ -20,10 +20,7 @@ export const authService = {
   },
   async logout() {
     try {
-      await fetch(`${environment.backendUrl}/auth/logout`, {
-        credentials: "include",
-        method: "POST",
-      });
+      await apiClient.post("/auth/logout");
     } finally {
       sessionService.clear();
     }
