@@ -1,5 +1,8 @@
 import { act, renderHook, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { actionToast } from "../../../shared/services/action-toast";
+
+vi.mock("../../../shared/services/action-toast", () => ({ actionToast: { success: vi.fn(), error: vi.fn() } }));
 
 vi.mock("../../../core/store/AppContext", () => ({
   useApp: () => ({ currentUser: { cargo: "Administrador" } }),
@@ -51,6 +54,8 @@ describe("useDecantsFacade", () => {
     expect(result.current.decants).toEqual([original]);
     expect(result.current.perfumeOptions).toEqual([{ id: 7, nome: "Chanel N°5" }, { id: 8, nome: "Libre" }]);
     expect(result.current.error).toBe("");
+    expect(actionToast.success).not.toHaveBeenCalled();
+    expect(actionToast.error).not.toHaveBeenCalled();
   });
 
   it("volta a pagina anterior ao excluir o unico item da ultima pagina", async () => {
@@ -195,11 +200,13 @@ describe("useDecantsFacade", () => {
     expect(result.current.showModal).toBe(true);
 
     await act(async () => {
+      expect(actionToast.success).not.toHaveBeenCalled();
       resolveCreate(created);
       await savePromise;
     });
     expect(result.current.decants).toEqual([original, created]);
     expect(result.current.showModal).toBe(false);
+    expect(actionToast.success).toHaveBeenCalledExactlyOnceWith("Decant cadastrado com sucesso!", "Verifique-o na lista de decants.");
   });
 
   it("updates and deletes only after successful service calls", async () => {
@@ -219,6 +226,8 @@ describe("useDecantsFacade", () => {
     await act(async () => { await result.current.confirmDelete(); });
     expect(result.current.decants).toEqual([]);
     expect(result.current.deleteDecant).toBeNull();
+    expect(actionToast.success).toHaveBeenNthCalledWith(1, "Decant atualizado com sucesso!", "Verifique-o na lista de decants.");
+    expect(actionToast.success).toHaveBeenNthCalledWith(2, "Decant excluído com sucesso!", "A lista de decants foi atualizada.");
   });
 
   it("keeps state and targets intact when a mutation fails", async () => {
@@ -239,5 +248,40 @@ describe("useDecantsFacade", () => {
     expect(result.current.decants).toEqual([original]);
     expect(result.current.deleteDecant).toEqual(original);
     expect(result.current.error).toBeTruthy();
+    expect(actionToast.error).toHaveBeenNthCalledWith(1, "Falha ao cadastrar");
+    expect(actionToast.error).toHaveBeenNthCalledWith(2, "Não foi possível excluir o decant.");
+    expect(actionToast.error).toHaveBeenCalledTimes(2);
+    expect(actionToast.success).not.toHaveBeenCalled();
+  });
+
+  it("Given an edit, when saving fails, then reports Falha ao atualizar and preserves the target", async () => {
+    updateDecantMock.mockRejectedValue(new Error("DECANTS_UPDATE_FAILED:500"));
+    const { result } = renderHook(() => useDecantsFacade());
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    act(() => {
+      result.current.setEditDecant(original);
+      result.current.setShowModal(true);
+    });
+
+    await act(async () => {
+      await expect(result.current.handleSave({ ...formData, perfumeId: "7" })).rejects.toThrow("DECANTS_UPDATE_FAILED:500");
+    });
+
+    expect(result.current.decants).toEqual([original]);
+    expect(result.current.editDecant).toEqual(original);
+    expect(result.current.showModal).toBe(true);
+    expect(actionToast.error).toHaveBeenCalledExactlyOnceWith("Falha ao atualizar");
+    expect(actionToast.success).not.toHaveBeenCalled();
+  });
+
+  it("Given a successful create, when refresh fails, then emits no mutation error", async () => {
+    fetchDecantsMock.mockResolvedValueOnce({ content: [original], number: 0, totalElements: 10, totalPages: 1 }).mockRejectedValue(new Error("refresh failed"));
+    createDecantMock.mockResolvedValue(created);
+    const { result } = renderHook(() => useDecantsFacade());
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    await act(async () => { await result.current.handleSave(formData); });
+    expect(actionToast.success).toHaveBeenCalledExactlyOnceWith("Decant cadastrado com sucesso!", "Verifique-o na lista de decants.");
+    expect(actionToast.error).not.toHaveBeenCalled();
+    expect(result.current.error).toBe("Não foi possível carregar os decants.");
   });
 });

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { actionToast } from "../../../shared/services/action-toast";
 import { useApp } from "../../../core/store/AppContext";
 import { useDebouncedValue } from "../../../shared/hooks/useDebouncedValue";
 import {
@@ -217,10 +218,12 @@ export function useProductsFacade() {
       await (formTarget
         ? updateProduct(formTarget, formData)
         : createProduct(formData));
+      actionToast.success(formTarget ? "Perfume atualizado com sucesso!" : "Perfume cadastrado com sucesso!", "Verifique-o na lista de perfumes.");
       closeForm();
       await loadProducts();
     } catch {
       setError("Não foi possível salvar o produto.");
+      actionToast.error(formTarget ? "Falha ao atualizar" : "Falha ao cadastrar");
       throw new Error("PRODUCTS_SUBMIT_FAILED");
     } finally {
       setIsSubmitting(false);
@@ -235,10 +238,12 @@ export function useProductsFacade() {
 
     try {
       await removeProduct(deleteTarget);
+      actionToast.success("Perfume excluído com sucesso!", "A lista de perfumes foi atualizada.");
       setDeleteTarget(null);
       await loadProducts();
     } catch {
       setError("Não foi possível excluir o produto.");
+      actionToast.error("Não foi possível excluir o perfume.");
     } finally {
       setIsDeleteSubmitting(false);
     }

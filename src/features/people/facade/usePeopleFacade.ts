@@ -1,4 +1,5 @@
 import { createPeopleTabs } from "../config/people.presentation";
+import { actionToast } from "../../../shared/services/action-toast";
 import { buildSearchParams, peopleErrorMessage, selectPeople } from "../services/people.service";
 import { usePeopleRepository } from "../repository/people.repository";
 import { useEffect, useRef, useState } from "react";
@@ -118,7 +119,9 @@ export function usePeopleFacade() {
         ? prev.map(cliente => cliente.id === saved.id ? saved : cliente)
         : [...prev, saved]);
       setModal(null);
+      actionToast.success(cd ? "Cliente atualizado com sucesso!" : "Cliente cadastrado com sucesso!", "Verifique-o na lista de clientes.");
     } catch (requestError) {
+      actionToast.error("Não foi possível salvar o cliente.");
       throw requestError;
     }
   };
@@ -131,7 +134,9 @@ export function usePeopleFacade() {
         ? prev.map(fornecedor => fornecedor.id === saved.id ? saved : fornecedor)
         : [...prev, saved]);
       setModal(null);
+      actionToast.success(fd ? "Fornecedor atualizado com sucesso!" : "Fornecedor cadastrado com sucesso!", "Verifique-o na lista de fornecedores.");
     } catch (requestError) {
+      actionToast.error("Não foi possível salvar o fornecedor.");
       throw requestError;
     }
   };
@@ -144,7 +149,9 @@ export function usePeopleFacade() {
         ? prev.map(funcionario => funcionario.id === saved.id ? saved : funcionario)
         : [...prev, saved]);
       setModal(null);
+      actionToast.success(fn ? "Funcionário atualizado com sucesso!" : "Funcionário cadastrado com sucesso!", "Verifique-o na lista de funcionários.");
     } catch (requestError) {
+      actionToast.error("Não foi possível salvar o funcionário.");
       throw requestError;
     }
   };
@@ -186,7 +193,9 @@ export function usePeopleFacade() {
         const deletedId = await removeFornecedor(target);
         setFornecedores(prev => prev.filter(fornecedor => fornecedor.id !== deletedId));
         setDeleteTarget(null);
+        actionToast.success("Fornecedor excluído com sucesso!", "A lista de fornecedores foi atualizada.");
       } catch (requestError) {
+        actionToast.error("Não foi possível excluir o fornecedor.");
         setError(peopleErrorMessage(requestError, "Não foi possível excluir o fornecedor. Tente novamente."));
         throw requestError;
       }
@@ -201,7 +210,9 @@ export function usePeopleFacade() {
         // Backend faz soft delete: o cliente continua existindo como inativo.
         setClientes(prev => prev.map(cliente => cliente.id === deletedId ? { ...cliente, ativo: false } : cliente));
         setDeleteTarget(null);
+        actionToast.success("Cliente inativado com sucesso!", "Verifique-o na lista de clientes inativos.");
       } catch (requestError) {
+        actionToast.error("Não foi possível inativar o cliente.");
         setError(peopleErrorMessage(requestError, "Não foi possível excluir o cliente. Tente novamente."));
         throw requestError;
       }
@@ -220,7 +231,9 @@ export function usePeopleFacade() {
         const deletedId = await removeFuncionario(target);
         setFuncionarios(prev => prev.filter(funcionario => funcionario.id !== deletedId));
         setDeleteTarget(null);
+        actionToast.success("Funcionário excluído com sucesso!", "A lista de funcionários foi atualizada.");
       } catch (requestError) {
+        actionToast.error("Não foi possível excluir o funcionário.");
         setError(peopleErrorMessage(requestError, "Não foi possível excluir o funcionário. Tente novamente."));
         setDeleteTarget(null);
       }
@@ -234,7 +247,9 @@ export function usePeopleFacade() {
       const reativado = await reactivateCliente(reactivateTarget);
       setClientes(prev => prev.map(cliente => cliente.id === reativado.id ? reativado : cliente));
       setReactivateTarget(null);
+      actionToast.success("Cliente reativado com sucesso!", "Verifique-o na lista de clientes ativos.");
     } catch (requestError) {
+      actionToast.error("Não foi possível reativar o cliente.");
       setError(peopleErrorMessage(requestError, "Não foi possível reativar o cliente. Tente novamente."));
     }
   };

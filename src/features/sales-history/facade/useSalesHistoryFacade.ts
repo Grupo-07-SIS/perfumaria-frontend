@@ -1,4 +1,5 @@
 import { saleUpdateErrorMessage } from "../services/sales-history.service";
+import { actionToast } from "../../../shared/services/action-toast";
 import { salesHistoryRepository, useSalesHistoryRepository } from "../repository/sales-history.repository";
 import { useEffect, useState } from "react";
 import type { SalesHistorySummary, StatusFilter, TipoFilter } from "../models/sales-history.models";
@@ -116,10 +117,12 @@ export function useSalesHistoryFacade() {
     const reactivating = !!editVenda?.cancelada && !updated.cancelada;
     try {
       const savedSale = await salesHistoryRepository.updateSale(updated);
+      actionToast.success(reactivating ? "Venda reativada com sucesso!" : updated.cancelada && !editVenda?.cancelada ? "Venda cancelada com sucesso!" : "Venda atualizada com sucesso!", "Verifique-a no histórico de vendas.");
       setPaginatedSales((current) => current.map((sale) => sale.id === savedSale.id ? { ...sale, ...savedSale } : sale));
       setEditVenda(null);
       setReloadKey((key) => key + 1);
     } catch (error) {
+      actionToast.error(reactivating ? "Não foi possível reativar a venda." : "Não foi possível atualizar a venda.");
       setError(saleUpdateErrorMessage(error, reactivating));
     }
   };

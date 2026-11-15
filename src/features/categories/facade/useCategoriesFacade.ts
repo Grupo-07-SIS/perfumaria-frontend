@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { actionToast } from "../../../shared/services/action-toast";
 import { CATEGORIES_PAGE_SIZE } from "../config/categories.config";
 import type {
   Category,
@@ -104,8 +105,10 @@ export function useCategoriesFacade() {
         return sortByName(nextCategories);
       });
       closeForm();
+      actionToast.success(formTarget ? "Categoria atualizada com sucesso!" : "Categoria cadastrada com sucesso!", "Verifique-a na lista de categorias.");
     } catch {
       setError("Não foi possível salvar a categoria.");
+      actionToast.error("Não foi possível salvar a categoria.");
       throw new Error("CATEGORIES_SUBMIT_FAILED");
     } finally {
       setIsSubmitting(false);
@@ -122,8 +125,10 @@ export function useCategoriesFacade() {
       const deletedCategoryId = await removeCategory(deleteTarget);
       setCategories((currentCategories) => currentCategories.filter((category) => category.id !== deletedCategoryId));
       setDeleteTarget(null);
+      actionToast.success("Categoria excluída com sucesso!", "A lista de categorias foi atualizada.");
     } catch {
       setError("Não foi possível excluir a categoria.");
+      actionToast.error("Não foi possível excluir a categoria.");
     } finally {
       setIsDeleteSubmitting(false);
     }

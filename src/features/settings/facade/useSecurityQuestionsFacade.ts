@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { actionToast } from "../../../shared/services/action-toast";
 import { useForm } from "react-hook-form";
 import { useApp } from "../../../core/store/AppContext";
 import { securityErrorMessage, SecurityHttpError } from "../../../core/services/security-http";
@@ -50,15 +51,26 @@ export function useSecurityQuestionsFacade() {
     if (busy.current || loading || loadFailed) return;
     busy.current = true; setSaving(true); setError(""); setSuccess("");
     const request = generation.current;
+    let saved = false;
     try {
       await securityQuestionsService.save(values);
       if (request !== generation.current) return;
+      saved = true;
+      actionToast.success("Perguntas de segurança salvas com sucesso!", "Suas respostas poderão ser usadas para recuperar o acesso.");
       reset({ senhaAtual: "", perguntas: values.perguntas.map(({ ordem, pergunta }) => ({ ordem, pergunta: pergunta.trim(), resposta: "" })) });
       setSuccess("Perguntas de segurança cadastradas. As respostas não são exibidas; para substituir, redigite as três.");
       dependencies.current.markSecurityQuestionsComplete();
       await dependencies.current.refreshSecurityQuestionsStatus();
     } catch (cause) {
-      if (request === generation.current) handleError(cause);
+      if (request === generation.current) {
+        if (!saved) {
+          actionToast.error("Não foi possível salvar as perguntas de segurança.");
+          handleError(cause);
+        } else {
+          setError("As perguntas foram salvas, mas não foi possível atualizar o status de segurança.");
+          if (cause instanceof SecurityHttpError && cause.status === 401) dependencies.current.invalidateAuthSession();
+        }
+      }
     } finally {
       if (request === generation.current) { busy.current = false; setSaving(false); }
     }

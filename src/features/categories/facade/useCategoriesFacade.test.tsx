@@ -1,5 +1,7 @@
 import { act, renderHook, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { actionToast } from "../../../shared/services/action-toast";
+vi.mock("../../../shared/services/action-toast", () => ({ actionToast: { success: vi.fn(), error: vi.fn() } }));
 
 const {
   createCategoryMock,
@@ -45,6 +47,8 @@ describe("useCategoriesFacade", () => {
     ]);
     expect(result.current.paginatedCategories).toHaveLength(2);
     expect(result.current.error).toBe("");
+    expect(actionToast.success).not.toHaveBeenCalled();
+    expect(actionToast.error).not.toHaveBeenCalled();
   });
 
   it("creates, updates and deletes categories through the facade", async () => {
@@ -87,6 +91,10 @@ describe("useCategoriesFacade", () => {
     expect(updateCategoryMock).toHaveBeenCalledWith({ id: 2, nome: "Body Splash" }, { nome: "Body Splash Premium" });
     expect(removeCategoryMock).toHaveBeenCalledWith({ id: 2, linkedProducts: 4, nome: "Body Splash Premium" });
     expect(result.current.categories).toEqual([{ id: 1, linkedProducts: 0, nome: "Perfumes" }]);
+    expect(actionToast.success).toHaveBeenNthCalledWith(1, "Categoria cadastrada com sucesso!", "Verifique-a na lista de categorias.");
+    expect(actionToast.success).toHaveBeenNthCalledWith(2, "Categoria atualizada com sucesso!", "Verifique-a na lista de categorias.");
+    expect(actionToast.success).toHaveBeenNthCalledWith(3, "Categoria excluída com sucesso!", "A lista de categorias foi atualizada.");
+    expect(actionToast.error).not.toHaveBeenCalled();
   });
 
   it("surfaces loading and submit errors", async () => {
@@ -112,5 +120,6 @@ describe("useCategoriesFacade", () => {
     await waitFor(() => {
       expect(result.current.error).toBe("Não foi possível salvar a categoria.");
     });
+    expect(actionToast.error).toHaveBeenCalledExactlyOnceWith("Não foi possível salvar a categoria.");
   });
 });

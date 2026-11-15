@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { actionToast } from "../../../shared/services/action-toast";
 import { useApp } from "../../../core/store/AppContext";
 import { useDebouncedValue } from "../../../shared/hooks/useDebouncedValue";
 import { DEFAULT_PAGE_SIZE } from "../../../shared/hooks/usePagination";
@@ -107,8 +108,10 @@ export function useBodySplashFacade() {
       }
       setEditItem(null);
       setShowModal(false);
+      actionToast.success(editItem ? "Body Splash atualizado com sucesso!" : "Body Splash cadastrado com sucesso!", "Verifique-o na lista de Body Splash.");
     } catch (requestError) {
       setError("Não foi possível salvar o Body Splash.");
+      actionToast.error("Não foi possível salvar o Body Splash.");
       throw requestError;
     }
   };
@@ -116,13 +119,19 @@ export function useBodySplashFacade() {
     setError("");
     try {
       await createBodySplashStockItem(values);
+    } catch (requestError) {
+      setError("Não foi possível cadastrar o Body Splash no estoque.");
+      actionToast.error("Não foi possível cadastrar o Body Splash no estoque.");
+      throw requestError;
+    }
+    setShowProductModal(false);
+    actionToast.success("Body Splash cadastrado no estoque com sucesso!", "Verifique-o na lista de Body Splash.");
+    try {
       const catalog = await fetchBodySplashCatalog({ page: currentPage - 1, size: DEFAULT_PAGE_SIZE });
       setProductOptions(catalog.productOptions);
       setError(catalog.productOptionsError ?? "");
-      setShowProductModal(false);
-    } catch (requestError) {
-      setError("Não foi possível cadastrar o Body Splash no estoque.");
-      throw requestError;
+    } catch {
+      setError("O Body Splash foi cadastrado, mas não foi possível atualizar a lista.");
     }
   };
   const fmt = (v: number) => `R$ ${v.toFixed(2).replace(".", ",")}`;
@@ -138,8 +147,10 @@ export function useBodySplashFacade() {
       setTotalPages(remainingPages);
       if (totalElements > DEFAULT_PAGE_SIZE || submittedSearch) await loadPage(Math.min(currentPage, remainingPages), submittedSearch);
       setDeleteItem(null);
+      actionToast.success("Body Splash excluído com sucesso!", "A lista de Body Splash foi atualizada.");
     } catch {
       setError("Não foi possível excluir o Body Splash.");
+      actionToast.error("Não foi possível excluir o Body Splash.");
     }
   };
   return {

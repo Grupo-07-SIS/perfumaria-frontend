@@ -1,4 +1,5 @@
 import { settingsSections } from "../config/settings.presentation";
+import { actionToast } from "../../../shared/services/action-toast";
 import { accountSettingsError, changeAccountEmail, changeAccountPassword, validateEmailChange, validatePasswordChange } from "../services/settings.service";
 import { useForm } from "react-hook-form";
 import { useContext, type SetStateAction } from "react";
@@ -143,8 +144,12 @@ export function useSettingsFacade() {
       setStockThresholds({ critico });
       setValue("criticoLimit", String(critico));
       showSuccess("Configurações de estoque salvas com sucesso!");
+      actionToast.success("Configurações de estoque salvas com sucesso!", "O novo limite será usado nos alertas de estoque.");
     } catch (error) {
-      if (requestVersion.current === version) setStockError(stockSettingsError(error, "Não foi possível salvar o limite de estoque."));
+      if (requestVersion.current === version) {
+        setStockError(stockSettingsError(error, "Não foi possível salvar o limite de estoque."));
+        actionToast.error("Não foi possível salvar o limite de estoque.");
+      }
     } finally {
       if (requestVersion.current === version) {
         savingRef.current = false;
@@ -174,7 +179,9 @@ export function useSettingsFacade() {
       setNovaSenha("");
       setConfirmSenha("");
       showSuccess("Senha alterada com sucesso.");
+      actionToast.success("Senha alterada com sucesso!", "Use a nova senha no próximo acesso.");
     } catch (error) {
+      actionToast.error("Não foi possível alterar a senha.");
       setAccountError(accountSettingsError(error, "Não foi possível alterar a senha. Tente novamente."));
     } finally {
       setIsAccountSaving(false);
@@ -203,7 +210,9 @@ export function useSettingsFacade() {
       setConfirmEmail("");
       setSenhaConfEmail("");
       showSuccess("E-mail de acesso alterado com sucesso.");
+      actionToast.success("E-mail de acesso alterado com sucesso!", "Use o novo e-mail no próximo acesso.");
     } catch (error) {
+      actionToast.error("Não foi possível alterar o e-mail.");
       setAccountError(accountSettingsError(error, "Não foi possível alterar o e-mail. Tente novamente."));
     } finally {
       setIsAccountSaving(false);

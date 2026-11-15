@@ -1,6 +1,7 @@
 "use client";
 
 import { useTheme } from "next-themes";
+import { CircleCheck, CircleX } from "lucide-react";
 import { Toaster as Sonner, ToasterProps } from "sonner";
 const PeractToaster = ({
   ...props
@@ -8,10 +9,20 @@ const PeractToaster = ({
   const {
     theme = "system"
   } = useTheme();
-  return <Sonner theme={theme as ToasterProps["theme"]} className="peract-sans-font toaster group" style={{
+  return <Sonner theme={theme as ToasterProps["theme"]} richColors closeButton position="top-right" duration={5000}
+    containerAriaLabel="Notificações de ações"
+    toastOptions={{ closeButtonAriaLabel: "Fechar notificação" }}
+    icons={{ success: <CircleCheck size={22} aria-hidden="true" data-toast-icon="success" />, error: <CircleX size={22} aria-hidden="true" data-toast-icon="error" /> }}
+    className="peract-sans-font toaster group" style={{
     "--normal-bg": "var(--popover)",
     "--normal-text": "var(--popover-foreground)",
-    "--normal-border": "var(--border)"
+    "--normal-border": "var(--border)",
+    "--success-bg": "#ecfdf5",
+    "--success-text": "#065f46",
+    "--success-border": "#6ee7b7",
+    "--error-bg": "#fef2f2",
+    "--error-text": "#991b1b",
+    "--error-border": "#fca5a5"
   } as React.CSSProperties} {...props} />;
 };
 export { PeractToaster };

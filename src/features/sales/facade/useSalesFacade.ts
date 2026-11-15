@@ -3,6 +3,7 @@ import { useForm } from "react-hook-form";
 import type { SalesFormValues, CatalogItem, CartItem, SaleItemGroup, SaleCustomer, SaleReview, NovoClienteModalFormValues } from "../models/sales.models";
 import { useEffect, useRef, useState } from "react";
 import { useDebouncedValue } from "../../../shared/hooks/useDebouncedValue";
+import { actionToast } from "../../../shared/services/action-toast";
 export function useSalesFacade() {
   const [products, setProducts] = useState<CatalogItem[]>([]);
   const [clientes, setClientes] = useState<SaleCustomer[]>([]);
@@ -213,6 +214,7 @@ export function useSalesFacade() {
     setConfirmationError("");
     try {
       await registerSale(saleReview.cart, saleReview.customer, saleReview.form);
+      actionToast.success(saleReview.form.isOnline ? "Pedido online registrado com sucesso!" : "Venda registrada com sucesso!", saleReview.form.isOnline ? "Acompanhe-o na lista de pedidos online." : "Verifique-a no histórico de vendas.");
       setRegisteredStatus(saleReview.form.isOnline ? "PENDENTE" : "FINALIZADA");
       setSaleReview(null);
       setSuccess(true);
@@ -227,6 +229,7 @@ export function useSalesFacade() {
       form.reset();
       setReloadKey(previous => previous + 1);
     } catch (error) {
+      actionToast.error("Não foi possível registrar a venda.", "Verifique as vendas antes de tentar novamente.");
       setConfirmationError(salesErrorMessage(error, "Não foi possível confirmar o registro. Verifique as vendas antes de tentar novamente."));
     } finally {
       submitting.current = false;
@@ -238,11 +241,17 @@ export function useSalesFacade() {
     telefone: string;
   }) => `${c.nome} – ${c.telefone}`;
   const createCustomer = async (values: NovoClienteModalFormValues) => {
-    const novoCliente = await createSaleCustomer(values);
-    setClientes(prev => [...prev, novoCliente]);
-    setClienteSelected(novoCliente);
-    setClienteSearch("");
-    setClienteOpen(false);
+    try {
+      const novoCliente = await createSaleCustomer(values);
+      setClientes(prev => [...prev, novoCliente]);
+      setClienteSelected(novoCliente);
+      setClienteSearch("");
+      setClienteOpen(false);
+      actionToast.success("Cliente cadastrado com sucesso!", "O cliente foi selecionado para esta venda.");
+    } catch (error) {
+      actionToast.error("Não foi possível cadastrar o cliente.");
+      throw error;
+    }
   };
   return {
     loading,

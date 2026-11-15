@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { actionToast } from "../../../shared/services/action-toast";
 import { useApp } from "../../../core/store/AppContext";
 import { useDebouncedValue } from "../../../shared/hooks/useDebouncedValue";
 import { DEFAULT_PAGE_SIZE as PAGE_SIZE } from "../../../shared/hooks/usePagination";
@@ -102,8 +103,10 @@ export function useDecantsFacade() {
       }
       setEditDecant(null);
       setShowModal(false);
+      actionToast.success(editDecant ? "Decant atualizado com sucesso!" : "Decant cadastrado com sucesso!", "Verifique-o na lista de decants.");
     } catch (requestError) {
       setError("Não foi possível salvar o decant.");
+      actionToast.error(editDecant ? "Falha ao atualizar" : "Falha ao cadastrar");
       throw requestError;
     }
   };
@@ -120,8 +123,10 @@ export function useDecantsFacade() {
       setTotalPages(remainingPages);
       if (totalElements > PAGE_SIZE || submittedSearch) await loadPage(Math.min(currentPage, remainingPages), submittedSearch);
       setDeleteDecant(null);
+      actionToast.success("Decant excluído com sucesso!", "A lista de decants foi atualizada.");
     } catch {
       setError("Não foi possível excluir o decant.");
+      actionToast.error("Não foi possível excluir o decant.");
     }
   };
   return {

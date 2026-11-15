@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { actionToast } from "../../../shared/services/action-toast";
 import { useForm } from "react-hook-form";
 import { useApp } from "../../../core/store/AppContext";
 import type { LoginFormData, LoginFormFacade } from "../models/login.models";
@@ -31,14 +32,17 @@ export function useLoginFacade(): LoginFormFacade {
 
       if (!hasAuthenticatedSession(hasLoggedIn)) {
         setAuthError("E-mail ou senha incorretos.");
+        actionToast.error("Não foi possível entrar.", "E-mail ou senha incorretos.");
         setLoading(false);
         return;
       }
 
       applyAuthSession(hasLoggedIn);
+      actionToast.success("Login realizado com sucesso!", "Bem-vindo à Perfumaria.");
       setLoading(false);
     } catch {
       setAuthError("Não foi possível entrar agora. Verifique sua conexão e tente novamente.");
+      actionToast.error("Não foi possível entrar.");
       setLoading(false);
     }
   });

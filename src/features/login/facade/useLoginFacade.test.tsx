@@ -1,5 +1,7 @@
 import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { actionToast } from "../../../shared/services/action-toast";
+vi.mock("../../../shared/services/action-toast", () => ({ actionToast: { success: vi.fn(), error: vi.fn() } }));
 
 const { executeLoginMock, useAppMock } = vi.hoisted(() => ({
   executeLoginMock: vi.fn(),
@@ -53,6 +55,8 @@ describe("useLoginFacade", () => {
     });
     expect(result.current.authError).toBe("");
     expect(result.current.loading).toBe(false);
+    expect(actionToast.success).toHaveBeenCalledExactlyOnceWith("Login realizado com sucesso!", "Bem-vindo à Perfumaria.");
+    expect(actionToast.error).not.toHaveBeenCalled();
   });
 
   it("sets an auth error when authentication fails and allows password toggle", async () => {
@@ -73,6 +77,8 @@ describe("useLoginFacade", () => {
 
     expect(result.current.showPass).toBe(true);
     expect(result.current.authError).toBe("E-mail ou senha incorretos.");
+    expect(actionToast.error).toHaveBeenCalledExactlyOnceWith("Não foi possível entrar.", "E-mail ou senha incorretos.");
+    expect(actionToast.success).not.toHaveBeenCalled();
   });
 
   it("shows clear login guidance when the request throws", async () => {
@@ -88,5 +94,6 @@ describe("useLoginFacade", () => {
     });
 
     expect(result.current.authError).toBe("Não foi possível entrar agora. Verifique sua conexão e tente novamente.");
+    expect(actionToast.error).toHaveBeenCalledExactlyOnceWith("Não foi possível entrar.");
   });
 });

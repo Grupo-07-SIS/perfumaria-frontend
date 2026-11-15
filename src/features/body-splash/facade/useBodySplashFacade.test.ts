@@ -1,5 +1,7 @@
 import { act, renderHook, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { actionToast } from "../../../shared/services/action-toast";
+vi.mock("../../../shared/services/action-toast", () => ({ actionToast: { success: vi.fn(), error: vi.fn() } }));
 
 vi.mock("../../../core/store/AppContext", () => ({
   useApp: () => ({ currentUser: { cargo: "Administrador" } }),
@@ -68,6 +70,18 @@ const productOptions = [
 ];
 
 describe("useBodySplashFacade", () => {
+  it("reports stock creation success even when the subsequent catalog refresh fails", async () => {
+    createBodySplashStockItemMock.mockResolvedValue(undefined);
+    const { result } = renderHook(() => useBodySplashFacade());
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    fetchBodySplashCatalogMock.mockRejectedValueOnce(new Error("refresh failed"));
+    act(() => result.current.setShowProductModal(true));
+    await act(async () => { await result.current.handleCreateProduct({ categoriaId: "1", estoqueAtual: "2", marca: "Peract", nome: "Rosa", precoVenda: "10", volume: "200" }); });
+    expect(result.current.showProductModal).toBe(false);
+    expect(result.current.error).toBe("O Body Splash foi cadastrado, mas não foi possível atualizar a lista.");
+    expect(actionToast.success).toHaveBeenCalledExactlyOnceWith("Body Splash cadastrado no estoque com sucesso!", "Verifique-o na lista de Body Splash.");
+    expect(actionToast.error).not.toHaveBeenCalled();
+  });
   it("consulta paginas remotas e retorna ao inicio ao buscar", async () => {
     fetchBodySplashCatalogMock.mockImplementation(async ({ page = 0 } = {}) => ({
       page: { content: page === 2 ? [created] : [original], number: page, totalElements: 21, totalPages: 3 }, productOptions,
@@ -102,6 +116,8 @@ describe("useBodySplashFacade", () => {
     expect(result.current.items).toEqual([original]);
     expect(result.current.productOptions).toEqual(productOptions);
     expect(result.current.error).toBe("");
+    expect(actionToast.success).not.toHaveBeenCalled();
+    expect(actionToast.error).not.toHaveBeenCalled();
   });
 
   it("volta a pagina anterior ao excluir o unico item da ultima pagina", async () => {
@@ -251,6 +267,7 @@ describe("useBodySplashFacade", () => {
     });
     expect(result.current.items).toEqual([original, created]);
     expect(result.current.showModal).toBe(false);
+    expect(actionToast.success).toHaveBeenCalledExactlyOnceWith("Body Splash cadastrado com sucesso!", "Verifique-o na lista de Body Splash.");
   });
 
   it("updates and deletes only after successful service calls", async () => {

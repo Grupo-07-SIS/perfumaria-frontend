@@ -1,5 +1,8 @@
 import { act, renderHook, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { actionToast } from "../../../shared/services/action-toast";
+
+vi.mock("../../../shared/services/action-toast", () => ({ actionToast: { success: vi.fn(), error: vi.fn() } }));
 
 const {
   createProductMock,
@@ -168,6 +171,10 @@ describe("useProductsFacade", () => {
     expect(updateProductMock).toHaveBeenCalled();
     expect(removeProductMock).toHaveBeenCalledWith({ id: 2, nome: "Sauvage Elixir" });
     expect(fetchProductsMock).toHaveBeenCalledTimes(4);
+    expect(actionToast.success).toHaveBeenNthCalledWith(1, "Perfume cadastrado com sucesso!", "Verifique-o na lista de perfumes.");
+    expect(actionToast.success).toHaveBeenNthCalledWith(2, "Perfume atualizado com sucesso!", "Verifique-o na lista de perfumes.");
+    expect(actionToast.success).toHaveBeenNthCalledWith(3, "Perfume excluído com sucesso!", "A lista de perfumes foi atualizada.");
+    expect(actionToast.error).not.toHaveBeenCalled();
   });
 
   it("loads 23 products across pages of 10, 10 and 3 and resets sorting to page one", async () => {
@@ -223,6 +230,7 @@ describe("useProductsFacade", () => {
     });
 
     expect(result.current.error).toBe("Não foi possível carregar os produtos.");
+    expect(actionToast.error).not.toHaveBeenCalled();
 
     act(() => {
       result.current.openCreateForm();
@@ -235,6 +243,54 @@ describe("useProductsFacade", () => {
     await waitFor(() => {
       expect(result.current.error).toBe("Não foi possível salvar o produto.");
     });
+    expect(actionToast.error).toHaveBeenCalledExactlyOnceWith("Falha ao cadastrar");
+    expect(actionToast.success).not.toHaveBeenCalled();
+  });
+
+  it("Given an edit, when saving fails, then reports Falha ao atualizar and preserves the form", async () => {
+    fetchProductsMock.mockResolvedValue(productPage([]));
+    fetchProductCategoriesMock.mockResolvedValue([]);
+    updateProductMock.mockRejectedValue(new Error("update failed"));
+    const product = { ativo: 1, categoriaId: 1, categoriaNome: "Perfumes", estoqueAtual: 2, id: 1, marca: "Dior", nome: "Sauvage", precoVenda: 150 };
+    const { result } = renderHook(() => useProductsFacade());
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    act(() => result.current.openEditForm(product));
+
+    await act(async () => {
+      await expect(result.current.submitProduct({ categoriaId: "1", estoqueAtual: "2", hasVolume: false, marca: "Dior", medida: "ML", nome: "Sauvage", precoCompra: "", precoVenda: "150", volume: "" })).rejects.toThrow("PRODUCTS_SUBMIT_FAILED");
+    });
+
+    expect(result.current.isFormOpen).toBe(true);
+    expect(result.current.formTarget).toEqual(product);
+    expect(actionToast.error).toHaveBeenCalledExactlyOnceWith("Falha ao atualizar");
+    expect(actionToast.success).not.toHaveBeenCalled();
+  });
+
+  it("Given a successful mutation, when refresh fails, then reports success only", async () => {
+    fetchProductsMock.mockResolvedValueOnce(productPage([])).mockRejectedValue(new Error("refresh failed"));
+    fetchProductCategoriesMock.mockResolvedValue([]);
+    createProductMock.mockResolvedValue({ id: 2 });
+    const { result } = renderHook(() => useProductsFacade());
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    await act(async () => {
+      await result.current.submitProduct({ categoriaId: "1", estoqueAtual: "2", hasVolume: false, marca: "Dior", medida: "ML", nome: "Sauvage", precoCompra: "", precoVenda: "150", volume: "" });
+    });
+    expect(actionToast.success).toHaveBeenCalledExactlyOnceWith("Perfume cadastrado com sucesso!", "Verifique-o na lista de perfumes.");
+    expect(actionToast.error).not.toHaveBeenCalled();
+    expect(result.current.error).toBe("Não foi possível carregar os produtos.");
+  });
+
+  it("Given a rejected delete, then preserves the target and emits one error", async () => {
+    fetchProductsMock.mockResolvedValue(productPage([]));
+    fetchProductCategoriesMock.mockResolvedValue([]);
+    removeProductMock.mockRejectedValue(new Error("delete failed"));
+    const { result } = renderHook(() => useProductsFacade());
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    act(() => result.current.openDeleteConfirm({ id: 1, nome: "Chance", categoriaNome: "Floral" }));
+    await act(async () => { await result.current.confirmDelete(); });
+    expect(result.current.deleteTarget).not.toBeNull();
+    expect(actionToast.error).toHaveBeenCalledExactlyOnceWith("Não foi possível excluir o perfume.");
+    expect(actionToast.success).not.toHaveBeenCalled();
   });
 
   it("ignores stale responses after changing filters and keeps empty results on page one", async () => {

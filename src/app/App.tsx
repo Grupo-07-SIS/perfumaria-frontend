@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { RouterProvider } from "react-router";
 import { router } from "./routes";
 import { AppProvider } from "./context/AppContext";
+import { PeractToaster } from "../shared/components/peract-sonner/PeractSonner";
 
 function VLibras() {
   useEffect(() => {
@@ -40,6 +41,7 @@ export default function App() {
     <AppProvider>
       <VLibras />
       <AppContent />
+      <PeractToaster />
     </AppProvider>
   );
 }

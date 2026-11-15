@@ -1,4 +1,5 @@
 import { selectOnlineOrders } from "../services/online-orders.service";
+import { actionToast } from "../../../shared/services/action-toast";
 import { onlineOrdersRepository } from "../repository/online-orders.repository";
 import { useEffect, useRef, useState } from "react";
 import type { Venda } from "../../../core/store/AppContext";
@@ -43,9 +44,11 @@ export function useOnlineOrdersFacade() {
       }
       const saved = await onlineOrdersRepository.updateStatus(venda.id, status, codigoRastreio);
       setVendas(current => current.map(v => v.id === saved.id ? saved : v));
+      actionToast.success(status === "FINALIZADA" ? "Pedido finalizado com sucesso!" : status === "CANCELADA" ? "Pedido cancelado com sucesso!" : "Pedido marcado como pendente!", "Verifique-o na lista de pedidos online.");
       return true;
     } catch {
       setError("Não foi possível atualizar o pedido.");
+      actionToast.error("Não foi possível atualizar o pedido.");
       return false;
     } finally {
       updatingRef.current = false;

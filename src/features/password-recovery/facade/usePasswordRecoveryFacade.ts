@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { actionToast } from "../../../shared/services/action-toast";
 import { securityErrorMessage, SecurityHttpError } from "../../../core/services/security-http";
 import { passwordRecoveryService } from "../services/password-recovery.service";
 import { RECOVERY_INVALID_ANSWERS } from "../config/password-recovery.config";
@@ -37,10 +38,12 @@ export function usePasswordRecoveryFacade() {
       const next = await operation();
       if (request !== generation.current) return;
       commit(next); setFormVersion(value => value + 1);
+      if (next.step === "success") actionToast.success("Senha redefinida com sucesso!", "Entre com sua nova senha para acessar o sistema.");
     } catch (cause) {
       if (request !== generation.current) return;
       // Never identify which of the three answers failed.
       setError(expected === "answers" && cause instanceof SecurityHttpError && cause.status === 401 ? RECOVERY_INVALID_ANSWERS : securityErrorMessage(cause));
+      actionToast.error(expected === "password" ? "Não foi possível redefinir a senha." : "Não foi possível continuar a recuperação.");
     } finally {
       if (request === generation.current) { busy.current = false; setLoading(false); }
     }
