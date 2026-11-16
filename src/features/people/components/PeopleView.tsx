@@ -79,7 +79,7 @@ export function PeopleView({
 
       {/* Tabs */}
       <div data-tour="tour-people-tabs" className="flex overflow-x-auto border-b peract-border-color mb-4">
-        {tabs.map(t => <PeractButtonPrimitive key={t.key} data-tour={t.key === "fornecedores" ? "tour-people-tab-suppliers" : t.key === "funcionarios" ? "tour-people-tab-employees" : undefined} onClick={() => selectTab(t.key)} className={`flex items-center gap-1.5 px-4 py-2.5 text-sm border-b-2 transition-all ${aba === t.key ? "font-medium" : "border-transparent peract-font-color-muted hover:text-gray-700"}`} style={aba === t.key ? {
+        {tabs.map(t => <PeractButtonPrimitive key={t.key} data-tour={t.key === "clientes" ? "tour-people-tab-clients" : t.key === "fornecedores" ? "tour-people-tab-suppliers" : "tour-people-tab-employees"} aria-pressed={aba === t.key} onClick={() => selectTab(t.key)} className={`flex items-center gap-1.5 px-4 py-2.5 text-sm border-b-2 transition-all ${aba === t.key ? "font-medium" : "border-transparent peract-font-color-muted hover:text-gray-700"}`} style={aba === t.key ? {
         borderColor: ACC,
         color: ACC
       } : {}} variant="plain" size="plain">

@@ -212,7 +212,10 @@ describe("People: caracterizacao de filtros e permissoes", () => {
   it("organiza fornecedores em tabela e preserva edicao e exclusao", async () => {
     const user = userEvent.setup();
     await renderPeople();
+    expect(screen.getByRole("button", { name: /^Clientes/ })).toHaveAttribute("aria-pressed", "true");
     await user.click(screen.getByRole("button", { name: /^Fornecedores/ }));
+    expect(screen.getByRole("button", { name: /^Clientes/ })).toHaveAttribute("aria-pressed", "false");
+    expect(screen.getByRole("button", { name: /^Fornecedores/ })).toHaveAttribute("aria-pressed", "true");
     const table = within(screen.getByRole("table", { name: "Fornecedores" }));
     expect(table.getAllByRole("columnheader").map(header => header.textContent)).toEqual(["Razão social", "CNPJ", "Telefone", "E-mail", "Endereço", "Ações"]);
     const row = within(table.getByRole("row", { name: /FrascosBR Ltda/ }));

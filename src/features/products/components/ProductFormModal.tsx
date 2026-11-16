@@ -183,7 +183,7 @@ export function ProductFormModal({
                 });
               }
             }} type="checkbox" />
-                <div className={`flex h-5 w-5 items-center justify-center rounded border-2 transition-all ${watchedHasVolume ? "border-[#A67449] bg-[#A67449]" : "border-gray-300 peract-bg-card"}`}>
+                <div className={`flex h-5 w-5 items-center justify-center rounded border-2 transition-all ${watchedHasVolume ? "border-[#70243f] bg-[#70243f]" : "border-gray-300 peract-bg-card"}`}>
                   {watchedHasVolume ? <CheckCircle size={12} className="text-white" /> : null}
                 </div>
               </div>
@@ -206,7 +206,7 @@ export function ProductFormModal({
             }) => <PeractSelect data={PRODUCT_MEASURE_OPTIONS} onValueChange={field.onChange} required value={field.value}>Tipo de medida</PeractSelect>} />
                 </div>
 
-                {volumePreview ? <div className="flex items-center gap-2 rounded-lg border border-amber-100 bg-amber-50 px-3 py-2 text-xs text-[#A67449]">
+                {volumePreview ? <div className="flex items-center gap-2 rounded-lg border border-amber-100 bg-amber-50 px-3 py-2 text-xs text-[#70243f]">
                     <Ruler size={11} /> Volume exibido: <strong>{volumePreview}</strong>
                   </div> : null}
               </div> : null}

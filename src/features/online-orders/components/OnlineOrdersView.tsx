@@ -67,10 +67,10 @@ export function OnlineOrdersView({
       {/* KPI Cards */}
       <div className="grid grid-cols-3 gap-3 mb-5">
         <PeractCard className="peract-bg-card rounded-xl border peract-border-color p-3 shadow-sm text-center">
-          <div className="w-8 h-8 rounded-full flex items-center justify-center mx-auto mb-1 bg-amber-100">
-            <Clock size={16} className="text-amber-700" />
+          <div className="w-8 h-8 rounded-full flex items-center justify-center mx-auto mb-1 peract-bg-accent-soft">
+            <Clock size={16} className="peract-font-color-accent" />
           </div>
-          <p className="text-2xl font-semibold text-amber-700">{pendentes}</p>
+          <p className="text-2xl font-semibold peract-font-color-accent">{pendentes}</p>
           <p className="text-xs peract-font-color-muted">Pedidos Pendentes</p>
         </PeractCard>
         <PeractCard className="peract-bg-card rounded-xl border peract-border-color p-3 shadow-sm text-center">

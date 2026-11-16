@@ -34,7 +34,7 @@ export function useNovoClienteModalForm({
   const [saving, setSaving] = useState(false);
   const [submitError, setSubmitError] = useState("");
   const submitting = useRef(false);
-  const ACC = "#c29958";
+  const ACC = "#70243f";
   const handleSave = async () => {
     if (submitting.current) return;
     const values = form.getValues();

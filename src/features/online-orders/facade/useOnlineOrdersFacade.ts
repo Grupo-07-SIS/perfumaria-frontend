@@ -32,7 +32,9 @@ export function useOnlineOrdersFacade() {
     if (updatingRef.current) return false;
     setError("");
     if (!canManageOrders && status !== "FINALIZADA") {
-      setError("Você não tem permissão para desfazer ou cancelar pedidos.");
+      const message = "Você não tem permissão para desfazer ou cancelar pedidos.";
+      setError(message);
+      actionToast.error(message);
       return false;
     }
     updatingRef.current = true;

@@ -36,7 +36,7 @@ export function EnderecoFields({
           <PeractInputControl type="text" inputMode="numeric" autoComplete="postal-code" aria-busy={cepLookup?.isLoading || undefined} value={formatCep(endereco.cep)} onChange={e => {
           set("cep", formatCep(e.target.value));
           onClearError("cep");
-        }} placeholder="00000-000" maxLength={9} aria-invalid={!!errors.cep} className={`w-full border rounded-lg px-2.5 py-1.5 text-sm peract-font-color-default focus:outline-none focus:border-[#c29958] ${errors.cep ? "border-red-400" : "peract-border-color"}`} />
+        }} placeholder="00000-000" maxLength={9} aria-invalid={!!errors.cep} className={`w-full border rounded-lg px-2.5 py-1.5 text-sm peract-font-color-default focus:outline-none focus:border-[#70243f] ${errors.cep ? "border-red-400" : "peract-border-color"}`} />
           {errors.cep && <p className="text-xs text-red-600 mt-1">{errors.cep}</p>}
           {cepLookup?.isLoading && <p role="status" className="text-xs peract-font-color-muted mt-1">Consultando CEP...</p>}
           {cepLookup?.message && <div className="flex items-start gap-1 mt-1">
@@ -49,7 +49,7 @@ export function EnderecoFields({
           <PeractInputControl type="text" maxLength={45} value={endereco.logradouro} aria-invalid={!!errors.logradouro} onChange={e => {
             set("logradouro", e.target.value);
             onClearError("logradouro");
-          }} placeholder="Ex: Rua das Flores" className={`w-full border rounded-lg px-2.5 py-1.5 text-sm peract-font-color-default focus:outline-none focus:border-[#c29958] ${errors.logradouro ? "border-red-400" : "peract-border-color"}`} />
+          }} placeholder="Ex: Rua das Flores" className={`w-full border rounded-lg px-2.5 py-1.5 text-sm peract-font-color-default focus:outline-none focus:border-[#70243f] ${errors.logradouro ? "border-red-400" : "peract-border-color"}`} />
           {errors.logradouro && <p className="text-xs text-red-600 mt-1">{errors.logradouro}</p>}
         </PeractField>
         <PeractField className="sm:col-span-2">
@@ -57,7 +57,7 @@ export function EnderecoFields({
           <PeractInputControl type="text" inputMode="numeric" value={endereco.numero} aria-invalid={!!errors.numero} onChange={e => {
             set("numero", onlyDigitsMax(e.target.value, NUMERO_MAX_DIGITS));
             onClearError("numero");
-          }} placeholder="Ex: 100" maxLength={NUMERO_MAX_DIGITS} className={`w-full border rounded-lg px-2.5 py-1.5 text-sm peract-font-color-default focus:outline-none focus:border-[#c29958] ${errors.numero ? "border-red-400" : "peract-border-color"}`} />
+          }} placeholder="Ex: 100" maxLength={NUMERO_MAX_DIGITS} className={`w-full border rounded-lg px-2.5 py-1.5 text-sm peract-font-color-default focus:outline-none focus:border-[#70243f] ${errors.numero ? "border-red-400" : "peract-border-color"}`} />
           {errors.numero && <p className="text-xs text-red-600 mt-1">{errors.numero}</p>}
         </PeractField>
         <PeractField className="sm:col-span-4">
@@ -65,7 +65,7 @@ export function EnderecoFields({
           <PeractInputControl type="text" maxLength={45} value={endereco.complemento ?? ""} aria-invalid={!!errors.complemento} onChange={e => {
             set("complemento", e.target.value);
             onClearError("complemento");
-          }} placeholder="Apto, sala, bloco..." className={`w-full border rounded-lg px-2.5 py-1.5 text-sm peract-font-color-default focus:outline-none focus:border-[#c29958] ${errors.complemento ? "border-red-400" : "peract-border-color"}`} />
+          }} placeholder="Apto, sala, bloco..." className={`w-full border rounded-lg px-2.5 py-1.5 text-sm peract-font-color-default focus:outline-none focus:border-[#70243f] ${errors.complemento ? "border-red-400" : "peract-border-color"}`} />
           {errors.complemento && <p className="text-xs text-red-600 mt-1">{errors.complemento}</p>}
         </PeractField>
         <PeractField className="sm:col-span-3">
@@ -73,7 +73,7 @@ export function EnderecoFields({
           <PeractInputControl type="text" maxLength={45} value={endereco.bairro} aria-invalid={!!errors.bairro} onChange={e => {
             set("bairro", e.target.value);
             onClearError("bairro");
-          }} placeholder="Ex: Centro" className={`w-full border rounded-lg px-2.5 py-1.5 text-sm peract-font-color-default focus:outline-none focus:border-[#c29958] ${errors.bairro ? "border-red-400" : "peract-border-color"}`} />
+          }} placeholder="Ex: Centro" className={`w-full border rounded-lg px-2.5 py-1.5 text-sm peract-font-color-default focus:outline-none focus:border-[#70243f] ${errors.bairro ? "border-red-400" : "peract-border-color"}`} />
           {errors.bairro && <p className="text-xs text-red-600 mt-1">{errors.bairro}</p>}
         </PeractField>
         <PeractField className="sm:col-span-2">
@@ -81,12 +81,12 @@ export function EnderecoFields({
           <PeractInputControl type="text" maxLength={45} value={endereco.cidade} aria-invalid={!!errors.cidade} onChange={e => {
             set("cidade", e.target.value);
             onClearError("cidade");
-          }} placeholder="Ex: São Paulo" className={`w-full border rounded-lg px-2.5 py-1.5 text-sm peract-font-color-default focus:outline-none focus:border-[#c29958] ${errors.cidade ? "border-red-400" : "peract-border-color"}`} />
+          }} placeholder="Ex: São Paulo" className={`w-full border rounded-lg px-2.5 py-1.5 text-sm peract-font-color-default focus:outline-none focus:border-[#70243f] ${errors.cidade ? "border-red-400" : "peract-border-color"}`} />
           {errors.cidade && <p className="text-xs text-red-600 mt-1">{errors.cidade}</p>}
         </PeractField>
         <PeractField className="sm:col-span-1">
           <PeractLabel className="text-xs text-gray-600 block mb-1">UF</PeractLabel>
-          <PeractNativeSelect value={endereco.uf} onChange={e => set("uf", e.target.value)} className="w-full border peract-border-color rounded-lg px-2 py-1.5 text-sm peract-font-color-default focus:outline-none focus:border-[#c29958]">
+          <PeractNativeSelect value={endereco.uf} onChange={e => set("uf", e.target.value)} className="w-full border peract-border-color rounded-lg px-2 py-1.5 text-sm peract-font-color-default focus:outline-none focus:border-[#70243f]">
             <option value="">—</option>
             {UF_LIST.map(uf => <option key={uf} value={uf}>{uf}</option>)}
           </PeractNativeSelect>

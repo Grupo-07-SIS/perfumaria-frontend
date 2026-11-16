@@ -6,7 +6,7 @@ export function StatusBadge({
 }) {
   const cfg = {
     Pendente: {
-      cls: "bg-amber-100 text-amber-700",
+      cls: "peract-bg-accent-soft peract-font-color-accent",
       icon: <Clock size={10} />
     },
     Finalizado: {

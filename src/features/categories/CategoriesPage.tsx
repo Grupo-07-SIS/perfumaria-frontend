@@ -16,7 +16,7 @@ export function CategoriesPage() {
       <div className="mb-5 flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
         <div>
           <h1 data-tour="tour-categories-header" className="peract-font-color-default">Categorias</h1>
-          <nav className="mt-0.5 text-xs peract-font-color-muted">Estoque &rsaquo; <span className="text-[#A67449]">Categorias</span></nav>
+          <nav className="mt-0.5 text-xs peract-font-color-muted">Estoque &rsaquo; <span className="text-[#70243f]">Categorias</span></nav>
         </div>
         <PeractButton action={facade.openCreateForm} className="self-start" icon={<Plus size={16} />}>Nova Categoria</PeractButton>
       </div>

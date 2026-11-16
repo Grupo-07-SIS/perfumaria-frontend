@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 720" role="img" aria-labelledby="title">
+  <title id="title">Canal Perfumado</title>
+  <circle cx="360" cy="360" r="352" fill="#f7f1eb" stroke="#2b2528" stroke-width="8" />
+  <text x="360" y="326" fill="#70243f" font-family="Playfair Display, Georgia, serif" font-size="116" font-weight="600" text-anchor="middle">canal</text>
+  <text x="360" y="430" fill="#70243f" font-family="Playfair Display, Georgia, serif" font-size="96" font-weight="600" text-anchor="middle">perfumado</text>
+</svg>

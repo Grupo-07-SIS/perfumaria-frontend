@@ -1,11 +1,12 @@
 import { PeractButtonPrimitive } from "../../shared/components/peract-button";
 import { useState } from "react";
 import { Navigate, Outlet, NavLink, useLocation } from "react-router";
-import logoImg from "figma:asset/19603bc35fe7f283ff1a83c590f928c9d0bfe9cf.png";
+import logoImg from "../../assets/canal-perfumado-logo.svg";
 import { LayoutDashboard, Package, ChevronDown, ChevronRight, Menu, X, ChevronLeft, Droplets, ShoppingBag, Users, Settings, LogOut, ShieldCheck, UserCheck, Sparkles, FlaskConical, Tags, ClipboardPlus, History, ShoppingCart } from "lucide-react";
 import { useApp } from "../store/AppContext";
 import { PeractButton } from "../../shared/components/peract-button";
 import { PeractTag } from "../../shared/components/peract-tag";
+import { useIsMobile } from "../../shared/hooks/useIsMobile";
 import { SecurityQuestionsWarningBanner } from "./SecurityQuestionsWarningBanner";
 import { GuidedSystemTour } from "./GuidedSystemTour";
 const C = {
@@ -152,6 +153,8 @@ export function AppLayout() {
   } = useApp();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const isCompactSidebar = useIsMobile(1024);
+  const isSidebarCollapsed = sidebarCollapsed && !isCompactSidebar;
   const location = useLocation();
   const isAdmin = currentUser?.cargo === "Administrador";
   const navItems = ALL_NAV_ITEMS
@@ -196,14 +199,14 @@ export function AppLayout() {
   return <div className="peract-bg-page flex h-screen overflow-hidden">
       {mobileMenuOpen ? <div className="fixed inset-0 z-40 bg-black/40 lg:hidden" onClick={() => setMobileMenuOpen(false)} /> : null}
 
-      <aside className={`peract-sidebar-shell fixed inset-y-0 left-0 z-50 flex shrink-0 flex-col transition-all duration-300 lg:relative ${mobileMenuOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"} ${sidebarCollapsed ? "w-16" : "w-64"}`}>
-        <div className={`flex shrink-0 items-center gap-3 border-b px-3 py-4 ${sidebarCollapsed ? "justify-center" : ""}`} style={{
+      <aside className={`peract-sidebar-shell fixed inset-y-0 left-0 z-50 flex shrink-0 flex-col transition-all duration-300 lg:relative ${mobileMenuOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"} ${isSidebarCollapsed ? "w-16" : "w-64"}`}>
+        <div className={`flex shrink-0 items-center gap-3 border-b px-3 py-4 ${isSidebarCollapsed ? "justify-center" : ""}`} style={{
         borderColor: C.border
       }}>
           <img src={logoImg} alt="Canal Perfumado" className="h-10 w-10 shrink-0 rounded-full border-2 object-cover" style={{
           borderColor: C.accent
         }} />
-          {!sidebarCollapsed ? <div className="min-w-0">
+          {!isSidebarCollapsed ? <div className="min-w-0">
               <p className="truncate text-xs font-medium leading-tight" style={{
             color: C.dark
           }}>Canal Perfumado</p>
@@ -212,10 +215,10 @@ export function AppLayout() {
             color: C.accent
           }}>Decants</PeractTag>
             </div> : null}
-          <PeractButton action={() => setMobileMenuOpen(false)} className="ml-auto h-8 w-8 rounded-lg peract-font-color-muted hover:bg-gray-100 lg:hidden" size="icon" theme="secondary"><X size={18} /></PeractButton>
+          <PeractButton action={() => setMobileMenuOpen(false)} aria-label="Fechar menu" title="Fechar menu" className="ml-auto h-8 w-8 rounded-lg peract-font-color-muted hover:bg-gray-100 lg:hidden" size="icon" theme="secondary"><X size={18} /></PeractButton>
         </div>
 
-        {!sidebarCollapsed && currentUser ? <div className="mx-3 mt-2 mb-1 flex items-center gap-2 rounded-lg px-3 py-1.5" style={{
+        {!isSidebarCollapsed && currentUser ? <div className="mx-3 mt-2 mb-1 flex items-center gap-2 rounded-lg px-3 py-1.5" style={{
         background: "var(--color-sidebar-accent)",
         border: "1px solid var(--color-sidebar-border)"
       }}>
@@ -234,16 +237,16 @@ export function AppLayout() {
             </div>
           </div> : null}
 
-        <nav className="flex flex-1 flex-col gap-0.5 overflow-y-auto p-2">
-          {navItems.map(item => <SidebarItem key={item.label} collapsed={sidebarCollapsed} item={item} onMobileClose={() => setMobileMenuOpen(false)} />)}
+        <nav data-tour="tour-sidebar-navigation" className="flex flex-1 flex-col gap-0.5 overflow-y-auto p-2">
+          {navItems.map(item => <SidebarItem key={item.label} collapsed={isSidebarCollapsed} item={item} onMobileClose={() => setMobileMenuOpen(false)} />)}
         </nav>
 
-        <GuidedSystemTour collapsed={sidebarCollapsed} isAdmin={isAdmin} onStart={() => setMobileMenuOpen(false)} />
+        <GuidedSystemTour collapsed={isSidebarCollapsed} isAdmin={isAdmin} onStart={() => setMobileMenuOpen(false)} />
 
         <div className="hidden shrink-0 border-t p-2 lg:block" style={{
         borderColor: C.border
       }}>
-          <PeractButton action={() => setSidebarCollapsed(!sidebarCollapsed)} className="h-9 min-h-9 w-full justify-center gap-2 px-3 py-2 text-xs hover:bg-gray-100" style={{
+          <PeractButton action={() => setSidebarCollapsed(!sidebarCollapsed)} aria-label={sidebarCollapsed ? "Expandir menu lateral" : undefined} title={sidebarCollapsed ? "Expandir menu lateral" : "Recolher menu lateral"} className="h-9 min-h-9 w-full justify-center gap-2 px-3 py-2 text-xs hover:bg-gray-100" style={{
           color: C.textMid
         }} theme="secondary">
             {sidebarCollapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
@@ -254,7 +257,7 @@ export function AppLayout() {
 
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
         <header className="peract-header-shell flex h-14 sm:h-16 shrink-0 items-center gap-3 px-3 sm:px-6">
-          <PeractButtonPrimitive onClick={() => setMobileMenuOpen(true)} className="h-9 w-9 shrink-0 rounded-md peract-font-color-muted hover:bg-gray-100 lg:hidden" variant="plain" size="plain" aria-label="Abrir menu" title="Abrir menu">
+          <PeractButtonPrimitive data-tour="tour-mobile-navigation" onClick={() => setMobileMenuOpen(true)} className="h-9 w-9 shrink-0 rounded-md peract-font-color-muted hover:bg-gray-100 lg:hidden" variant="plain" size="plain" aria-label="Abrir menu" title="Abrir menu">
             <Menu size={20} />
           </PeractButtonPrimitive>
           <div className="flex min-w-0 flex-1 items-center gap-3">

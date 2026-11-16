@@ -24,7 +24,7 @@ export function DashboardView({
         </div>
         <div className="flex rounded-lg overflow-hidden border peract-border-color self-start">
           {(Object.keys(periodLabels) as Period[]).map(p => <PeractButtonPrimitive key={p} onClick={() => setPeriod(p)} className={`px-3 py-1.5 text-xs transition-all ${period === p ? "text-white" : "text-gray-600 peract-bg-card hover:bg-gray-50"}`} style={period === p ? {
-          background: "#c29958"
+          background: "#70243f"
         } : {}} variant="plain" size="plain">
               {periodLabels[p]}
             </PeractButtonPrimitive>)}
@@ -68,7 +68,7 @@ export function DashboardView({
               <XAxis dataKey="dia" tick={axisProps} axisLine={false} tickLine={false} />
               <YAxis tick={axisProps} axisLine={false} tickLine={false} tickFormatter={v => `R$${v}`} />
               <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => [`R$ ${v.toFixed(2).replace(".", ",")}`, "Faturamento"]} />
-              <Bar dataKey="faturamento" fill="#c29958" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="faturamento" fill="#70243f" radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </PeractCard>
@@ -140,8 +140,8 @@ export function DashboardView({
         </div>
         <div className="divide-y divide-gray-50">
           {recentActivities.map(activity => <div key={activity.id} className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50/50 transition-colors">
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${activity.type === "venda" ? "bg-amber-100" : activity.type === "producao" ? "bg-green-100" : "bg-blue-100"}`}>
-                {activity.type === "venda" ? <ShoppingBag size={14} className="text-amber-700" /> : activity.type === "producao" ? <Package size={14} className="text-green-600" /> : <Package size={14} className="text-blue-600" />}
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${activity.type === "venda" ? "peract-bg-accent-soft" : activity.type === "producao" ? "bg-green-100" : "bg-blue-100"}`}>
+                {activity.type === "venda" ? <ShoppingBag size={14} className="peract-font-color-accent" /> : activity.type === "producao" ? <Package size={14} className="text-green-600" /> : <Package size={14} className="text-blue-600" />}
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm peract-font-color-default truncate">{activity.description}</p>

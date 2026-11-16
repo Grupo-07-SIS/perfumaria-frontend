@@ -5,7 +5,7 @@ export const SALES_CHANNEL_OPTIONS: { value: SalesChannel; label: string }[] = [
   { value: "whatsapp", label: "WhatsApp" },
   { value: "site", label: "Site" },
 ];
-export const ACC = "#c29958";
+export const ACC = "#70243f";
 export const DARK = "#050300";
 export const WARM = "#f5ede0";
 export const PERIOD_LABELS: Record<Period, string> = {
@@ -14,7 +14,8 @@ export const PERIOD_LABELS: Record<Period, string> = {
   "30dias": "30 dias",
   semestre: "Semestre"
 };
-export const CAT_COLORS = [ACC, "#b07d40", "#8c6030", "#6b4620"];
+export const CAT_COLORS = [ACC, "#a45b76", "#6b4755", "#c57d99"];
+export const PRODUCT_RANK_COLORS = [ACC, DARK, "#82344f", "#964762", "#aa5b75"];
 export const TOOLTIP_STYLE = {
   contentStyle: {
     background: DARK,

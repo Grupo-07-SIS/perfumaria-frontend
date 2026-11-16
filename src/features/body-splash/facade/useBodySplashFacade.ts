@@ -94,6 +94,7 @@ export function useBodySplashFacade() {
   const filtered = items;
 
   const handleSave = async (values: BodySplashModalFormValues) => {
+    const isEditing = Boolean(editItem);
     setError("");
     try {
       if (editItem) {
@@ -111,7 +112,7 @@ export function useBodySplashFacade() {
       actionToast.success(editItem ? "Body Splash atualizado com sucesso!" : "Body Splash cadastrado com sucesso!", "Verifique-o na lista de Body Splash.");
     } catch (requestError) {
       setError("Não foi possível salvar o Body Splash.");
-      actionToast.error("Não foi possível salvar o Body Splash.");
+      actionToast.error(isEditing ? "Não foi possível atualizar o Body Splash." : "Não foi possível cadastrar o Body Splash.");
       throw requestError;
     }
   };

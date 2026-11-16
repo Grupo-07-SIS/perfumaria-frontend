@@ -89,6 +89,7 @@ export function useDecantsFacade() {
   const filtered = decants;
 
   const handleSave = async (values: DecantModalFormValues) => {
+    const isEditing = Boolean(editDecant);
     setError("");
     try {
       if (editDecant) {
@@ -106,7 +107,7 @@ export function useDecantsFacade() {
       actionToast.success(editDecant ? "Decant atualizado com sucesso!" : "Decant cadastrado com sucesso!", "Verifique-o na lista de decants.");
     } catch (requestError) {
       setError("Não foi possível salvar o decant.");
-      actionToast.error(editDecant ? "Falha ao atualizar" : "Falha ao cadastrar");
+      actionToast.error(isEditing ? "Falha ao atualizar" : "Falha ao cadastrar");
       throw requestError;
     }
   };

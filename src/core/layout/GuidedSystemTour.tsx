@@ -52,7 +52,7 @@ export function GuidedSystemTour({ isAdmin, collapsed, onStart }: GuidedSystemTo
               </div>
               {isMobile && <PeractButtonPrimitive onClick={() => setIsSectionMenuOpen(false)} className="h-9 w-9 shrink-0 rounded-md peract-font-color-muted hover:bg-gray-100" variant="plain" size="plain" aria-label="Fechar menu do tour" title="Fechar menu do tour"><X size={16} /></PeractButtonPrimitive>}
             </div>
-            <PeractButtonPrimitive onClick={() => startTour(sections.flatMap(section => section.steps))} className="mb-1 min-h-11 w-full justify-start rounded-md px-3 py-2 text-left text-sm font-medium text-white" style={{ background: "#a67449" }} variant="plain" size="plain">
+            <PeractButtonPrimitive onClick={() => startTour(sections.flatMap(section => section.steps))} className="mb-1 min-h-11 w-full justify-start rounded-md px-3 py-2 text-left text-sm font-medium text-white" style={{ background: "#70243f" }} variant="plain" size="plain">
               Tour completo
             </PeractButtonPrimitive>
             <div className="flex flex-col gap-0.5">

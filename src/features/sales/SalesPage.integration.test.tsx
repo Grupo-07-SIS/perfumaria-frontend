@@ -2,6 +2,7 @@ import { act, fireEvent, render, screen, waitFor, within } from "@testing-librar
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { apiClient } from "../../core/services/http-client";
+import { PeractToaster } from "../../shared/components/peract-sonner";
 import { SalesPage } from "./SalesPage";
 
 vi.mock("../../core/services/http-client", () => ({ apiClient: { get: vi.fn(), post: vi.fn() } }));
@@ -10,8 +11,13 @@ const product = { id: 42, nome: "Perfume remoto", precoVenda: 45, estoqueAtual: 
 const customer = { id: 81, nome: "Cliente remoto", email: "cliente@example.test", telefone: "11999998888", status: 1 };
 
 async function renderLoaded() {
-  render(<SalesPage />);
+  render(<><PeractToaster position="top-right" richColors /><SalesPage /></>);
   await waitFor(() => expect(screen.getByRole("button", { name: "Registrar venda" })).toBeEnabled());
+}
+
+async function findToast(message: string | RegExp) {
+  const notifications = screen.getByRole("region", { name: /Notificações de ações/ });
+  return within(notifications).findByText(message);
 }
 
 async function addCompleteProduct(user: ReturnType<typeof userEvent.setup>, name: RegExp) {
@@ -79,7 +85,7 @@ describe("Sales backend integration", () => {
     expect(screen.getByRole("combobox")).toHaveValue("Pix");
     await user.click(screen.getByRole("button", { name: "Registrar venda" }));
     await user.click(screen.getByRole("button", { name: "Confirmar registro" }));
-    await screen.findByRole("status");
+    expect(await findToast("Venda registrada como finalizada.")).toBeInTheDocument();
     expect(apiClient.post).toHaveBeenCalledTimes(1);
   });
 
@@ -192,7 +198,7 @@ describe("Sales backend integration", () => {
     await user.click(screen.getByRole("button", { name: /Cliente remoto/ }));
     await user.selectOptions(screen.getByRole("combobox"), "Pix");
     await reviewAndConfirmSale(user);
-    await screen.findByRole("status");
+    expect(await findToast("Venda registrada como finalizada.")).toBeInTheDocument();
     expect(apiClient.post).toHaveBeenCalledWith("/vendas", expect.objectContaining({ itens: [
       { produtoId: 1002, quantidade: 1 },
       { produtoId: 42, quantidade: 1 },
@@ -257,7 +263,7 @@ describe("Sales backend integration", () => {
     await user.type(screen.getByPlaceholderText("0"), "10");
     expect(screen.getByText("Total", { selector: "span" }).parentElement).toHaveTextContent("81.00");
     await reviewAndConfirmSale(user);
-    expect(await screen.findByRole("status")).toHaveTextContent("Venda registrada como finalizada.");
+    expect(await screen.findByText("Venda registrada como finalizada.")).toBeInTheDocument();
     expect(apiClient.post).toHaveBeenCalledExactlyOnceWith("/vendas", { clienteId: 81, forma: "Pix", tipoVenda: "PRESENCIAL", desconto: 10, tipoDesconto: "PERCENTUAL", itens: [{ produtoId: 42, quantidade: 2 }] });
     expect(screen.getByText("Nenhum item adicionado ainda.")).toBeInTheDocument();
     expect(screen.getByRole("combobox")).toHaveValue("");
@@ -286,7 +292,7 @@ describe("Sales backend integration", () => {
     expect(modal.getByText("- R$ 5,00")).toBeInTheDocument();
     expect(modal.getByText("R$ 52,50")).toBeInTheDocument();
     await user.click(modal.getByRole("button", { name: "Confirmar registro" }));
-    expect(await screen.findByRole("status")).toHaveTextContent("Venda registrada como pendente.");
+    expect(await findToast("Venda registrada como pendente.")).toBeInTheDocument();
     expect(apiClient.post).toHaveBeenCalledWith("/vendas", { clienteId: 81, forma: "Pix", tipoVenda: "ONLINE", canalVendaOnline: channel.toUpperCase(), desconto: 5, tipoDesconto: "VALOR", frete: 12.5, itens: [{ produtoId: 42, quantidade: 1 }] });
     await user.click(screen.getByRole("button", { name: "Online" }));
     expect(screen.getByLabelText("Valor do frete (R$)")).toHaveValue(null);
@@ -307,13 +313,14 @@ describe("Sales backend integration", () => {
     vi.mocked(apiClient.post).mockRejectedValueOnce(new Error("offline"));
     await reviewAndConfirmSale(user);
     expect(await screen.findByRole("alert")).toHaveTextContent("Não foi possível confirmar");
+    expect(await findToast(/Não foi possível confirmar o registro/)).toBeInTheDocument();
     expect(freightInput).toHaveValue(15);
     await user.click(screen.getByRole("button", { name: "Voltar para alterar" }));
     await user.click(screen.getByRole("button", { name: "Presencial" }));
     expect(screen.queryByLabelText("Valor do frete (R$)")).not.toBeInTheDocument();
     expect(screen.getByText("Total", { selector: "span" }).parentElement).toHaveTextContent("45.00");
     await reviewAndConfirmSale(user);
-    await screen.findByRole("status");
+    expect(await findToast("Venda registrada como finalizada.")).toBeInTheDocument();
     expect(apiClient.post).toHaveBeenLastCalledWith("/vendas", expect.not.objectContaining({ frete: expect.anything() }));
   });
 
@@ -347,9 +354,9 @@ describe("Sales backend integration", () => {
     expect(await screen.findByRole("alert")).toHaveTextContent("Dados inválidos");
     expect(screen.getByText("1 item(s)")).toBeInTheDocument();
     expect(screen.getByRole("combobox", { hidden: true })).toHaveValue("Pix");
-    expect(screen.queryByRole("status")).not.toBeInTheDocument();
+    expect(within(screen.getByRole("region", { name: /Notificações de ações/ })).queryByText("Venda registrada como finalizada.")).not.toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Confirmar registro" }));
-    expect(await screen.findByRole("status")).toHaveTextContent("finalizada");
+    expect(await findToast("Venda registrada como finalizada.")).toBeInTheDocument();
   });
 
   it("blocks repeated submissions and editing while the POST is pending", async () => {
@@ -369,9 +376,9 @@ describe("Sales backend integration", () => {
     expect(screen.getByRole("button", { name: "Voltar para alterar" })).toBeDisabled();
     fireEvent.keyDown(screen.getByRole("dialog"), { key: "Escape" });
     expect(screen.getByRole("dialog")).toBeInTheDocument();
-    expect(screen.queryByRole("status")).not.toBeInTheDocument();
+    expect(within(screen.getByRole("region", { name: /Notificações de ações/ })).queryByText("Venda registrada como finalizada.")).not.toBeInTheDocument();
     await act(async () => { resolveSale({ status: 201, data: "" }); });
-    expect(screen.getByRole("status")).toHaveTextContent("finalizada");
+    expect(await findToast("Venda registrada como finalizada.")).toBeInTheDocument();
   });
 
   it("reports loading errors and reloads without inventing catalog entries", async () => {
@@ -422,7 +429,7 @@ describe("Sales backend integration", () => {
     await addCompleteProduct(user, /^Perfume remoto/);
     await user.selectOptions(screen.getByRole("combobox"), "Pix");
     await reviewAndConfirmSale(user);
-    await screen.findByRole("status");
+    expect(await findToast("Venda registrada como finalizada.")).toBeInTheDocument();
     expect(apiClient.post).toHaveBeenLastCalledWith("/vendas", expect.objectContaining({ clienteId: 501 }));
   });
 });

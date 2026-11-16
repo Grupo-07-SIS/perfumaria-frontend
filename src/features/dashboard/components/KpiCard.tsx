@@ -17,7 +17,7 @@ export function KpiCard({
       <div className="flex items-start justify-between mb-3">
         <p className="text-xs peract-font-color-muted leading-tight pr-2">{title}</p>
         <div className="w-9 h-9 rounded-lg flex items-center justify-center text-white shrink-0" style={{
-        background: alert ? "#dc2626" : "#c29958"
+        background: alert ? "#dc2626" : "#70243f"
       }}>
           {icon}
         </div>

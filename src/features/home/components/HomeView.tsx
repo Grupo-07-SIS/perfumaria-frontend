@@ -3,7 +3,7 @@ import { ptBR } from "date-fns/locale";
 import type { useHomeFacade } from "../facade/useHomeFacade";
 import { PeractButtonPrimitive } from "../../../shared/components/peract-button";
 import { AlertTriangle, ShoppingBag, DollarSign, TrendingUp, TrendingDown, BarChart2, Droplets, Package, ArrowRight, ShoppingCart, CalendarDays, Check, RefreshCw } from "lucide-react";
-import { PERIOD_LABELS, DARK, ACC, CAT_COLORS, WARM, SALES_CHANNEL_OPTIONS } from "../config/home.config";
+import { PERIOD_LABELS, DARK, ACC, CAT_COLORS, PRODUCT_RANK_COLORS, WARM, SALES_CHANNEL_OPTIONS } from "../config/home.config";
 import type { Period, SalesChannel } from "../models/home.models";
 import { Link } from "react-router";
 import { KpiCard } from "./KpiCard";
@@ -108,7 +108,7 @@ export function HomeView({
           <h1 data-tour="tour-home-heading" className="peract-font-color-default">Início</h1>
           <p className="text-sm peract-font-color-muted mt-0.5">Painel de controle Canal Perfumado Decants</p>
         </div>
-        {isAdmin && <div className="flex w-full flex-col items-start gap-2 self-start sm:w-auto sm:items-end">
+        {isAdmin && <div data-tour="tour-home-period" className="flex w-full flex-col items-start gap-2 self-start sm:w-auto sm:items-end">
           <div className="flex w-full flex-wrap items-center justify-start gap-2 sm:w-auto sm:justify-end">
             <div className="flex rounded-lg overflow-hidden border peract-border-color">
               {(Object.keys(PERIOD_LABELS) as Period[]).map(p => <PeractButtonPrimitive key={p} onClick={() => setPeriod(p)} className="px-3 py-1.5 text-xs transition-all" style={period === p && !customMode ? {
@@ -129,7 +129,7 @@ export function HomeView({
             <div className="flex w-full flex-wrap items-center justify-start gap-2 sm:w-auto sm:justify-end">
               <CalendarDateField label="Data inicial" value={customStartDate} onSelect={selectCustomStartDate} />
               <CalendarDateField label="Data final" value={customEndDate} onSelect={selectCustomEndDate} />
-              <PeractButtonPrimitive onClick={applyCustomPeriod} className="flex h-8 items-center gap-1.5 rounded-md border border-transparent px-4 text-xs font-medium text-white shadow-sm transition-all hover:brightness-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c29958] focus-visible:ring-offset-2 active:translate-y-px" style={{ background: ACC }} variant="plain" size="plain" aria-label="Aplicar período personalizado">
+              <PeractButtonPrimitive onClick={applyCustomPeriod} className="flex h-8 items-center gap-1.5 rounded-md border border-transparent px-4 text-xs font-medium text-white shadow-sm transition-all hover:brightness-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#70243f] focus-visible:ring-offset-2 active:translate-y-px" style={{ background: ACC }} variant="plain" size="plain" aria-label="Aplicar período personalizado">
                 <Check size={13} /> Aplicar
               </PeractButtonPrimitive>
             </div>
@@ -215,9 +215,9 @@ export function HomeView({
         <PeractCard className="peract-bg-card rounded-xl border peract-border-color p-4 shadow-sm">
           <h2 className="text-sm mb-4 peract-font-color-default">Top 5 Produtos Mais Vendidos</h2>
           {topProdutos.length === 0 ? <EmptyChart icon={<Droplets size={22} />} message={failedSections.includes("topProducts") ? "Top produtos indisponível" : "Nenhum produto vendido no período"} /> : <div className="flex flex-col gap-3">
-              {topProdutos.map((p, i) => <div key={p.nome} className="flex items-center gap-3">
+                {topProdutos.map((p, i) => <div key={p.nome} className="flex items-center gap-3">
                   <PeractTag className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold shrink-0 text-white" style={{
-              background: i === 0 ? ACC : i === 1 ? DARK : "#d1c0a0"
+                background: PRODUCT_RANK_COLORS[i % PRODUCT_RANK_COLORS.length]
             }}>
                     {i + 1}
                   </PeractTag>
@@ -235,7 +235,7 @@ export function HomeView({
                     <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
                       <div className="h-full rounded-full transition-all" style={{
                   width: `${p.vendas / topProdutos[0].vendas * 100}%`,
-                  background: i === 0 ? ACC : "#d1c0a0"
+                  background: PRODUCT_RANK_COLORS[i % PRODUCT_RANK_COLORS.length]
                 }} />
                     </div>
                   </div>
@@ -330,7 +330,7 @@ export function HomeView({
               </div> : <div className="flex flex-col gap-1.5">
                 {vendasRecentes.map(v => {
               const statusLabel = v.status === "FINALIZADA" ? "Finalizado" : v.status === "CANCELADA" ? "Cancelado" : "Pendente";
-              const statusStyle = v.status === "FINALIZADA" ? "bg-green-100 text-green-700" : v.status === "CANCELADA" ? "bg-red-100 text-red-700" : "bg-amber-100 text-amber-700";
+              const statusStyle = v.status === "FINALIZADA" ? "bg-green-100 text-green-700" : v.status === "CANCELADA" ? "bg-red-100 text-red-700" : "peract-bg-accent-soft peract-font-color-accent";
             return <div key={v.id} className="flex items-center gap-3 py-2 px-3 rounded-lg" style={{
               background: "#fafaf9"
             }}>
