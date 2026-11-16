@@ -188,12 +188,11 @@
   }
 
   .peract-serif-font {
-    font-family: "Playfair Display", "Georgia", serif;
-    letter-spacing: 0.05em;
+    font-family: var(--brand-font-serif);
   }
 
   .peract-sans-font {
-    font-family: "Inter", "Segoe UI", sans-serif;
+    font-family: var(--brand-font-sans);
   }
 
   .peract-font-weight-normal {
@@ -233,7 +232,7 @@
   }
 
   .peract-bg-accent-soft {
-    background-color: color-mix(in srgb, var(--brand-accent) 10%, white);
+    background-color: color-mix(in srgb, var(--brand-accent) 10%, var(--brand-bg));
   }
 
   .peract-border-default {
@@ -265,9 +264,9 @@
   }
 
   .peract-surface-panel {
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.96) 0%, rgba(247, 247, 246, 0.96) 100%);
+    background: linear-gradient(180deg, color-mix(in srgb, var(--card) 98%, white) 0%, var(--background) 100%);
     border: 1px solid var(--border);
-    box-shadow: 0 18px 45px rgba(26, 26, 26, 0.08);
+    box-shadow: 0 18px 45px color-mix(in srgb, var(--brand-dark) 8%, transparent);
   }
 
   .peract-input-shell {
@@ -354,6 +353,52 @@
 @keyframes peract-feedback-in {
   from { opacity: 0; transform: translateY(-4px); }
   to { opacity: 1; transform: translateY(0); }
+}
+
+/* Fora de @layer para vencer os estilos que o Sonner injeta em runtime. */
+[data-sonner-toast].peract-toast[data-styled="true"] {
+  --peract-toast-accent: var(--brand-accent);
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.875rem 1rem 0.875rem 1.125rem;
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--peract-toast-accent);
+  border-radius: 0.875rem;
+  background: var(--card);
+  color: var(--foreground);
+  font-family: var(--brand-font-sans);
+  font-size: 0.875rem;
+  line-height: 1.35;
+  box-shadow: 0 18px 40px color-mix(in srgb, var(--brand-dark) 16%, transparent), 0 2px 6px color-mix(in srgb, var(--brand-dark) 8%, transparent);
+}
+
+[data-sonner-toast].peract-toast[data-type="success"] {
+  --peract-toast-accent: #2f7d4f;
+}
+
+[data-sonner-toast].peract-toast[data-type="error"] {
+  --peract-toast-accent: #b3261e;
+}
+
+[data-sonner-toast].peract-toast [data-icon] {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  margin: 0;
+  border-radius: 9999px;
+  background: color-mix(in srgb, var(--peract-toast-accent) 12%, transparent);
+  color: var(--peract-toast-accent);
+}
+
+[data-sonner-toast].peract-toast [data-title] {
+  font-weight: 600;
+  color: var(--foreground);
+}
+
+[data-sonner-toast].peract-toast [data-description] {
+  color: var(--muted-foreground);
 }
 
 @media (prefers-reduced-motion: reduce) {

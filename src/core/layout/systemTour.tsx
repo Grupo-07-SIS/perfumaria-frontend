@@ -1,8 +1,10 @@
 import type { Step } from "react-joyride";
+import { environment } from "../../environment";
 
 export interface SystemTourStep extends Step {
   route: string;
   beforeTargetSelector?: string;
+  compactTargetSelector?: string;
 }
 
 export interface SystemTourSection {
@@ -33,8 +35,14 @@ export function getSystemTourSections(isAdmin: boolean): SystemTourSection[] {
       description: "Visão geral e atalhos do seu perfil.",
       steps: [
         tourStep("/", "tour-home-heading", "Início", "Este é o ponto de partida. A navegação lateral permite acessar as áreas liberadas para seu perfil."),
+        {
+          ...tourStep("/", "tour-sidebar-navigation", "Navegação lateral", "Estoque reúne os itens do catálogo e Vendas reúne o registro e o acompanhamento de pedidos. Em telas menores, use Abrir menu; com a barra recolhida, expanda-a para ver os submenus."),
+          compactTargetSelector: '[data-tour="tour-mobile-navigation"]',
+          placement: "right",
+        },
         ...(isAdmin ? [
-          tourStep("/", "tour-home-kpis", "Indicadores", "Acompanhe vendas, faturamento, margem e ticket médio do período selecionado."),
+          tourStep("/", "tour-home-period", "Período", "Escolha um período ou use Personalizado para informar as datas e aplicar o filtro."),
+          tourStep("/", "tour-home-kpis", "Indicadores", "Acompanhe vendas, faturamento, margem e vendas finalizadas por canal no período selecionado."),
           tourStep("/", "tour-home-charts", "Evolução do período", "Compare a quantidade de vendas e o faturamento por hora, dia ou mês."),
           tourStep("/", "tour-home-products", "Desempenho de produtos", "Veja os produtos mais vendidos e a distribuição da receita por categoria."),
           tourStep("/", "tour-home-operations", "Operação diária", "Acompanhe alertas de estoque e as vendas recentes; os atalhos levam às ações relacionadas."),
@@ -44,12 +52,12 @@ export function getSystemTourSections(isAdmin: boolean): SystemTourSection[] {
     ...(isAdmin ? [
       {
         id: "products",
-        title: "Estoque · Produtos",
+        title: "Estoque · Perfumes",
         description: "Catálogo, filtros e manutenção dos produtos.",
         steps: [
           tourStep("/estoque/produtos", "tour-products-header", "Produtos", "Consulte o catálogo, cadastre itens e edite estoque, preços e informações dos produtos."),
           tourStep("/estoque/produtos", "tour-products-filters", "Filtros do estoque", "Pesquise por nome ou marca e refine a lista por categoria e status do estoque."),
-          tourStep("/estoque/produtos", "tour-products-table", "Lista de produtos", "Ordene as colunas, navegue pelas páginas e use as ações de edição ou exclusão."),
+          tourStep("/estoque/produtos", "tour-products-table", "Lista de produtos", "Ordene as colunas, navegue pelas páginas e use as ações de edição ou inativação."),
         ],
       },
       {
@@ -64,7 +72,7 @@ export function getSystemTourSections(isAdmin: boolean): SystemTourSection[] {
     ] : []),
     {
       id: "decants",
-      title: "Decants",
+      title: "Estoque · Decants",
       description: isAdmin ? "Preços e volumes dos frascos de decant." : "Consulte preços e volumes dos frascos de decant.",
       steps: [
         tourStep("/decants", "tour-decants-header", "Decants", isAdmin ? "Cadastre a tabela de preços dos frascos de decant vinculados a perfumes." : "Consulte os preços cadastrados dos frascos de decant vinculados a perfumes."),
@@ -74,7 +82,7 @@ export function getSystemTourSections(isAdmin: boolean): SystemTourSection[] {
     },
     {
       id: "body-splash",
-      title: "Body Splash",
+      title: "Estoque · Body Splash",
       description: isAdmin ? "Preços dos frascos fracionados." : "Consulte os preços dos frascos fracionados.",
       steps: [
         tourStep("/bodysplash", "tour-body-splash-header", "Body Splash", isAdmin ? "Cadastre preços de frascos fracionados vinculados aos produtos Body Splash." : "Consulte os preços de frascos fracionados vinculados aos produtos Body Splash."),
@@ -84,7 +92,7 @@ export function getSystemTourSections(isAdmin: boolean): SystemTourSection[] {
     },
     {
       id: "sale",
-      title: "Vendas · Registrar",
+      title: "Vendas · Registrar Venda",
       description: "Monte e confirme uma venda presencial ou online.",
       steps: [
         tourStep("/vendas/registrar", "tour-sales-header", "Registrar venda", "Monte uma venda presencial ou online. O formulário recalcula os valores conforme os itens e condições escolhidos."),
@@ -97,7 +105,7 @@ export function getSystemTourSections(isAdmin: boolean): SystemTourSection[] {
     },
     {
       id: "sales-history",
-      title: "Vendas · Histórico",
+      title: "Vendas · Histórico de Vendas",
       description: "Consulta, filtros e detalhes de vendas.",
       steps: [
         tourStep("/vendas/historico", "tour-history-heading", "Histórico de vendas", "Consulte vendas registradas e acompanhe os totais do histórico."),
@@ -107,46 +115,46 @@ export function getSystemTourSections(isAdmin: boolean): SystemTourSection[] {
     },
     {
       id: "online-orders",
-      title: "Vendas · Pedidos online",
+      title: "Vendas · Pedidos Online",
       description: "Acompanhamento e ações dos pedidos digitais.",
       steps: [
         tourStep("/vendas/pedidos", "tour-orders-heading", "Pedidos online", "Acompanhe pedidos dos canais digitais, incluindo pendências e finalizações."),
         tourStep("/vendas/pedidos", "tour-orders-filters", "Filtros de pedidos", "Pesquise e filtre por status ou canal para localizar um pedido."),
-        tourStep("/vendas/pedidos", "tour-orders-results", "Ações dos pedidos", "Abra os detalhes, finalize pedidos, informe rastreio ou cancele quando necessário."),
+        tourStep("/vendas/pedidos", "tour-orders-results", "Ações dos pedidos", isAdmin ? "Abra os detalhes, finalize ou desfaça pedidos e cancele quando necessário." : "Abra os detalhes e finalize pedidos pendentes. Desfazer ou cancelar pedidos é uma ação do administrador."),
       ],
     },
     ...(isAdmin ? [
       {
         id: "people-clients",
-        title: "Pessoas · Clientes",
+        title: "Gerenciamento · Clientes",
         description: "Busca, status e manutenção de clientes.",
         steps: [
           tourStep("/clientes", "tour-people-heading", "Gerenciamento", "Administre clientes, fornecedores e funcionários da organização."),
           tourStep("/clientes", "tour-people-tabs", "Abas de cadastro", "As abas separam os tipos de cadastro; o contador mostra a quantidade de cada grupo."),
-          tourStep("/clientes", "tour-people-search", "Busca e status", "Pesquise clientes e filtre registros ativos, inativos ou todos."),
-          tourStep("/clientes", "tour-people-results", "Clientes", "Consulte contatos, pedidos e status; as ações permitem editar, inativar ou reativar."),
+          tourStep("/clientes", "tour-people-search", "Busca e status", "Pesquise clientes e filtre registros ativos, inativos ou todos.", "[data-tour='tour-people-tab-clients']"),
+          tourStep("/clientes", "tour-people-results", "Clientes", "Consulte contatos, pedidos e status; as ações permitem editar, inativar ou reativar.", "[data-tour='tour-people-tab-clients']"),
         ],
       },
       {
         id: "people-suppliers",
-        title: "Pessoas · Fornecedores",
+        title: "Gerenciamento · Fornecedores",
         description: "Dados de contato e cadastro de fornecedores.",
         steps: [
           tourStep("/clientes", "tour-people-heading", "Fornecedores", "Use a aba Fornecedores para manter os dados das empresas fornecedoras."),
           tourStep("/clientes", "tour-people-tabs", "Abas de cadastro", "Alterne entre Clientes, Fornecedores e Funcionários."),
           tourStep("/clientes", "tour-people-search", "Busca de fornecedores", "Pesquise por razão social, CNPJ ou e-mail.", "[data-tour='tour-people-tab-suppliers']"),
-          tourStep("/clientes", "tour-people-supplier-results", "Lista de fornecedores", "Consulte contato e endereço; as ações permitem editar ou remover um cadastro."),
+          tourStep("/clientes", "tour-people-supplier-results", "Lista de fornecedores", "Consulte contato e endereço; as ações permitem editar ou remover um cadastro.", "[data-tour='tour-people-tab-suppliers']"),
         ],
       },
       {
         id: "people-employees",
-        title: "Pessoas · Funcionários",
+        title: "Gerenciamento · Funcionários",
         description: "Acesso, perfil e manutenção da equipe.",
         steps: [
           tourStep("/clientes", "tour-people-heading", "Funcionários", "Use a aba Funcionários para administrar as contas de acesso da equipe."),
           tourStep("/clientes", "tour-people-tabs", "Abas de cadastro", "Alterne entre Clientes, Fornecedores e Funcionários."),
           tourStep("/clientes", "tour-people-search", "Busca da equipe", "Localize funcionários pelo nome ou e-mail.", "[data-tour='tour-people-tab-employees']"),
-          tourStep("/clientes", "tour-people-employee-results", "Lista de funcionários", "Confira cargo e e-mail. Senhas nunca são exibidas; as ações permitem editar ou remover contas."),
+          tourStep("/clientes", "tour-people-employee-results", "Lista de funcionários", "Confira cargo e e-mail. Senhas nunca são exibidas; as ações permitem editar ou remover contas.", "[data-tour='tour-people-tab-employees']"),
         ],
       },
       {
@@ -156,26 +164,27 @@ export function getSystemTourSections(isAdmin: boolean): SystemTourSection[] {
         steps: [
           tourStep("/configuracoes", "tour-settings-heading", "Configurações", "Ajuste parâmetros operacionais e opções de segurança da conta."),
           tourStep("/configuracoes", "tour-settings-sections", "Seções", "Escolha entre configurações de estoque e segurança."),
-          tourStep("/configuracoes", "tour-settings-stock", "Limite de estoque", "Produtos com quantidade positiva menor ou igual ao limite são considerados críticos."),
-        ],
-      },
-      {
-        id: "settings-security",
-        title: "Configurações · Segurança",
-        description: "Troca autenticada de senha e e-mail de acesso.",
-        steps: [
-          tourStep("/configuracoes", "tour-settings-password", "Alterar senha", "Confirme sua senha atual e defina uma nova senha com pelo menos seis caracteres.", "[data-tour='tour-settings-security-tab']"),
-          tourStep("/configuracoes", "tour-settings-email", "Alterar e-mail", "Informe e confirme o novo e-mail; ao salvar, a sessão autenticada será renovada."),
+          tourStep("/configuracoes", "tour-settings-stock", "Limite de estoque", "Produtos com quantidade positiva menor ou igual ao limite são considerados críticos.", "[data-tour='tour-settings-stock-tab']"),
         ],
       },
     ] : []),
+    {
+      id: "settings-security",
+      title: "Configurações · Segurança",
+      description: environment.features.securityQuestionsEnabled ? "Perguntas de segurança e dados de acesso da conta." : "Senha e e-mail de acesso da conta.",
+      steps: [
+        ...(environment.features.securityQuestionsEnabled ? [
+          tourStep("/configuracoes", "tour-settings-questions", "Perguntas de segurança", "Cadastre três perguntas diferentes para recuperar sua senha. A senha atual confirma o cadastro.", "[data-tour='tour-settings-security-tab']"),
+        ] : []),
+        tourStep("/configuracoes", "tour-settings-password", "Alterar senha", "Confirme sua senha atual e defina uma nova senha com pelo menos seis caracteres.", "[data-tour='tour-settings-security-tab']"),
+        tourStep("/configuracoes", "tour-settings-email", "Alterar e-mail", "Informe e confirme o novo e-mail; ao salvar, a sessão autenticada será renovada.", "[data-tour='tour-settings-security-tab']"),
+      ],
+    },
   ];
 
-  const consumedSections = new Set<string>();
   const findSection = (id: string) => sections.find(section => section.id === id);
   const groupSections = (id: string, title: string, description: string, subsectionIds: string[]): SystemTourSection => {
     const subsections = subsectionIds.map(findSection).filter((section): section is SystemTourSection => Boolean(section));
-    subsectionIds.forEach(subsectionId => consumedSections.add(subsectionId));
     return {
       id,
       title,
@@ -185,29 +194,31 @@ export function getSystemTourSections(isAdmin: boolean): SystemTourSection[] {
     };
   };
 
-  const dashboard = findSection("home");
-  const groupedSections: SystemTourSection[] = dashboard ? [{ ...dashboard, title: "Dashboard" }] : [];
-
-  if (isAdmin) {
-    groupedSections.push(groupSections("stock", "Estoque", "Produtos e categorias do catálogo.", ["products", "categories"]));
-  }
-
-  for (const id of ["decants", "body-splash"]) {
-    const section = findSection(id);
-    if (section) groupedSections.push(section);
-  }
+  const home = findSection("home");
+  const groupedSections: SystemTourSection[] = home ? [home] : [];
+  groupedSections.push(groupSections(
+    "stock",
+    "Estoque",
+    isAdmin ? "Perfumes, Body Splash, Decants e categorias." : "Consulte Body Splash e Decants.",
+    isAdmin ? ["products", "body-splash", "decants", "categories"] : ["body-splash", "decants"],
+  ));
 
   groupedSections.push(groupSections(
     "sales",
     "Vendas",
-    isAdmin ? "Registro, histórico e pedidos online." : "Registro de vendas.",
-    isAdmin ? ["sale", "sales-history", "online-orders"] : ["sale"],
+    isAdmin ? "Registro, histórico e pedidos online." : "Registro de vendas e pedidos online.",
+    isAdmin ? ["sale", "sales-history", "online-orders"] : ["sale", "online-orders"],
   ));
 
   if (isAdmin) {
     groupedSections.push(groupSections("people", "Gerenciamento", "Clientes, fornecedores e funcionários.", ["people-clients", "people-suppliers", "people-employees"]));
-    groupedSections.push(groupSections("settings", "Configurações", "Parâmetros de estoque e segurança da conta.", ["settings-stock", "settings-security"]));
   }
+  groupedSections.push(groupSections(
+    "settings",
+    "Configurações",
+    isAdmin ? "Parâmetros de estoque e segurança da conta." : "Segurança e dados de acesso da conta.",
+    isAdmin ? ["settings-stock", "settings-security"] : ["settings-security"],
+  ));
 
   return groupedSections;
 }

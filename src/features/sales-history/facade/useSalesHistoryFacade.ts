@@ -122,8 +122,9 @@ export function useSalesHistoryFacade() {
       setEditVenda(null);
       setReloadKey((key) => key + 1);
     } catch (error) {
-      actionToast.error(reactivating ? "Não foi possível reativar a venda." : "Não foi possível atualizar a venda.");
-      setError(saleUpdateErrorMessage(error, reactivating));
+      const message = saleUpdateErrorMessage(error, reactivating);
+      setError(message);
+      actionToast.error(message);
     }
   };
   return {

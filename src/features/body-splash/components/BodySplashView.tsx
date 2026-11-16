@@ -75,7 +75,7 @@ export function BodySplashView({
       </div>
 
       {/* Info banner */}
-      <div data-tour="tour-body-splash-table" className="rounded-xl border px-4 py-3 mb-4 flex items-start gap-3" style={{
+      <div className="rounded-xl border px-4 py-3 mb-4 flex items-start gap-3" style={{
       background: `${ACC}12`,
       borderColor: `${ACC}30`
     }}>
@@ -101,6 +101,7 @@ export function BodySplashView({
         </div>
       </PeractCard>
 
+      <div data-tour="tour-body-splash-table">
       {/* Table desktop */}
       <PeractCard className="hidden md:block peract-bg-card rounded-xl border peract-border-color shadow-sm">
         <div className="overflow-auto max-h-[520px]">
@@ -201,5 +202,6 @@ export function BodySplashView({
           </PeractCard>)}
       </div>
           <PeractPaginationFooter className="mt-4 md:hidden" currentPage={currentPage} onPageChange={page => void setCurrentPage(page)} totalPages={totalPages} firstItem={firstItem} lastItem={lastItem} totalItems={totalElements}>body splash(es)</PeractPaginationFooter>
+      </div>
     </div>;
 }

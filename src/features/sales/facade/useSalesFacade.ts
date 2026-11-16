@@ -86,8 +86,6 @@ export function useSalesFacade() {
   const setTipoDesconto = (value: SalesFormValues["tipoDesconto"]) => form.setValue("tipoDesconto", value, { shouldDirty: true });
   const setDesconto = (value: string) => form.setValue("desconto", value, { shouldDirty: true });
   const setFrete = (value: string) => form.setValue("frete", value, { shouldDirty: true });
-  const [success, setSuccess] = useState(false);
-  const [registeredStatus, setRegisteredStatus] = useState<"FINALIZADA" | "PENDENTE">("FINALIZADA");
   const [errors, setErrors] = useState<string[]>([]);
   const [showNovoCliente, setShowNovoCliente] = useState(false);
   const clientesFiltrados = clientes.filter(c => {
@@ -133,7 +131,6 @@ export function useSalesFacade() {
       return;
     }
     setErrors([]);
-    setSuccess(false);
     setCart(prev => {
       const existing = prev.find(i => i.catalogItem.id === item.id);
       if (cartQuantityError(item, (existing?.quantidade ?? 0) + 1)) return prev;
@@ -186,7 +183,6 @@ export function useSalesFacade() {
   });
   const handleRegistrar = () => {
     if (submitting.current || loading || loadError) return;
-    setSuccess(false);
     const values = form.getValues();
     const errs = validateSale(cart, clienteSelected, values);
     if (errs.length > 0) {
@@ -214,10 +210,8 @@ export function useSalesFacade() {
     setConfirmationError("");
     try {
       await registerSale(saleReview.cart, saleReview.customer, saleReview.form);
-      actionToast.success(saleReview.form.isOnline ? "Pedido online registrado com sucesso!" : "Venda registrada com sucesso!", saleReview.form.isOnline ? "Acompanhe-o na lista de pedidos online." : "Verifique-a no histórico de vendas.");
-      setRegisteredStatus(saleReview.form.isOnline ? "PENDENTE" : "FINALIZADA");
+      actionToast.success(saleReview.form.isOnline ? "Venda registrada como pendente." : "Venda registrada como finalizada.", saleReview.form.isOnline ? "Acompanhe-o na lista de pedidos online." : "Verifique-a no histórico de vendas.");
       setSaleReview(null);
-      setSuccess(true);
       setCart([]);
       setClienteSelected(null);
       setClienteSearch("");
@@ -229,8 +223,9 @@ export function useSalesFacade() {
       form.reset();
       setReloadKey(previous => previous + 1);
     } catch (error) {
-      actionToast.error("Não foi possível registrar a venda.", "Verifique as vendas antes de tentar novamente.");
-      setConfirmationError(salesErrorMessage(error, "Não foi possível confirmar o registro. Verifique as vendas antes de tentar novamente."));
+      const message = salesErrorMessage(error, "Não foi possível confirmar o registro. Verifique as vendas antes de tentar novamente.");
+      setConfirmationError(message);
+      actionToast.error(message);
     } finally {
       submitting.current = false;
       setSaving(false);
@@ -300,9 +295,6 @@ export function useSalesFacade() {
     setTipoDesconto,
     desconto,
     setDesconto,
-    success,
-    registeredStatus,
-    setSuccess,
     errors,
     setErrors,
     showNovoCliente,

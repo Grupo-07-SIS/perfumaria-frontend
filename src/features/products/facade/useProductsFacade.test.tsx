@@ -55,7 +55,7 @@ describe("useProductsFacade", () => {
       expect(result.current.isLoading).toBe(false);
     });
 
-    expect(fetchProductsMock).toHaveBeenCalledWith(expect.objectContaining({ nome: "", ordenacao: "nome,asc", page: 0 }));
+    expect(fetchProductsMock).toHaveBeenCalledWith(expect.objectContaining({ nome: "", ordenacao: "dataCadastro,desc", page: 0 }));
 
     expect(result.current.products[0].estoqueStatus).toBe("ok");
     expect(result.current.products[1].estoqueStatus).toBe("esgotado");
@@ -95,7 +95,7 @@ describe("useProductsFacade", () => {
       await result.current.submitSearch();
     });
 
-    expect(fetchProductsMock).toHaveBeenNthCalledWith(2, expect.objectContaining({ nome: "dior", ordenacao: "nome,asc", page: 0 }));
+    expect(fetchProductsMock).toHaveBeenNthCalledWith(2, expect.objectContaining({ nome: "dior", ordenacao: "dataCadastro,desc", page: 0 }));
     expect(result.current.products[0].nome).toBe("Dior Homme");
 
     await act(async () => {
@@ -175,6 +175,26 @@ describe("useProductsFacade", () => {
     expect(actionToast.success).toHaveBeenNthCalledWith(2, "Perfume atualizado com sucesso!", "Verifique-o na lista de perfumes.");
     expect(actionToast.success).toHaveBeenNthCalledWith(3, "Perfume excluído com sucesso!", "A lista de perfumes foi atualizada.");
     expect(actionToast.error).not.toHaveBeenCalled();
+  });
+
+  it("shows the newest product first and returns to page one after creating one", async () => {
+    fetchProductsMock.mockResolvedValue(productPage([], 0, 23));
+    fetchProductCategoriesMock.mockResolvedValue([{ id: 1, nome: "Perfumes" }]);
+    createProductMock.mockResolvedValue({ ativo: 1, categoriaId: 1, categoriaNome: "Perfumes", estoqueAtual: 7, id: 99, marca: "Dior", nome: "Novo", precoVenda: 150 });
+    const { result } = renderHook(() => useProductsFacade());
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    expect(result.current.sortField).toBe("dataCadastro");
+    expect(result.current.sortAscending).toBe(false);
+
+    await act(async () => { result.current.toggleSort("marca"); });
+    await act(async () => { result.current.setCurrentPage(2); });
+    act(() => result.current.openCreateForm());
+    await act(async () => {
+      await result.current.submitProduct({ categoriaId: "1", estoqueAtual: "7", hasVolume: false, marca: "Dior", medida: "ML", nome: "Novo", precoCompra: "", precoVenda: "150", volume: "" });
+    });
+
+    await waitFor(() => expect(fetchProductsMock).toHaveBeenLastCalledWith(expect.objectContaining({ ordenacao: "dataCadastro,desc", page: 0 })));
+    expect(result.current.currentPage).toBe(1);
   });
 
   it("loads 23 products across pages of 10, 10 and 3 and resets sorting to page one", async () => {

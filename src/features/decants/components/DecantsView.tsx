@@ -58,7 +58,7 @@ export function DecantsView({
       </div>
 
       {/* Info banner */}
-      <div data-tour="tour-decants-table" className="rounded-xl border px-4 py-3 mb-4 flex items-start gap-3" style={{
+      <div className="rounded-xl border px-4 py-3 mb-4 flex items-start gap-3" style={{
       background: `${ACC}12`,
       borderColor: `${ACC}30`
     }}>
@@ -84,6 +84,7 @@ export function DecantsView({
         </div>
       </PeractCard>
 
+      <div data-tour="tour-decants-table">
       {/* Table desktop */}
       <PeractCard className="hidden md:block peract-bg-card rounded-xl border peract-border-color shadow-sm">
         <div className="overflow-auto max-h-[520px]">
@@ -190,5 +191,6 @@ export function DecantsView({
           </PeractCard>}
       </div>
       <PeractPaginationFooter className="mt-4 md:hidden" currentPage={currentPage} totalPages={totalPages} onPageChange={page => void setCurrentPage(page)} firstItem={firstItem} lastItem={lastItem} totalItems={totalElements}>decant(s)</PeractPaginationFooter>
+      </div>
     </div>;
 }

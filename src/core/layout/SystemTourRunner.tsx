@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { ArrowLeft, ArrowRight, Check, X } from "lucide-react";
-import Joyride, { ACTIONS, EVENTS, STATUS, type CallBackProps, type Step } from "react-joyride";
+import Joyride, { ACTIONS, EVENTS, STATUS, type CallBackProps } from "react-joyride";
 import { useLocation, useNavigate } from "react-router";
 import { PeractButtonPrimitive } from "../../shared/components/peract-button";
+import { actionToast } from "../../shared/services/action-toast";
 import type { SystemTourStep } from "./systemTour";
 import { useIsMobile } from "../../shared/hooks/useIsMobile";
 
@@ -12,58 +13,88 @@ interface SystemTourRunnerProps {
   onFinish: () => void;
 }
 
+// Reserve space for the fixed controls and mobile safe-area insets.
+const MOBILE_TOUR_PADDING = { top: 8, right: 8, bottom: 110, left: 8 };
+
 export function SystemTourRunner({ steps, onFinish }: SystemTourRunnerProps) {
   const isMobile = useIsMobile();
+  const isCompactSidebar = useIsMobile(1024);
   const location = useLocation();
   const navigate = useNavigate();
   const [tourSteps] = useState<SystemTourStep[]>(steps);
   const [stepIndex, setStepIndex] = useState(0);
   const [isRunning, setIsRunning] = useState(false);
   const [isActive, setIsActive] = useState(true);
-  const originPath = useRef(location.pathname);
+  const originLocation = useRef({
+    pathname: location.pathname,
+    search: location.search,
+    hash: location.hash,
+    state: location.state,
+  });
+  const direction = useRef<1 | -1>(1);
   const isLastStep = stepIndex === tourSteps.length - 1;
-  const displayedSteps = useMemo(() => isMobile
-    ? tourSteps.map(step => ({
-        ...step,
-        placement: "top" as const,
+  const displayedSteps = useMemo<SystemTourStep[]>(() => tourSteps.map(step => {
+    const compactTarget = isCompactSidebar ? step.compactTargetSelector : undefined;
+    const presentedStep: SystemTourStep = {
+      ...step,
+      target: compactTarget ?? step.target,
+      placement: compactTarget ? "bottom" : step.placement,
+    };
+    if (!isMobile) return presentedStep;
+    return {
+        ...presentedStep,
+        placement: compactTarget ? "bottom" : "top",
         floaterProps: {
           ...step.floaterProps,
-          disableFlip: true,
+          disableFlip: false,
           options: {
             ...step.floaterProps?.options,
-            modifiers: {
-              ...step.floaterProps?.options?.modifiers,
-              flip: { enabled: false },
-              preventOverflow: {
-                enabled: true,
-                boundariesElement: "window",
-                padding: 8,
-              },
+            flip: {
+              ...step.floaterProps?.options?.flip,
+              enabled: true,
+              boundariesElement: "viewport",
+              padding: MOBILE_TOUR_PADDING,
+            },
+            preventOverflow: {
+              ...step.floaterProps?.options?.preventOverflow,
+              enabled: true,
+              boundariesElement: "viewport",
+              padding: MOBILE_TOUR_PADDING,
             },
           },
         },
-      }))
-    : tourSteps, [isMobile, tourSteps]);
+      };
+  }), [isCompactSidebar, isMobile, tourSteps]);
 
   const finishTour = () => {
     setIsRunning(false);
     setIsActive(false);
-    if (location.pathname !== originPath.current) navigate(originPath.current);
+    const origin = originLocation.current;
+    if (location.pathname !== origin.pathname || location.search !== origin.search || location.hash !== origin.hash || location.state !== origin.state) {
+      navigate({ pathname: origin.pathname, search: origin.search, hash: origin.hash }, { state: origin.state });
+    }
     onFinish();
   };
 
   const advanceTourStep = (nextIndex: number) => {
-    if (nextIndex >= tourSteps.length) {
+    if (nextIndex < 0 || nextIndex >= tourSteps.length) {
       finishTour();
       return;
     }
+    direction.current = nextIndex < stepIndex ? -1 : 1;
     setIsRunning(false);
     setStepIndex(nextIndex);
   };
 
+  const skipMissingStep = (step: SystemTourStep, index: number) => {
+    const title = typeof step.title === "string" ? ` "${step.title}"` : "";
+    actionToast.error(`Não foi possível exibir a etapa${title} do tour.`, "A página ou seção não ficou disponível.");
+    advanceTourStep(index + direction.current);
+  };
+
   useEffect(() => {
     if (!isActive) return;
-    const step = tourSteps[stepIndex];
+    const step = displayedSteps[stepIndex];
     if (!step) {
       finishTour();
       return;
@@ -80,24 +111,36 @@ export function SystemTourRunner({ steps, onFinish }: SystemTourRunnerProps) {
     const timer = window.setInterval(() => {
       attempts += 1;
       if (step.beforeTargetSelector && !prepared) {
-        document.querySelector<HTMLElement>(step.beforeTargetSelector)?.click();
-        prepared = true;
+        const activator = document.querySelector<HTMLElement>(step.beforeTargetSelector);
+        if (activator) {
+          if (activator.getAttribute("aria-pressed") !== "true") activator.click();
+          prepared = true;
+        }
+      } else {
+        const target = typeof step.target === "string" ? document.querySelector(step.target) : step.target;
+        if (target?.isConnected) {
+          window.clearInterval(timer);
+          setIsRunning(true);
+          return;
+        }
       }
-      if (document.querySelector(step.target as string)) {
+      if (attempts >= 60) {
         window.clearInterval(timer);
-        setIsRunning(true);
-      } else if (attempts >= 40) {
-        window.clearInterval(timer);
-        advanceTourStep(stepIndex + 1);
+        skipMissingStep(step, stepIndex);
       }
     }, 50);
 
     return () => window.clearInterval(timer);
-  }, [isActive, stepIndex, location.pathname, tourSteps, navigate]);
+  }, [isActive, stepIndex, location.pathname, displayedSteps, navigate]);
 
   const handleTourCallback = (data: CallBackProps) => {
     if (data.status === STATUS.FINISHED || data.status === STATUS.SKIPPED || data.action === ACTIONS.CLOSE || data.action === ACTIONS.SKIP) {
       finishTour();
+      return;
+    }
+    if (data.index !== stepIndex) return;
+    if (data.type === EVENTS.TARGET_NOT_FOUND) {
+      skipMissingStep(displayedSteps[stepIndex], stepIndex);
       return;
     }
     if (data.type !== EVENTS.STEP_AFTER) return;
@@ -120,13 +163,13 @@ export function SystemTourRunner({ steps, onFinish }: SystemTourRunnerProps) {
       showSkipButton
       spotlightPadding={8}
       stepIndex={stepIndex}
-      steps={displayedSteps as Step[]}
+      steps={displayedSteps}
       styles={{
         options: {
           arrowColor: "#ffffff",
           backgroundColor: "#ffffff",
           overlayColor: "rgba(17, 24, 39, 0.48)",
-          primaryColor: "#a67449",
+          primaryColor: "#70243f",
           textColor: "#292524",
           width: 320,
           zIndex: 10000,
@@ -135,6 +178,7 @@ export function SystemTourRunner({ steps, onFinish }: SystemTourRunnerProps) {
           ? {
               borderRadius: 10,
               padding: 14,
+              maxWidth: "calc(100vw - 24px)",
               maxHeight: "max(80px, calc(100dvh - 150px))",
               overflowY: "auto",
               overscrollBehavior: "contain",
@@ -156,8 +200,10 @@ export function SystemTourRunner({ steps, onFinish }: SystemTourRunnerProps) {
             role="group"
             style={{
               position: "fixed",
-              width: "min(420px, calc(100vw - 24px))",
+              left: "max(12px, env(safe-area-inset-left, 0px))",
               right: "max(12px, env(safe-area-inset-right, 0px))",
+              maxWidth: 420,
+              marginLeft: "auto",
               bottom: "max(12px, env(safe-area-inset-bottom, 0px))",
               zIndex: 10002,
             }}
@@ -183,6 +229,9 @@ export function SystemTourRunner({ steps, onFinish }: SystemTourRunnerProps) {
             <ArrowLeft aria-hidden="true" size={15} />
             <span className="hidden min-[360px]:inline">Voltar</span>
           </PeractButtonPrimitive>
+          <span aria-label={`Etapa ${stepIndex + 1} de ${tourSteps.length}`} aria-live="polite" className="whitespace-nowrap px-1 text-xs peract-font-color-muted">
+            {stepIndex + 1}/{tourSteps.length}
+          </span>
           <PeractButtonPrimitive
             aria-label={isLastStep ? "Concluir tour" : "Avançar"}
             title={isLastStep ? "Concluir tour" : "Avançar"}

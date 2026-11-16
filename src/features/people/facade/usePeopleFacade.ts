@@ -121,7 +121,7 @@ export function usePeopleFacade() {
       setModal(null);
       actionToast.success(cd ? "Cliente atualizado com sucesso!" : "Cliente cadastrado com sucesso!", "Verifique-o na lista de clientes.");
     } catch (requestError) {
-      actionToast.error("Não foi possível salvar o cliente.");
+      actionToast.error(peopleErrorMessage(requestError, cd ? "Não foi possível atualizar o cliente." : "Não foi possível cadastrar o cliente."));
       throw requestError;
     }
   };
@@ -136,7 +136,7 @@ export function usePeopleFacade() {
       setModal(null);
       actionToast.success(fd ? "Fornecedor atualizado com sucesso!" : "Fornecedor cadastrado com sucesso!", "Verifique-o na lista de fornecedores.");
     } catch (requestError) {
-      actionToast.error("Não foi possível salvar o fornecedor.");
+      actionToast.error(peopleErrorMessage(requestError, fd ? "Não foi possível atualizar o fornecedor." : "Não foi possível cadastrar o fornecedor."));
       throw requestError;
     }
   };
@@ -151,7 +151,7 @@ export function usePeopleFacade() {
       setModal(null);
       actionToast.success(fn ? "Funcionário atualizado com sucesso!" : "Funcionário cadastrado com sucesso!", "Verifique-o na lista de funcionários.");
     } catch (requestError) {
-      actionToast.error("Não foi possível salvar o funcionário.");
+      actionToast.error(peopleErrorMessage(requestError, fn ? "Não foi possível atualizar o funcionário." : "Não foi possível cadastrar o funcionário."));
       throw requestError;
     }
   };
@@ -195,8 +195,9 @@ export function usePeopleFacade() {
         setDeleteTarget(null);
         actionToast.success("Fornecedor excluído com sucesso!", "A lista de fornecedores foi atualizada.");
       } catch (requestError) {
-        actionToast.error("Não foi possível excluir o fornecedor.");
-        setError(peopleErrorMessage(requestError, "Não foi possível excluir o fornecedor. Tente novamente."));
+        const message = peopleErrorMessage(requestError, "Não foi possível excluir o fornecedor. Tente novamente.");
+        setError(message);
+        actionToast.error(message);
         throw requestError;
       }
     }
@@ -212,8 +213,9 @@ export function usePeopleFacade() {
         setDeleteTarget(null);
         actionToast.success("Cliente inativado com sucesso!", "Verifique-o na lista de clientes inativos.");
       } catch (requestError) {
-        actionToast.error("Não foi possível inativar o cliente.");
-        setError(peopleErrorMessage(requestError, "Não foi possível excluir o cliente. Tente novamente."));
+        const message = peopleErrorMessage(requestError, "Não foi possível excluir o cliente. Tente novamente.");
+        setError(message);
+        actionToast.error(message);
         throw requestError;
       }
     }
@@ -221,6 +223,7 @@ export function usePeopleFacade() {
   const requestEmployeeDeletion = (target: Funcionario) => {
     if (target.donoOrganizacao) {
       setError("O dono da organização não pode ser excluído.");
+      actionToast.error("O dono da organização não pode ser excluído.");
       return;
     }
     setDeleteTarget({
@@ -233,8 +236,9 @@ export function usePeopleFacade() {
         setDeleteTarget(null);
         actionToast.success("Funcionário excluído com sucesso!", "A lista de funcionários foi atualizada.");
       } catch (requestError) {
-        actionToast.error("Não foi possível excluir o funcionário.");
-        setError(peopleErrorMessage(requestError, "Não foi possível excluir o funcionário. Tente novamente."));
+        const message = peopleErrorMessage(requestError, "Não foi possível excluir o funcionário. Tente novamente.");
+        setError(message);
+        actionToast.error(message);
         setDeleteTarget(null);
       }
     }
@@ -249,8 +253,9 @@ export function usePeopleFacade() {
       setReactivateTarget(null);
       actionToast.success("Cliente reativado com sucesso!", "Verifique-o na lista de clientes ativos.");
     } catch (requestError) {
-      actionToast.error("Não foi possível reativar o cliente.");
-      setError(peopleErrorMessage(requestError, "Não foi possível reativar o cliente. Tente novamente."));
+      const message = peopleErrorMessage(requestError, "Não foi possível reativar o cliente. Tente novamente.");
+      setError(message);
+      actionToast.error(message);
     }
   };
   return {

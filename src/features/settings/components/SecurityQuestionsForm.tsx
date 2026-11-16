@@ -12,7 +12,7 @@ export function SecurityQuestionsForm() {
   const disabled = facade.loading || facade.saving || facade.loadFailed;
   return (
     <PeractCard className="p-4 lg:p-6">
-      <h2 className="peract-serif-font mb-2">Perguntas de segurança</h2>
+      <h2 data-tour="tour-settings-questions" className="peract-serif-font mb-2">Perguntas de segurança</h2>
       <p className="mb-3 text-sm peract-font-color-muted">Cadastre exatamente três perguntas pessoais e diferentes. A senha atual é exigida tanto no primeiro cadastro quanto na substituição. Não use informações públicas ou fáceis de adivinhar.</p>
       <p className="mb-4 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">{EXACT_ANSWER_NOTICE}</p>
       {facade.error && <p role="alert" className="mb-4 text-sm text-red-700">{facade.error}</p>}

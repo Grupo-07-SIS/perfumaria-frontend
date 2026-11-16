@@ -213,6 +213,32 @@ describe("AppLayout", () => {
     expect(navigation.queryByRole("link", { name: "Categorias" })).not.toBeInTheDocument();
   });
 
+  it("expands the mobile sidebar after resizing from a collapsed desktop sidebar", () => {
+    let compact = false;
+    useIsMobileMock.mockImplementation((breakpoint?: number) => breakpoint === 1024 && compact);
+    useAppMock.mockReturnValue({
+      currentUser: { cargo: "Administrador", nome: "Admin", id: "admin" },
+      logout: vi.fn(),
+    });
+    const view = renderLayout("/");
+    fireEvent.click(screen.getByRole("button", { name: "Recolher" }));
+    expect(screen.getByRole("complementary")).toHaveClass("w-16");
+    expect(screen.getByRole("button", { name: "Expandir menu lateral" })).toHaveAttribute("title", "Expandir menu lateral");
+
+    compact = true;
+    view.rerender(<MemoryRouter initialEntries={["/"]}><LayoutRoutes /></MemoryRouter>);
+    fireEvent.click(screen.getByRole("button", { name: "Abrir menu" }));
+    expect(screen.getByRole("complementary")).toHaveClass("w-64", "translate-x-0");
+    expect(screen.getByRole("button", { name: "Fechar menu" })).toBeInTheDocument();
+    fireEvent.click(within(screen.getByRole("navigation")).getByRole("button", { name: "Estoque" }));
+    expect(screen.getByRole("link", { name: "Decants" })).toBeInTheDocument();
+    expect(screen.getByText("Tour pelo sistema")).toBeInTheDocument();
+
+    compact = false;
+    view.rerender(<MemoryRouter initialEntries={["/"]}><LayoutRoutes /></MemoryRouter>);
+    expect(screen.getByRole("complementary")).toHaveClass("w-16");
+  });
+
   it("keeps the mobile tour menu bounded and closes the sidebar when starting", async () => {
     useIsMobileMock.mockReturnValue(true);
     useAppMock.mockReturnValue({
@@ -247,14 +273,19 @@ describe("AppLayout", () => {
     fireEvent.click(screen.getByRole("button", { name: "Escolher tour do sistema" }));
     const tourMenu = within(screen.getByRole("dialog"));
     if (cargo === "Funcionário") {
-      expect(tourMenu.queryByRole("button", { name: /^Estoque/ })).not.toBeInTheDocument();
+      expect(tourMenu.getByRole("button", { name: /^Estoque Tour completo/ })).toBeInTheDocument();
+      expect(tourMenu.getByRole("button", { name: /^Body Splash/ })).toBeInTheDocument();
+      expect(tourMenu.getByRole("button", { name: /^Decants/ })).toBeInTheDocument();
+      expect(tourMenu.getByRole("button", { name: /^Pedidos Online/ })).toBeInTheDocument();
+      expect(tourMenu.getByRole("button", { name: /^Configurações Tour completo/ })).toBeInTheDocument();
+      expect(tourMenu.queryByRole("button", { name: /^Perfumes/ })).not.toBeInTheDocument();
+      expect(tourMenu.queryByRole("button", { name: /^Histórico de Vendas/ })).not.toBeInTheDocument();
       expect(tourMenu.queryByRole("button", { name: /^Gerenciamento/ })).not.toBeInTheDocument();
-      expect(tourMenu.queryByRole("button", { name: /^Configurações/ })).not.toBeInTheDocument();
     } else {
       expect(tourMenu.getByRole("button", { name: /^Estoque Tour completo/ })).toBeInTheDocument();
-      expect(tourMenu.getByRole("button", { name: /^Produtos/ })).toBeInTheDocument();
+      expect(tourMenu.getByRole("button", { name: /^Perfumes/ })).toBeInTheDocument();
       expect(tourMenu.getByRole("button", { name: /^Vendas Tour completo/ })).toBeInTheDocument();
-      expect(tourMenu.getByRole("button", { name: /^Registrar/ })).toBeInTheDocument();
+      expect(tourMenu.getByRole("button", { name: /^Registrar Venda/ })).toBeInTheDocument();
     }
     fireEvent.click(tourMenu.getByRole("button", { name: "Tour completo" }));
 

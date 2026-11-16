@@ -78,8 +78,8 @@ export function useProductsFacade() {
   const [search, setSearch] = useState("");
   const [submittedSearch, setSubmittedSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("todos");
-  const [sortAscending, setSortAscending] = useState(true);
-  const [sortField, setSortField] = useState<ProductSortField>("nome");
+  const [sortAscending, setSortAscending] = useState(false);
+  const [sortField, setSortField] = useState<ProductSortField>("dataCadastro");
   const [statusFilter, setStatusFilter] = useState<ProductStatusFilter>("todos");
   const [totalPages, setTotalPages] = useState(1);
   const [totalProducts, setTotalProducts] = useState(0);
@@ -211,6 +211,7 @@ export function useProductsFacade() {
   };
 
   const submitProduct = async (formData: ProductFormData) => {
+    const isEditing = Boolean(formTarget);
     setIsSubmitting(true);
     setError("");
 
@@ -220,10 +221,18 @@ export function useProductsFacade() {
         : createProduct(formData));
       actionToast.success(formTarget ? "Perfume atualizado com sucesso!" : "Perfume cadastrado com sucesso!", "Verifique-o na lista de perfumes.");
       closeForm();
-      await loadProducts();
+      if (isEditing) {
+        await loadProducts();
+      } else {
+        // O novo produto deve aparecer no topo: volta à ordem padrão e à primeira página.
+        setSortField("dataCadastro");
+        setSortAscending(false);
+        setCurrentPage(1);
+        setReloadVersion((version) => version + 1);
+      }
     } catch {
       setError("Não foi possível salvar o produto.");
-      actionToast.error(formTarget ? "Falha ao atualizar" : "Falha ao cadastrar");
+      actionToast.error(isEditing ? "Falha ao atualizar" : "Falha ao cadastrar");
       throw new Error("PRODUCTS_SUBMIT_FAILED");
     } finally {
       setIsSubmitting(false);

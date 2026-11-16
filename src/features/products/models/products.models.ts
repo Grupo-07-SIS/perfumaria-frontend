@@ -6,6 +6,7 @@ export type ProductType = "PERFUME" | "BODY_SPLASH" | "OUTRO";
 export type ProductStatusFilter = "todos" | ProductStockStatus;
 
 export type ProductSortField =
+  | "dataCadastro"
   | "nome"
   | "marca"
   | "categoriaNome"

@@ -3,7 +3,7 @@ import { Controller } from "react-hook-form";
 import { Link, useInRouterContext } from "react-router";
 import { environment } from "../../../environment";
 import { AlertCircle, Eye, EyeOff, Lock, Mail } from "lucide-react";
-import logoImg from "figma:asset/19603bc35fe7f283ff1a83c590f928c9d0bfe9cf.png";
+import logoImg from "../../../assets/canal-perfumado-logo.svg";
 import { PeractButton } from "../../../shared/components/peract-button";
 import { PeractCard } from "../../../shared/components/peract-card";
 import { PeractInput } from "../../../shared/components/peract-input";
@@ -72,15 +72,17 @@ export function LoginFormPanel({
                     {facade.showPass ? <EyeOff size={15} /> : <Eye size={15} />}
                   </PeractButtonPrimitive>} type={facade.showPass ? "text" : "password"} validation={facade.errors.password ? "invalid" : "non-validation"} value={field.value}>SENHA</PeractInput>} />
 
+          <div className="-mt-2 flex justify-end">
+            {environment.features.securityQuestionsEnabled && (inRouter
+              ? <Link to="/recuperar-senha" className="peract-font-color-accent text-xs underline-offset-2 hover:underline focus-visible:outline">Esqueci minha senha</Link>
+              : <a href="/recuperar-senha" className="peract-font-color-accent text-xs underline-offset-2 hover:underline focus-visible:outline">Esqueci minha senha</a>)}
+          </div>
+
           <PeractButton className="mt-2 w-full tracking-[0.04em]" disabled={facade.loading} theme="primary" type="submit">
             {facade.loading ? <span className="h-4 w-4 shrink-0 animate-spin rounded-full border-2 border-white/40 border-t-white" /> : null}
             {facade.loading ? "Verificando..." : "Entrar no sistema"}
           </PeractButton>
         </form>
-
-        {environment.features.securityQuestionsEnabled && <div className="mt-4 text-center text-sm peract-font-color-accent">
-          {inRouter ? <Link to="/recuperar-senha" className="underline focus-visible:outline">Esqueci minha senha</Link> : <a href="/recuperar-senha" className="underline focus-visible:outline">Esqueci minha senha</a>}
-        </div>}
 
         <p className="mt-6 text-center text-xs tracking-[0.06em] text-[#c8c8c5]">© 2026 CANAL PERFUMADO DECANTS</p>
       </PeractCard>

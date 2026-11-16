@@ -57,7 +57,7 @@ export function SettingsView({
         {/* Sidebar */}
         <div className="lg:w-56 shrink-0">
           <PeractCard data-tour="tour-settings-sections" className="peract-bg-card rounded-xl border peract-border-color shadow-sm overflow-hidden">
-            {sections.map(s => <PeractButtonPrimitive key={s.key} data-tour={s.key === "seguranca" ? "tour-settings-security-tab" : undefined} onClick={() => setActiveSection(s.key)} className={`w-full min-w-0 flex items-center justify-start gap-3 whitespace-normal px-4 py-3 text-sm text-left transition-all border-l-2 ${activeSection === s.key ? "border-[#A67449] text-[#A67449] bg-amber-50" : "border-transparent text-gray-600 hover:bg-gray-50"}`} variant="plain" size="plain">
+            {sections.map(s => <PeractButtonPrimitive key={s.key} data-tour={s.key === "seguranca" ? "tour-settings-security-tab" : "tour-settings-stock-tab"} aria-pressed={activeSection === s.key} onClick={() => setActiveSection(s.key)} className={`w-full min-w-0 flex items-center justify-start gap-3 whitespace-normal px-4 py-3 text-sm text-left transition-all border-l-2 ${activeSection === s.key ? "peract-border-color-accent peract-font-color-accent peract-bg-accent-soft" : "border-transparent text-gray-600 hover:bg-gray-50"}`} variant="plain" size="plain">
               <span className="shrink-0">{s.icon}</span>
               <span className="min-w-0 flex-1 whitespace-normal break-words">{s.label}</span>
               </PeractButtonPrimitive>)}
@@ -126,9 +126,7 @@ export function SettingsView({
               </div>
 
               <div className="flex justify-end">
-                <PeractButtonPrimitive onClick={() => void handleSaveEstoque()} disabled={stockDisabled} className="flex items-center gap-2 px-5 py-2 rounded-lg text-white text-sm hover:opacity-90 transition-opacity" style={{
-              background: "#A67449"
-            }} variant="plain" size="plain">
+                <PeractButtonPrimitive onClick={() => void handleSaveEstoque()} disabled={stockDisabled} className="flex items-center gap-2 px-5 py-2 rounded-lg text-sm" variant="default" size="plain">
                   <Save size={15} /> {isStockSaving ? "Salvando..." : "Salvar configurações"}
                 </PeractButtonPrimitive>
               </div>
@@ -193,9 +191,7 @@ export function SettingsView({
                 </div>
 
                 <div className="flex justify-start mt-5">
-                  <PeractButtonPrimitive onClick={() => void handleSaveSenha()} disabled={isAccountSaving} className="flex items-center gap-2 px-5 py-2 rounded-lg text-white text-sm hover:opacity-90 transition-opacity disabled:opacity-60" style={{
-                background: "#A67449"
-              }} variant="plain" size="plain">
+                  <PeractButtonPrimitive onClick={() => void handleSaveSenha()} disabled={isAccountSaving} className="flex items-center gap-2 px-5 py-2 rounded-lg text-sm disabled:opacity-60" variant="default" size="plain">
                     <Save size={15} /> {isAccountSaving ? "Salvando..." : "Alterar senha"}
                   </PeractButtonPrimitive>
                 </div>
@@ -262,9 +258,7 @@ export function SettingsView({
                 </div>
 
                 <div className="flex justify-start mt-5">
-                  <PeractButtonPrimitive onClick={() => void handleSaveEmail()} disabled={isAccountSaving} className="flex items-center gap-2 px-5 py-2 rounded-lg text-white text-sm hover:opacity-90 transition-opacity disabled:opacity-60" style={{
-                background: "#A67449"
-              }} variant="plain" size="plain">
+                  <PeractButtonPrimitive onClick={() => void handleSaveEmail()} disabled={isAccountSaving} className="flex items-center gap-2 px-5 py-2 rounded-lg text-sm disabled:opacity-60" variant="default" size="plain">
                     <Save size={15} /> {isAccountSaving ? "Salvando..." : "Alterar e-mail"}
                   </PeractButtonPrimitive>
                 </div>

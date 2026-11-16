@@ -1,11 +1,11 @@
-import logoImg from "figma:asset/19603bc35fe7f283ff1a83c590f928c9d0bfe9cf.png";
+import logoImg from "../../../assets/canal-perfumado-logo.svg";
 import { Sparkles } from "lucide-react";
 import { ImageWithFallback } from "../../../app/components/figma/ImageWithFallback";
 import { PeractCard } from "../../../shared/components/peract-card";
 import { PERFUME_BG } from "../config/loginVisuals";
 export function LoginHeroPanel() {
   return <div className="relative hidden overflow-hidden lg:flex lg:w-[55%]">
-      <ImageWithFallback src={PERFUME_BG} alt="Canal Perfumado Decants" className="absolute inset-0 h-full w-full object-cover" />
+      <ImageWithFallback src={PERFUME_BG} alt="Canal Perfumado Decants" className="absolute inset-0 h-full w-full object-[center_80%] object-cover" />
       <div className="absolute inset-0" style={{
       background: "linear-gradient(to right, rgba(255,255,255,0) 60%, rgba(255,255,255,0.35) 100%)"
     }} />
@@ -31,7 +31,7 @@ export function LoginHeroPanel() {
       }}>
           <div className="mb-4 flex items-center gap-2">
             <div className="h-px flex-1" style={{
-            background: "linear-gradient(to right, #c29958, transparent)"
+            background: "linear-gradient(to right, #70243f, transparent)"
           }} />
             <Sparkles size={13} className="peract-font-color-accent" />
           </div>

@@ -28,7 +28,7 @@ export function ProductsPage() {
       <div className="mb-5 flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
         <div>
           <h1 data-tour="tour-products-header" className="peract-font-color-default">Estoque – Perfumes</h1>
-          <nav className="mt-0.5 text-xs peract-font-color-muted">Estoque &rsaquo; <span className="text-[#A67449]">Perfumes</span></nav>
+          <nav className="mt-0.5 text-xs peract-font-color-muted">Estoque &rsaquo; <span className="text-[#70243f]">Perfumes</span></nav>
         </div>
         <PeractButton action={facade.openCreateForm} className="self-start" icon={<Plus size={16} />}>Novo produto</PeractButton>
       </div>

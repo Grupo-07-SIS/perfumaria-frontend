@@ -1,5 +1,5 @@
 import type { BodySplashItem } from "../models/body-splash.models";
-export const ACC = "#c29958";
+export const ACC = "#70243f";
 export const DARK = "#050300";
 export const WARM = "#f5ede0";
 export const VOLUMES: Array<{

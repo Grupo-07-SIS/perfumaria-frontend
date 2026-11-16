@@ -58,8 +58,6 @@ export function SalesView({
   setTipoDesconto,
   desconto,
   setDesconto,
-  success,
-  registeredStatus,
   errors,
   showNovoCliente,
   setShowNovoCliente,
@@ -80,16 +78,9 @@ export function SalesView({
         <h1 data-tour="tour-sales-header" className="peract-font-color-default">Registrar Venda</h1>
         <nav className="text-xs peract-font-color-muted mt-0.5">
           Vendas &rsaquo;{" "}
-          <span className="text-[#A67449]">Registrar Venda</span>
+          <span className="text-[#70243f]">Registrar Venda</span>
         </nav>
       </div>
-
-      {success && <div className="flex items-center gap-3 px-4 py-3 mb-4 bg-green-50 border border-green-200 rounded-xl text-green-700 text-sm" role="status">
-          <CheckCircle size={18} />
-          <div>
-            <p className="font-medium">{registeredStatus === "PENDENTE" ? "Venda registrada como pendente." : "Venda registrada como finalizada."}</p>
-          </div>
-        </div>}
 
       {errors.length > 0 && <div className="px-4 py-3 mb-4 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm" role="alert">
           <ul className="list-disc list-inside space-y-0.5">
@@ -109,16 +100,16 @@ export function SalesView({
           <PeractButtonPrimitive onClick={() => {
           setIsOnline(false);
           setCanalOnline(null);
-        }} className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border-2 text-sm transition-all flex-1 justify-center ${!isOnline ? "border-[#A67449] text-[#A67449] bg-amber-50" : "peract-border-color peract-font-color-muted hover:border-gray-300"}`} variant="plain" size="plain">
+        }} className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border-2 text-sm transition-all flex-1 justify-center ${!isOnline ? "border-[#70243f] text-[#70243f] peract-bg-accent-soft" : "peract-border-color peract-font-color-muted hover:border-gray-300"}`} variant="plain" size="plain">
             <Store size={16} /> Presencial
-            {!isOnline && <span className="w-4 h-4 rounded-full border-2 border-[#A67449] flex items-center justify-center ml-1">
-                <span className="w-2 h-2 rounded-full bg-[#A67449]" />
+            {!isOnline && <span className="w-4 h-4 rounded-full border-2 border-[#70243f] flex items-center justify-center ml-1">
+                <span className="w-2 h-2 rounded-full bg-[#70243f]" />
               </span>}
           </PeractButtonPrimitive>
-          <PeractButtonPrimitive onClick={() => setIsOnline(true)} className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border-2 text-sm transition-all flex-1 justify-center ${isOnline ? "border-[#A67449] text-[#A67449] bg-amber-50" : "peract-border-color peract-font-color-muted hover:border-gray-300"}`} variant="plain" size="plain">
+          <PeractButtonPrimitive onClick={() => setIsOnline(true)} className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border-2 text-sm transition-all flex-1 justify-center ${isOnline ? "border-[#70243f] text-[#70243f] peract-bg-accent-soft" : "peract-border-color peract-font-color-muted hover:border-gray-300"}`} variant="plain" size="plain">
             <Globe size={16} /> Online
-            {isOnline && <span className="w-4 h-4 rounded-full border-2 border-[#A67449] flex items-center justify-center ml-1">
-                <span className="w-2 h-2 rounded-full bg-[#A67449]" />
+            {isOnline && <span className="w-4 h-4 rounded-full border-2 border-[#70243f] flex items-center justify-center ml-1">
+                <span className="w-2 h-2 rounded-full bg-[#70243f]" />
               </span>}
           </PeractButtonPrimitive>
         </div>
@@ -281,11 +272,11 @@ export function SalesView({
           <PeractCard data-tour="tour-sales-cart" className="peract-bg-card rounded-xl border peract-border-color shadow-sm overflow-hidden">
             <div className="flex items-center gap-2 px-4 py-3 border-b border-gray-50">
               <ShoppingCart size={16} style={{
-              color: "#A67449"
+              color: "#70243f"
             }} />
               <h2 className="peract-font-color-default text-sm">Carrinho</h2>
               {cart.length > 0 && <PeractTag className="ml-auto text-xs px-2 py-0.5 rounded-full text-white" style={{
-              background: "#A67449"
+              background: "#70243f"
             }}>
                   {cart.length} item(s)
                 </PeractTag>}
@@ -319,7 +310,7 @@ export function SalesView({
                         <p className="text-xs peract-font-color-muted">{item.catalogItem.apresentacao ?? item.catalogItem.categoriaNome ?? "Produto completo"}</p>
                       </div>
                       <div className="col-span-4 sm:col-span-2 flex items-center justify-center">
-                        <PeractInputControl aria-label={`Quantidade de ${item.catalogItem.nome}`} type="number" min={1} max={item.catalogItem.estoqueAtual} step={1} value={item.quantidade} onChange={e => updateQty(item.catalogItem.id, Number(e.target.value))} className="w-16 border peract-border-color rounded-lg px-2 py-1 text-sm text-center focus:outline-none focus:border-[#A67449]" />
+                        <PeractInputControl aria-label={`Quantidade de ${item.catalogItem.nome}`} type="number" min={1} max={item.catalogItem.estoqueAtual} step={1} value={item.quantidade} onChange={e => updateQty(item.catalogItem.id, Number(e.target.value))} className="w-16 border peract-border-color rounded-lg px-2 py-1 text-sm text-center focus:outline-none focus:border-[#70243f]" />
                       </div>
                       <div className="col-span-3 sm:col-span-2 text-sm text-gray-600 text-right">
                         R$ {item.catalogItem.preco.toFixed(2)}
@@ -349,9 +340,9 @@ export function SalesView({
             background: isOnline ? "#EFF6FF" : "#F9F5F1"
           }}>
               {isOnline ? <Globe size={14} className="text-blue-600" /> : <Store size={14} style={{
-              color: "#A67449"
+              color: "#70243f"
             }} />}
-              <span className={`text-xs font-medium ${isOnline ? "text-blue-600" : "text-[#A67449]"}`}>
+              <span className={`text-xs font-medium ${isOnline ? "text-blue-600" : "text-[#70243f]"}`}>
                 {isOnline ? "Venda Online" : "Venda Presencial"}
               </span>
             </div>
@@ -406,13 +397,13 @@ export function SalesView({
                 <Tag size={11} /> Desconto (opcional)
               </PeractLabel>
               <div className="flex gap-2 mb-2">
-                <PeractButtonPrimitive onClick={() => setTipoDesconto("percentual")} className={`flex-1 py-1.5 rounded-lg border text-xs font-medium transition-all ${tipoDesconto === "percentual" ? "text-white border-[#A67449]" : "peract-border-color peract-font-color-muted hover:border-gray-300 peract-bg-card"}`} style={tipoDesconto === "percentual" ? {
-                background: "#A67449"
+                <PeractButtonPrimitive onClick={() => setTipoDesconto("percentual")} className={`flex-1 py-1.5 rounded-lg border text-xs font-medium transition-all ${tipoDesconto === "percentual" ? "text-white border-[#70243f]" : "peract-border-color peract-font-color-muted hover:border-gray-300 peract-bg-card"}`} style={tipoDesconto === "percentual" ? {
+                background: "#70243f"
               } : {}} variant="plain" size="plain">
                   % Percentual
                 </PeractButtonPrimitive>
-                <PeractButtonPrimitive onClick={() => setTipoDesconto("valor")} className={`flex-1 py-1.5 rounded-lg border text-xs font-medium transition-all ${tipoDesconto === "valor" ? "text-white border-[#A67449]" : "peract-border-color peract-font-color-muted hover:border-gray-300 peract-bg-card"}`} style={tipoDesconto === "valor" ? {
-                background: "#A67449"
+                <PeractButtonPrimitive onClick={() => setTipoDesconto("valor")} className={`flex-1 py-1.5 rounded-lg border text-xs font-medium transition-all ${tipoDesconto === "valor" ? "text-white border-[#70243f]" : "peract-border-color peract-font-color-muted hover:border-gray-300 peract-bg-card"}`} style={tipoDesconto === "valor" ? {
+                background: "#70243f"
               } : {}} variant="plain" size="plain">
                   R$ Valor fixo
                 </PeractButtonPrimitive>
@@ -421,7 +412,7 @@ export function SalesView({
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 peract-font-color-muted text-sm">
                   {tipoDesconto === "percentual" ? "%" : "R$"}
                 </span>
-                <PeractInputControl type="number" min={0} max={tipoDesconto === "percentual" ? 100 : undefined} step={0.01} value={desconto} onChange={e => setDesconto(e.target.value)} placeholder="0" className="w-full border peract-border-color rounded-lg pl-8 pr-3 py-2 text-sm text-gray-700 focus:outline-none focus:border-[#A67449]" />
+                <PeractInputControl type="number" min={0} max={tipoDesconto === "percentual" ? 100 : undefined} step={0.01} value={desconto} onChange={e => setDesconto(e.target.value)} placeholder="0" className="w-full border peract-border-color rounded-lg pl-8 pr-3 py-2 text-sm text-gray-700 focus:outline-none focus:border-[#70243f]" />
               </div>
               {descontoAplicado > 0 && <p className="text-xs text-green-600 mt-1 flex items-center gap-1">
                   <Tag size={10} /> Desconto de R$ {descontoAplicado.toFixed(2)}{" "}
@@ -435,7 +426,7 @@ export function SalesView({
                 Tipo de pagamento *
               </PeractLabel>
               <div className="relative">
-                <PeractNativeSelect value={pagamento} onChange={e => setPagamento(e.target.value)} className="w-full border peract-border-color rounded-lg px-3 py-2 text-sm text-gray-700 focus:outline-none focus:border-[#A67449] appearance-none pr-8">
+                <PeractNativeSelect value={pagamento} onChange={e => setPagamento(e.target.value)} className="w-full border peract-border-color rounded-lg px-3 py-2 text-sm text-gray-700 focus:outline-none focus:border-[#70243f] appearance-none pr-8">
                   <option value="">Selecionar...</option>
                   {pagamentos.map(p => <option key={p} value={p}>
                       {p}
@@ -446,7 +437,7 @@ export function SalesView({
             </PeractField>
 
             <PeractButtonPrimitive onClick={handleRegistrar} className="w-full py-3 rounded-xl text-white text-sm font-medium flex items-center justify-center gap-2 hover:opacity-90 transition-opacity" style={{
-            background: "#A67449"
+            background: "#70243f"
           }} variant="plain" size="plain">
               <CheckCircle size={16} /> {saving ? "Registrando..." : "Registrar venda"}
             </PeractButtonPrimitive>

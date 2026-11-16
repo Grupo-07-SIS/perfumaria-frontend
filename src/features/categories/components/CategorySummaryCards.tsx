@@ -13,7 +13,7 @@ export function CategorySummaryCards({
         background: "#FFF3E8"
       }}>
             <Tag size={16} style={{
-          color: "#A67449"
+          color: "#70243f"
         }} />
           </div>
           <div className="min-w-0">

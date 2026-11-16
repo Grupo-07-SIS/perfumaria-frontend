@@ -1,5 +1,5 @@
 import type { Period } from "../models/dashboard.models";
-export const PIE_COLORS = ["#c29958", "#1a1a1a", "#6b6b68", "#d4b278", "#eeeeec"];
+export const PIE_COLORS = ["#70243f", "#a45b76", "#6b4755", "#c57d99", "#eadce1"];
 export const periodLabels: Record<Period, string> = {
   hoje: "Hoje",
   "7dias": "Últimos 7 dias",

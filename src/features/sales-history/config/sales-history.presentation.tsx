@@ -5,7 +5,7 @@ export const saleStatusConfig: Record<"Pendente" | "Finalizado" | "Cancelado", {
   icon: React.ReactNode;
 }> = {
   Pendente: {
-    active: "border-amber-400 text-amber-700 bg-amber-50",
+    active: "border-[#70243f] text-[#70243f] peract-bg-accent-soft",
     base: "border-gray-200 text-gray-500 hover:border-gray-300",
     icon: <Clock size={13} />
   },
